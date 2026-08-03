@@ -4731,32 +4731,35 @@
     return clamp(local, PIT.x + 20, PIT.x + PIT.width - 20);
   }
 
-  canvas.addEventListener("pointerdown", (event) => {
+  function beginPointerInteraction(clientX, clientY, pointerId) {
     ensureAudio();
-    if (!state.started || (state.paused && !state.gameOver)) return;
+    if (!state.started || (state.paused && !state.gameOver)) return false;
     state.pointerActive = true;
-    state.pointerX = toWorldX(event.clientX);
-    state.pointerStartX = event.clientX;
-    state.pointerStartY = event.clientY;
+    state.pointerX = toWorldX(clientX);
+    state.pointerStartX = clientX;
+    state.pointerStartY = clientY;
     state.pointerStartTime = performance.now();
-    canvas.setPointerCapture?.(event.pointerId);
-  });
+    if (pointerId !== undefined) {
+      canvas.setPointerCapture?.(pointerId);
+    }
+    return true;
+  }
 
-  canvas.addEventListener("pointermove", (event) => {
+  function movePointerInteraction(clientX) {
     if (!state.started || (state.paused && !state.gameOver)) return;
-    state.pointerX = toWorldX(event.clientX);
-  });
+    state.pointerX = toWorldX(clientX);
+  }
 
-  canvas.addEventListener("pointerup", (event) => {
+  function endPointerInteraction(clientX, clientY) {
     if (!state.started) {
       state.pointerActive = false;
       return;
     }
-    state.pointerX = toWorldX(event.clientX);
+    state.pointerX = toWorldX(clientX);
     if (state.pointerActive) {
       if (isMobileMode) {
-        const dx = event.clientX - state.pointerStartX;
-        const dy = event.clientY - state.pointerStartY;
+        const dx = clientX - state.pointerStartX;
+        const dy = clientY - state.pointerStartY;
         const dt = Math.max(16, performance.now() - state.pointerStartTime);
         const downward = Math.max(0, dy);
         const speed = downward / dt;
@@ -4774,11 +4777,55 @@
       }
     }
     state.pointerActive = false;
+  }
+
+  canvas.addEventListener("pointerdown", (event) => {
+    beginPointerInteraction(event.clientX, event.clientY, event.pointerId);
+  });
+
+  canvas.addEventListener("pointermove", (event) => {
+    movePointerInteraction(event.clientX);
+  });
+
+  canvas.addEventListener("pointerup", (event) => {
+    endPointerInteraction(event.clientX, event.clientY);
   });
 
   canvas.addEventListener("pointercancel", () => {
     state.pointerActive = false;
   });
+
+  canvas.addEventListener("touchstart", (event) => {
+    if (!isMobileMode) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    if (beginPointerInteraction(touch.clientX, touch.clientY)) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", (event) => {
+    if (!isMobileMode || !state.pointerActive) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    movePointerInteraction(touch.clientX);
+    event.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", (event) => {
+    if (!isMobileMode || !state.pointerActive) return;
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      state.pointerActive = false;
+      return;
+    }
+    endPointerInteraction(touch.clientX, touch.clientY);
+    event.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("touchcancel", () => {
+    state.pointerActive = false;
+  }, { passive: false });
 
   window.addEventListener("keydown", (event) => {
     if (isMobileMode) {
