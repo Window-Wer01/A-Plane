@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>啵啵星团 - 可试玩原型</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">阶段 1 可试玩原型</p>
+        <h1>啵啵星团</h1>
+        <p class="hero-copy">
+          外星圆形生物合并小游戏。当前版本先验证核心手感：投放、碰撞、合并、危险线、结算与分数驱动。
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button id="pauseBtn" class="ghost-btn" type="button">暂停</button>
+        <button id="helpBtn" class="ghost-btn" type="button">新手说明</button>
+        <button id="leaderboardBtn" class="ghost-btn" type="button">本地榜</button>
+        <button id="settingsBtn" class="ghost-btn" type="button">设置</button>
+        <button id="restartBtn" class="primary-btn" type="button">重新开始</button>
+      </div>
+    </section>
+
+    <section class="game-layout">
+      <div class="game-panel">
+        <div class="hud">
+          <div class="stat-card">
+            <span class="stat-label">分数</span>
+            <strong id="scoreValue">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">最高分</span>
+            <strong id="bestValue">0</strong>
+          </div>
+          <div class="stat-card next-card">
+            <span class="stat-label">下一只</span>
+            <div class="next-meta">
+              <div id="nextBlob" class="next-blob"></div>
+              <div>
+                <strong id="nextName">孢子</strong>
+                <span id="nextHint" class="next-hint">轻轻放，别堆太高</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section id="coachCard" class="coach-card" aria-live="polite">
+          <div class="coach-head">
+            <span id="coachStage" class="coach-stage">准备开始</span>
+            <strong id="coachTitle">先开局，再看局内建议</strong>
+          </div>
+          <p id="coachTip" class="coach-tip">这一栏会持续提示当前更适合做铺底、追合并还是优先清理上层。</p>
+        </section>
+
+        <section id="objectiveCard" class="objective-card" aria-live="polite">
+          <div class="objective-head">
+            <span id="objectiveStage" class="objective-stage">本局目标</span>
+            <strong id="objectiveTitle">开局后先做出第一次合并</strong>
+          </div>
+          <div class="objective-progress">
+            <div class="objective-bar">
+              <div id="objectiveFill" class="objective-fill"></div>
+            </div>
+            <span id="objectiveValue" class="objective-value">0%</span>
+          </div>
+          <p id="objectiveTip" class="objective-tip">先别急着堆高，前几手先把底部承接面铺出来。</p>
+        </section>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="420" height="760" aria-label="啵啵星团原型画布"></canvas>
+          <div id="statusBanner" class="status-banner">拖动或移动鼠标瞄准，点击 / 松手投放</div>
+        </div>
+        <section id="dangerMeter" class="danger-meter" data-state="safe" aria-live="polite">
+          <div class="danger-meter-head">
+            <span>危险监测</span>
+            <strong id="dangerText">开始后会在这里显示危险状态</strong>
+          </div>
+          <div class="danger-bar">
+            <div id="dangerFill" class="danger-fill"></div>
+          </div>
+        </section>
+        <section class="analytics-card" aria-live="polite">
+          <div class="analytics-head">
+            <h2>局内读数</h2>
+            <span id="analyticsGuideProgress" class="analytics-badge">引导 0/5</span>
+          </div>
+          <div class="analytics-grid">
+            <div class="mini-stat">
+              <span>投放偏向</span>
+              <strong id="analyticsDropBias">中路 0 : 边路 0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>救险次数</span>
+              <strong id="analyticsRecovery">0 次</strong>
+            </div>
+            <div class="mini-stat">
+              <span>当前压力</span>
+              <strong id="analyticsPressure">安全</strong>
+            </div>
+            <div class="mini-stat">
+              <span>任务完成率</span>
+              <strong id="analyticsTaskRate">0/5</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-panel">
+        <section class="info-card">
+          <h2>当前原型包含</h2>
+          <ul>
+            <li>PC 与移动端统一操作</li>
+            <li>基础碰撞与同级合并</li>
+            <li>危险线判定与失败结算</li>
+            <li>本地最高分记录</li>
+            <li>外星啵啵体的基础诙谐表情</li>
+          </ul>
+        </section>
+
+        <section class="info-card">
+          <h2>操作说明</h2>
+          <ul>
+            <li>PC：移动鼠标瞄准，点击投放；也支持 <code>A</code>/<code>D</code> 微调，<code>Space</code> 投放</li>
+            <li>移动端：手指拖动瞄准，松手投放</li>
+            <li>把同等级啵啵体碰到一起就会合并变大</li>
+            <li>越过顶部危险线太久就会失败</li>
+          </ul>
+        </section>
+
+        <section class="info-card subtle">
+          <h2>这版先不做</h2>
+          <ul>
+            <li>多人模式</li>
+            <li>排行榜服务端联机</li>
+            <li>皮肤 / DLC / 商业化</li>
+            <li>完整风控与账号系统</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+
+    <section id="resultPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">本局结算</p>
+        <h2 id="resultTitle">这局翻车了</h2>
+        <div class="result-grid">
+          <div class="mini-stat">
+            <span>本局分数</span>
+            <strong id="resultScore">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>历史最高</span>
+            <strong id="resultBest">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>最高等级</span>
+            <strong id="resultTier">1</strong>
+          </div>
+          <div class="mini-stat">
+            <span>用时</span>
+            <strong id="resultDuration">0s</strong>
+          </div>
+          <div class="mini-stat">
+            <span>合并次数</span>
+            <strong id="resultMerges">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>峰值危险</span>
+            <strong id="resultDangerPeak">0%</strong>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
+          <button id="resultCloseBtn" class="ghost-btn" type="button">先看看</button>
+        </div>
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">本局复盘</p>
+              <h2 id="resultReviewTitle">这局还可以再稳一点</h2>
+            </div>
+          </div>
+          <p id="resultReviewTip" class="panel-copy">复盘会根据这局的堆叠、危险度和合并进度给出简单建议。</p>
+          <div id="resultReviewTags" class="result-tags"></div>
+        </section>
+
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">任务回看</p>
+              <h2 id="resultObjectiveTitle">这局主要卡在这里</h2>
+            </div>
+          </div>
+          <div class="objective-snapshot compact-snapshot">
+            <div class="objective-head">
+              <span id="resultObjectiveStage" class="objective-stage">阶段任务</span>
+              <strong id="resultObjectiveValue">0%</strong>
+            </div>
+            <p id="resultObjectiveTip" class="objective-tip">这里会回看这局结束前最关键的任务阶段。</p>
+          </div>
+        </section>
+
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">本局里程碑</p>
+              <h2>这局你解锁了</h2>
+            </div>
+          </div>
+          <div id="resultMilestones" class="milestone-list"></div>
+        </section>
+
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">引导进度</p>
+              <h2>首次试玩已经走到哪</h2>
+            </div>
+          </div>
+          <div id="resultGuideList" class="guide-checklist"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="startPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">准备开始</p>
+        <h2>先热个身，再正式开局</h2>
+        <p class="panel-copy">
+          这一版重点是验证单人玩法闭环。开局后先跟着阶段任务往前推，完成节点时会有明确提示，不需要自己猜下一步该做什么。
+        </p>
+        <ul class="panel-list">
+          <li>PC：移动鼠标瞄准，点击投放，也支持 <code>A</code>/<code>D</code> 微调与 <code>Space</code> 投放</li>
+          <li>同级啵啵体接触后会立即合并</li>
+          <li>堆叠触碰红线后，会进入 14 秒倒计时</li>
+          <li>阶段任务会从第一投、第一次合并一路推进到稳住局势</li>
+          <li>完成阶段任务或里程碑时，会出现单独提示</li>
+        </ul>
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">首次试玩引导</p>
+              <h2>这一轮你会经过</h2>
+            </div>
+          </div>
+          <div id="startGuideList" class="guide-checklist"></div>
+        </section>
+        <p class="panel-copy subtle-copy">首次试玩建议：先轻轻放几手，把底部铺开，再追第一次合并。</p>
+        <div class="panel-actions">
+          <button id="startGameBtn" class="primary-btn" type="button">开始试玩</button>
+          <button id="startHelpBtn" class="ghost-btn" type="button">先看说明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pausePanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">已暂停</p>
+        <h2>先停一下，整理思路</h2>
+        <p class="panel-copy">
+          当前进度已经保留。继续后可以直接接着投放，危险计时也会从暂停前的状态恢复。
+        </p>
+        <section class="panel-subsection">
+          <div class="objective-snapshot">
+            <div class="objective-head">
+              <span id="pauseObjectiveStage" class="objective-stage">阶段任务</span>
+              <strong id="pauseObjectiveTitle">当前目标</strong>
+            </div>
+            <div class="objective-progress">
+              <div class="objective-bar">
+                <div id="pauseObjectiveFill" class="objective-fill"></div>
+              </div>
+              <span id="pauseObjectiveValue" class="objective-value">0%</span>
+            </div>
+            <p id="pauseObjectiveTip" class="objective-tip">这里会显示当前这局最该优先完成的任务。</p>
+          </div>
+        </section>
+        <div class="panel-actions">
+          <button id="resumeGameBtn" class="primary-btn" type="button">继续游戏</button>
+          <button id="pauseHelpBtn" class="ghost-btn" type="button">看说明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderboardPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">本地排行榜</p>
+            <h2>最近最强 5 局</h2>
+          </div>
+          <button id="leaderboardCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <section class="history-summary">
+          <h2>最近几局概览</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>平均存活</span>
+              <strong id="historyAvgDuration">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均合并</span>
+              <strong id="historyAvgMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均危险峰值</span>
+              <strong id="historyAvgDanger">0%</strong>
+            </div>
+            <div class="mini-stat">
+              <span>常见翻车点</span>
+              <strong id="historyCommonFailure">暂无</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期进度</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>累计局数</span>
+              <strong id="progressTotalRuns">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计总分</span>
+              <strong id="progressTotalScore">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计合并</span>
+              <strong id="progressTotalMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>历史最高等级</span>
+              <strong id="progressBestTier">1</strong>
+            </div>
+            <div class="mini-stat">
+              <span>最长存活</span>
+              <strong id="progressLongestRun">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>已解锁里程碑</span>
+              <strong id="progressMilestones">0</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期成就总览</h2>
+          <div id="progressAchievementList" class="achievement-list"></div>
+        </section>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
+
+    <section id="helpPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">新手说明</p>
+            <h2>这一版怎么玩</h2>
+          </div>
+          <button id="helpCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="panel-section">
+          <p class="panel-copy">先把低级啵啵体铺稳，再逐步往上合。别只盯着追高阶，留空间更重要。</p>
+          <ul class="panel-list">
+            <li>鼠标或触控负责瞄准，投放后会受到反弹和堆叠挤压影响</li>
+            <li>黄色以上表示开始接近危险区，红色表示已经触线</li>
+            <li>危险条一旦进入红色，就会显示剩余结束时间</li>
+            <li>暂停、设置和本地榜都不会清掉当前局面</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="settingsPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">设置</p>
+            <h2>原型选项</h2>
+          </div>
+          <button id="settingsCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="settings-list">
+          <label class="setting-row">
+            <span>音效</span>
+            <input id="audioToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row">
+            <span>危险晃动</span>
+            <input id="shakeToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row range-row">
+            <span>音量</span>
+            <input id="volumeRange" type="range" min="0" max="100" value="65" />
+          </label>
+        </div>
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">本地数据管理</p>
+              <h2>只影响这台设备</h2>
+            </div>
+          </div>
+          <label class="setting-row export-note-row">
+            <span>备份名称</span>
+            <input id="backupNameInput" type="text" placeholder="可选：比如“调参前基线”“里程碑A”" />
+          </label>
+          <label class="setting-row export-note-row">
+            <span>备份分组</span>
+            <input id="backupGroupInput" type="text" placeholder="可选：比如“实验组”“发布前”“手机测试”" />
+          </label>
+          <label class="setting-row export-note-row">
+            <span>备份备注</span>
+            <input id="backupNoteInput" type="text" placeholder="可选：给导入前备份/快照加备注" />
+          </label>
+          <div class="management-actions">
+            <button id="clearLeaderboardBtn" class="ghost-btn" type="button">清空排行榜</button>
+            <button id="resetProgressBtn" class="ghost-btn" type="button">重置长期进度</button>
+            <button id="resetAllDataBtn" class="ghost-btn danger-btn" type="button">全部重置</button>
+            <button id="undoImportBtn" class="ghost-btn" type="button">撤销上次导入</button>
+            <button id="createSnapshotBtn" class="ghost-btn" type="button">创建快照备份</button>
+          </div>
+          <label class="setting-row export-note-row">
+            <span>备份标签</span>
+            <input id="backupTagInput" type="text" placeholder="可选：多个标签用逗号分隔，比如“实验版,里程碑”" />
+          </label>
+        </section>
+
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">最近导入备份</p>
+              <h2>最近 5 次回退点</h2>
+            </div>
+            <button id="clearBackupHistoryBtn" class="ghost-btn tiny-btn" type="button">清空历史</button>
+          </div>
+          <div id="backupStatsGrid" class="history-grid compact-grid"></div>
+          <label class="setting-row export-note-row">
+            <span>清理策略</span>
+            <select id="backupCleanupPolicy">
+              <option value="recent">优先保留最近备份</option>
+              <option value="keep_annotated">优先保留有备注/标签</option>
+              <option value="balance_sources">尽量平衡导入前与快照</option>
+            </select>
+          </label>
+          <div class="backup-batch-actions">
+            <button id="applyCleanupPolicyBtn" class="ghost-btn tiny-btn" type="button">立即整理现有备份</button>
+          </div>
+          <p id="backupCapacityHint" class="panel-copy subtle-copy">备份上限为 5 条；超过后会自动淘汰最旧的一条。</p>
+          <div id="backupTagStats" class="backup-tag-stats"></div>
+          <div class="backup-toolbar">
+            <input id="backupSearchInput" type="text" placeholder="搜索备注或时间" />
+            <select id="backupSourceFilter">
+              <option value="all">全部来源</option>
+              <option value="import">仅导入前</option>
+              <option value="snapshot">仅快照</option>
+            </select>
+            <select id="backupPinnedFilter">
+              <option value="all">全部置顶状态</option>
+              <option value="pinned">仅看置顶</option>
+              <option value="unpinned">仅看未置顶</option>
+            </select>
+            <select id="backupGroupFilter">
+              <option value="all">全部分组</option>
+              <option value="__ungrouped__">未分组</option>
+            </select>
+            <select id="backupTagFilter" multiple size="4">
+              <option value="all">全部标签（清空）</option>
+              <option value="__untagged__">无标签</option>
+            </select>
+            <select id="backupSortOrder">
+              <option value="newest">按时间：新到旧</option>
+              <option value="oldest">按时间：旧到新</option>
+              <option value="note">按备注</option>
+              <option value="source">按来源</option>
+            </select>
+          </div>
+          <div class="backup-filter-summary">
+            <div id="backupTagSummary" class="backup-tag-summary">已选标签：无</div>
+            <button id="clearTagFilterBtn" class="ghost-btn tiny-btn" type="button">清空标签筛选</button>
+          </div>
+          <div id="backupPolicyPreview" class="import-preview empty">切换清理策略后，这里会显示下一次超限时可能淘汰哪些备份。</div>
+          <div class="backup-batch-actions">
+            <button id="archiveSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">归档选中</button>
+            <button id="pinSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">置顶选中</button>
+            <button id="unpinSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">取消置顶选中</button>
+            <button id="exportSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">导出选中</button>
+            <button id="tagSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">批量改标签</button>
+            <button id="renameSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">批量改备注</button>
+            <button id="deleteSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">删除选中</button>
+          </div>
+          <div id="importBackupHistory" class="backup-history"></div>
+          <div class="panel-head compact archive-head">
+            <div>
+              <p class="eyebrow">备份归档区</p>
+              <h2>长期保留，不参与清理</h2>
+            </div>
+            <button id="clearArchivedBackupsBtn" class="ghost-btn tiny-btn" type="button">清空归档</button>
+          </div>
+          <div id="archivedStatsGrid" class="history-grid compact-grid"></div>
+          <div class="backup-filter-summary">
+            <div class="backup-tag-summary">归档区搜索</div>
+            <input id="archivedBackupSearchInput" type="text" placeholder="搜索归档备注、标签或时间" />
+          </div>
+          <div class="backup-batch-actions">
+            <button id="unarchiveSelectedBackupsBtn" class="ghost-btn tiny-btn" type="button">取消归档选中</button>
+            <button id="pinSelectedArchivedBackupsBtn" class="ghost-btn tiny-btn" type="button">置顶选中</button>
+            <button id="unpinSelectedArchivedBackupsBtn" class="ghost-btn tiny-btn" type="button">取消置顶选中</button>
+          </div>
+          <div id="archivedBackupHistory" class="backup-history"></div>
+          <div class="panel-head compact archive-head">
+            <div>
+              <p class="eyebrow">操作日志</p>
+              <h2>记录最近的重要动作</h2>
+            </div>
+            <button id="clearOperationLogBtn" class="ghost-btn tiny-btn" type="button">清空日志</button>
+          </div>
+          <div id="operationLogList" class="operation-log-list"></div>
+          <div class="panel-head compact archive-head">
+            <div>
+              <p class="eyebrow">最近导出</p>
+              <h2>记录置顶区导出结果</h2>
+            </div>
+            <button id="clearExportRecordBtn" class="ghost-btn tiny-btn" type="button">清空记录</button>
+          </div>
+          <div id="exportRecordList" class="operation-log-list"></div>
+          <div class="panel-head compact archive-head">
+            <div>
+              <p class="eyebrow">最近恢复</p>
+              <h2>记录最近的快捷恢复结果</h2>
+            </div>
+            <button id="exportRestoreRecordBtn" class="ghost-btn tiny-btn" type="button">导出结果</button>
+            <button id="exportRestoreSummaryBtn" class="ghost-btn tiny-btn" type="button">导出摘要</button>
+            <button id="clearRestoreRecordBtn" class="ghost-btn tiny-btn" type="button">清空记录</button>
+          </div>
+          <div class="backup-filter-summary">
+            <input id="restoreRecordSearchInput" type="text" placeholder="搜索恢复标题、模块或来源" />
+            <select id="restoreRecordScopeFilter">
+              <option value="all">全部范围</option>
+              <option value="pinned">置顶区</option>
+              <option value="group">分组</option>
+              <option value="tag">标签</option>
+            </select>
+            <select id="restoreRecordKindFilter">
+              <option value="all">全部类型</option>
+              <option value="bundle">整区恢复</option>
+              <option value="module">模块恢复</option>
+            </select>
+          </div>
+          <div id="restoreRecordList" class="operation-log-list"></div>
+        </section>
+
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">导出 / 导入</p>
+              <h2>备份到文件</h2>
+            </div>
+          </div>
+          <p class="panel-copy subtle-copy">导出会生成一个 JSON 文件；导入会覆盖当前本地数据（排行榜、长期进度、引导进度、最高分与设置）。</p>
+          <label class="setting-row export-note-row">
+            <span>导出备注</span>
+            <input id="exportNoteInput" type="text" placeholder="可选：比如“调参前”“手机测试”" />
+          </label>
+          <div class="export-options">
+            <label class="export-option">
+              <input id="exportIncludeLeaderboard" type="checkbox" checked />
+              <span>排行榜</span>
+            </label>
+            <label class="export-option">
+              <input id="exportIncludeProgress" type="checkbox" checked />
+              <span>长期进度/成就</span>
+            </label>
+            <label class="export-option">
+              <input id="exportIncludeOnboarding" type="checkbox" checked />
+              <span>引导进度</span>
+            </label>
+            <label class="export-option">
+              <input id="exportIncludeBest" type="checkbox" checked />
+              <span>最高分</span>
+            </label>
+            <label class="export-option">
+              <input id="exportIncludeSettings" type="checkbox" checked />
+              <span>设置</span>
+            </label>
+          </div>
+          <div class="management-actions">
+            <button id="exportDataBtn" class="ghost-btn" type="button">导出数据</button>
+            <label class="ghost-btn file-btn" for="importDataInput">导入数据</label>
+            <input id="importDataInput" class="file-input" type="file" accept="application/json,.json" />
+          </div>
+          <div class="export-options import-options">
+            <label class="export-option">
+              <input id="importIncludeLeaderboard" type="checkbox" checked />
+              <span>恢复排行榜</span>
+            </label>
+            <label class="export-option">
+              <input id="importMergeLeaderboard" type="checkbox" />
+              <span>合并排行榜（保留最高 5 条）</span>
+            </label>
+            <label class="export-option">
+              <input id="importIncludeProgress" type="checkbox" checked />
+              <span>恢复长期进度/成就</span>
+            </label>
+            <label class="export-option">
+              <input id="importMergeProgress" type="checkbox" />
+              <span>合并长期进度（累计相加）</span>
+            </label>
+            <label class="export-option">
+              <input id="importIncludeOnboarding" type="checkbox" checked />
+              <span>恢复引导进度</span>
+            </label>
+            <label class="export-option">
+              <input id="importMergeOnboarding" type="checkbox" />
+              <span>合并引导进度（完成项并集）</span>
+            </label>
+            <label class="export-option">
+              <input id="importIncludeBest" type="checkbox" checked />
+              <span>恢复最高分</span>
+            </label>
+            <label class="export-option">
+              <input id="importIncludeSettings" type="checkbox" checked />
+              <span>恢复设置</span>
+            </label>
+          </div>
+          <div id="importPreviewBox" class="import-preview empty">选择一个 JSON 文件后，这里会先显示导入预览和差异摘要。</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="./game.js"></script>
+</body>
+</html>
