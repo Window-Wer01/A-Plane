@@ -332,6 +332,18 @@
 
   const settings = readSettings();
   let audioCtx = null;
+  let bgmIntervalId = null;
+  let bgmStep = 0;
+  const BGM_SEQUENCE = [
+    { bass: 220.0, lead: 659.25 },
+    { bass: 220.0, lead: 783.99 },
+    { bass: 246.94, lead: 880.0 },
+    { bass: 246.94, lead: 783.99 },
+    { bass: 196.0, lead: 659.25 },
+    { bass: 196.0, lead: 587.33 },
+    { bass: 174.61, lead: 523.25 },
+    { bass: 196.0, lead: 587.33 }
+  ];
 
   function readSettings() {
     try {
@@ -2774,6 +2786,33 @@
     oscillator.stop(now + duration);
   }
 
+  function stopBgm() {
+    if (bgmIntervalId) {
+      clearInterval(bgmIntervalId);
+      bgmIntervalId = null;
+    }
+  }
+
+  function playBgmStep() {
+    const ctxx = ensureAudio();
+    if (!ctxx || !settings.audioEnabled || !state.started || state.paused || state.gameOver) return;
+    const note = BGM_SEQUENCE[bgmStep % BGM_SEQUENCE.length];
+    bgmStep += 1;
+    playTone({ frequency: note.bass, duration: 0.26, type: "triangle", gain: 0.012 });
+    playTone({ frequency: note.lead, duration: 0.16, type: "sine", gain: 0.008 });
+  }
+
+  function syncBgm() {
+    if (!settings.audioEnabled || !state.started || state.paused || state.gameOver) {
+      stopBgm();
+      return;
+    }
+    ensureAudio();
+    if (bgmIntervalId) return;
+    playBgmStep();
+    bgmIntervalId = window.setInterval(playBgmStep, 320);
+  }
+
   function formatDuration(seconds) {
     if (seconds < 60) return `${seconds}s`;
     const mins = Math.floor(seconds / 60);
@@ -2831,13 +2870,13 @@
 
   function getReadyStatus() {
     return isMobileMode
-      ? "准备开始：先左右瞄准，再向下滑动投放"
+      ? "准备开始：点击直接下落，也可以左右瞄准后滑动投放"
       : "准备开始：移动鼠标瞄准，点击或按 Space 投放";
   }
 
   function getPlayStatus() {
     return isMobileMode
-      ? "继续：手指向下滑动投放，滑得越快，下落越重"
+      ? "继续：点击直接下落，也可以向下滑动投放"
       : "继续整理空间，别让它们顶到红线";
   }
 
@@ -2854,6 +2893,7 @@
         setCoachMoment("暂停提示", "暂停里可以回看当前任务", "不确定下一步时，先看暂停里的任务回看，比硬打更有帮助。", 4.2);
       }
     }
+    stopBgm();
     updatePauseButton();
   }
 
@@ -2864,6 +2904,7 @@
     if (!state.gameOver && state.started && state.panelsOpen === 0) {
       state.paused = false;
       setStatus(getPlayStatus());
+      syncBgm();
     } else if (!state.gameOver) {
       state.paused = true;
     }
@@ -3520,6 +3561,8 @@
     );
     setStatus(getPlayStatus());
     ensureAudio();
+    bgmStep = 0;
+    syncBgm();
   }
 
   function getBlobMass(blob) {
@@ -3621,6 +3664,7 @@
     }
     updatePauseButton();
     setStatus(showStartPanel ? getReadyStatus() : "新的一局已准备好，直接开始吧");
+    stopBgm();
     updateDangerUI();
     updateHud();
     updateCoachUI();
@@ -3765,6 +3809,7 @@
     state.gameOver = true;
     state.started = false;
     state.paused = true;
+    stopBgm();
     state.lastObjectiveSnapshot = getResultObjectiveSnapshotData(finalObjectiveSnapshot);
     state.tutorialStage = "本局结束";
     state.tutorialTitle = "可以回看局面，再开下一局";
@@ -6093,6 +6138,7 @@
   audioToggle?.addEventListener("change", () => {
     settings.audioEnabled = audioToggle.checked;
     saveSettings();
+    syncBgm();
   });
   shakeToggle?.addEventListener("change", () => {
     settings.shakeEnabled = shakeToggle.checked;
@@ -6104,6 +6150,7 @@
   volumeRange?.addEventListener("input", () => {
     settings.volume = Number(volumeRange.value) / 100;
     saveSettings();
+    syncBgm();
   });
 
   syncSettingsUI();

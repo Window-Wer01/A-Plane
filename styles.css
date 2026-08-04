@@ -1336,6 +1336,8 @@ code {
   }
 
   .mobile-play-shell .game-panel {
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
     border-radius: 0;
@@ -1362,6 +1364,20 @@ code {
     margin-bottom: 10px;
   }
 
+  .mobile-play-shell .hud {
+    position: sticky;
+    top: calc(52px + max(8px, env(safe-area-inset-top)));
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .mobile-play-shell .next-card {
+    grid-column: 1 / -1;
+  }
+
   .mobile-play-actions {
     position: sticky;
     top: 0;
@@ -1375,22 +1391,28 @@ code {
     padding: 12px;
   }
 
-  .stat-card {
-    padding: 12px 12px 10px;
+  .mobile-play-shell .stat-card {
+    padding: 10px 12px 9px;
+    border-radius: 14px;
   }
 
-  .stat-card strong {
-    font-size: 22px;
+  .mobile-play-shell .stat-card strong {
+    margin-top: 4px;
+    font-size: 20px;
   }
 
-  .next-meta {
-    gap: 10px;
-    margin-top: 8px;
+  .mobile-play-shell .stat-label {
+    font-size: 11px;
   }
 
-  .next-blob {
-    width: 46px;
-    height: 46px;
+  .mobile-play-shell .next-meta {
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .mobile-play-shell .next-blob {
+    width: 40px;
+    height: 40px;
   }
 
   .coach-head {
@@ -1442,15 +1464,20 @@ code {
 
   .canvas-wrap {
     border-radius: 18px;
-    min-height: min(72vh, 620px);
+    min-height: 0;
   }
 
   .mobile-play-shell .canvas-wrap {
-    min-height: min(72vh, 620px);
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .mobile-play-shell canvas {
-    min-height: min(72vh, 620px);
+  .mobile-play-shell #gameCanvas {
+    width: min(100%, calc((100dvh - 238px) * 0.5526));
+    max-height: calc(100dvh - 238px);
   }
 
   .status-banner {
@@ -1462,7 +1489,19 @@ code {
   }
 
   .mobile-play-shell #dangerMeter {
-    margin-top: 10px;
+    flex: 0 0 auto;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .mobile-play-shell .danger-meter-head {
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .mobile-play-shell .danger-meter-head strong {
+    font-size: 12px;
   }
 
   .mobile-start-card {
