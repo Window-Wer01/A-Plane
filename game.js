@@ -3083,7 +3083,7 @@
   }
 
   function updateDangerUI() {
-    if (!dangerMeter || !dangerText || !dangerFill) return;
+    if (!dangerMeter || !dangerFill) return;
 
     let meterState = "safe";
     let ratio = 0;
@@ -3109,7 +3109,9 @@
     }
 
     dangerMeter.dataset.state = meterState;
-    dangerText.textContent = text;
+    if (dangerText) {
+      dangerText.textContent = text;
+    }
     dangerFill.style.width = `${(ratio * 100).toFixed(1)}%`;
   }
 
@@ -3598,7 +3600,9 @@
 
     const level = LEVELS[state.nextLevel];
     nextName.textContent = level.name;
-    nextHint.textContent = level.hint;
+    if (nextHint) {
+      nextHint.textContent = level.hint;
+    }
     nextBlob.style.background = `radial-gradient(circle at 28% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0) 24%), ${level.color}`;
   }
 
@@ -4229,7 +4233,11 @@
 
     ctx.save();
     ctx.strokeStyle = `rgba(251,113,133,${0.26 + Math.min(0.62, state.warningLevel * 0.95)})`;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = isMobileMode ? 4 : 3;
+    if (isMobileMode) {
+      ctx.shadowColor = `rgba(251,113,133,${0.32 + Math.min(0.4, state.warningLevel * 0.5)})`;
+      ctx.shadowBlur = 8 + state.warningLevel * 12;
+    }
     ctx.setLineDash([8, 8]);
     ctx.beginPath();
     ctx.moveTo(PIT.x + 10, DANGER_Y);
@@ -4238,9 +4246,11 @@
     ctx.setLineDash([]);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("危险线", PIT.x + 12, DANGER_Y - 8);
+    if (!isMobileMode) {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.font = "12px sans-serif";
+      ctx.fillText("危险线", PIT.x + 12, DANGER_Y - 8);
+    }
 
     if (state.warningLevel > 0.02) {
       const warningHeight = Math.max(0, WARNING_Y - PIT.y);

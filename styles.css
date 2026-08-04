@@ -392,12 +392,13 @@ code {
 .overlay-hud {
   position: absolute;
   left: 10px;
-  right: 10px;
-  top: 10px;
+  right: 86px;
+  bottom: 14px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+  align-items: stretch;
   pointer-events: none;
 }
 
@@ -423,19 +424,35 @@ code {
   font-size: 18px;
 }
 
-.next-pill {
-  grid-column: 1 / -1;
+.next-pill,
+.score-pill,
+.best-pill {
+  min-height: 58px;
 }
 
-.overlay-next-meta {
+.compact-next-pill {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  margin-top: 4px;
 }
 
-  .overlay-controls {
+.compact-next-copy {
+  min-width: 0;
+}
+
+.compact-next-copy strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlay-controls {
     position: absolute;
     right: 10px;
-    top: 106px;
+    bottom: 14px;
     z-index: 2;
     display: flex;
     flex-direction: column;
@@ -466,10 +483,26 @@ code {
   position: absolute;
   left: 10px;
   right: 10px;
-  bottom: 10px;
+  bottom: 82px;
   z-index: 2;
   margin-top: 0;
   pointer-events: none;
+}
+
+.compact-danger-meter {
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.compact-danger-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
 .danger-meter-head {
@@ -1513,17 +1546,18 @@ code {
   }
 
   .status-banner {
-    top: 108px;
+    top: auto;
+    bottom: 94px;
     min-width: 0;
-    max-width: calc(100% - 20px);
+    max-width: calc(100% - 104px);
     padding: 8px 10px;
     font-size: 12px;
   }
 
   .overlay-hud {
     left: 8px;
-    right: 8px;
-    top: 8px;
+    right: 74px;
+    bottom: 8px;
     gap: 6px;
   }
 
@@ -1536,21 +1570,15 @@ code {
     font-size: 16px;
   }
 
-  .overlay-next-meta {
-    gap: 6px;
-  }
-
   .mobile-play-shell .overlay-danger-meter {
     left: 8px;
-    right: 8px;
-    bottom: 8px;
-    padding: 9px 10px;
-    border-radius: 12px;
+    right: 74px;
+    bottom: 72px;
   }
 
   .mobile-play-shell .overlay-controls {
     right: 8px;
-    top: 108px;
+    bottom: 8px;
     gap: 6px;
   }
 
@@ -1561,13 +1589,8 @@ code {
     font-size: 11px;
   }
 
-  .mobile-play-shell .overlay-danger-meter .danger-meter-head {
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-
-  .mobile-play-shell .overlay-danger-meter .danger-meter-head strong {
-    font-size: 12px;
+  .mobile-play-shell .compact-danger-bar {
+    height: 3px;
   }
 
   .mobile-start-card {
