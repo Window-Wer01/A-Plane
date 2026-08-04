@@ -39,6 +39,16 @@ body {
   margin: 0 auto;
 }
 
+.mobile-play-page {
+  padding: 0;
+}
+
+.mobile-play-shell {
+  max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .hero-card,
 .info-card,
 .game-panel {
@@ -171,6 +181,13 @@ code {
     radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.12), transparent 34%),
     linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07)),
     var(--panel);
+}
+
+.mobile-play-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .hud {
@@ -1302,8 +1319,30 @@ code {
 }
 
 @media (max-width: 760px) {
-  body {
+  body:not(.mobile-play-page) {
     padding: 14px 10px 24px;
+  }
+
+  .mobile-play-page {
+    padding: 0;
+  }
+
+  .mobile-play-shell {
+    padding: 0;
+  }
+
+  .mobile-play-shell .game-layout {
+    display: block;
+  }
+
+  .mobile-play-shell .game-panel {
+    min-height: 100vh;
+    min-height: 100dvh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
   }
 
   .hero-card {
@@ -1321,6 +1360,15 @@ code {
     grid-template-columns: 1fr;
     gap: 10px;
     margin-bottom: 10px;
+  }
+
+  .mobile-play-actions {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: linear-gradient(180deg, rgba(32, 58, 121, 0.96), rgba(32, 58, 121, 0.82));
+    backdrop-filter: blur(10px);
   }
 
   .game-panel {
@@ -1393,7 +1441,16 @@ code {
   }
 
   .canvas-wrap {
-    border-radius: 20px;
+    border-radius: 18px;
+    min-height: min(72vh, 620px);
+  }
+
+  .mobile-play-shell .canvas-wrap {
+    min-height: min(72vh, 620px);
+  }
+
+  .mobile-play-shell canvas {
+    min-height: min(72vh, 620px);
   }
 
   .status-banner {
@@ -1402,6 +1459,10 @@ code {
     max-width: calc(100% - 20px);
     padding: 8px 10px;
     font-size: 12px;
+  }
+
+  .mobile-play-shell #dangerMeter {
+    margin-top: 10px;
   }
 
   .mobile-start-card {

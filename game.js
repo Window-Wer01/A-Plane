@@ -29,6 +29,7 @@
   const startHelpBtn = document.getElementById("startHelpBtn");
   const pausePanel = document.getElementById("pausePanel");
   const resumeGameBtn = document.getElementById("resumeGameBtn");
+  const pauseRestartBtn = document.getElementById("pauseRestartBtn");
   const pauseHelpBtn = document.getElementById("pauseHelpBtn");
   const pauseObjectiveStage = document.getElementById("pauseObjectiveStage");
   const pauseObjectiveTitle = document.getElementById("pauseObjectiveTitle");
@@ -52,7 +53,6 @@
   const resultObjectiveTip = document.getElementById("resultObjectiveTip");
   const resultMilestones = document.getElementById("resultMilestones");
   const resultRestartBtn = document.getElementById("resultRestartBtn");
-  const resultCloseBtn = document.getElementById("resultCloseBtn");
   const leaderboardPanel = document.getElementById("leaderboardPanel");
   const leaderboardList = document.getElementById("leaderboardList");
   const leaderboardCloseBtn = document.getElementById("leaderboardCloseBtn");
@@ -68,7 +68,6 @@
   const progressMilestones = document.getElementById("progressMilestones");
   const progressAchievementList = document.getElementById("progressAchievementList");
   const startGuideList = document.getElementById("startGuideList");
-  const resultGuideList = document.getElementById("resultGuideList");
   const analyticsGuideProgress = document.getElementById("analyticsGuideProgress");
   const analyticsDropBias = document.getElementById("analyticsDropBias");
   const analyticsRecovery = document.getElementById("analyticsRecovery");
@@ -522,7 +521,6 @@
   function renderOnboardingChecklist() {
     const data = readOnboarding();
     renderGuideInto(startGuideList, data);
-    renderGuideInto(resultGuideList, data);
   }
 
   function resetOnboardingData() {
@@ -3565,7 +3563,8 @@
     statusBanner.textContent = text;
   }
 
-  function resetGame() {
+  function resetGame(options = {}) {
+    const { showStartPanel = true } = options;
     state.blobs = [];
     state.popups = [];
     state.bursts = [];
@@ -3617,15 +3616,22 @@
     closePanel(leaderboardPanel);
     closePanel(helpPanel);
     closePanel(settingsPanel);
-    openPanel(startPanel);
+    if (showStartPanel) {
+      openPanel(startPanel);
+    }
     updatePauseButton();
-    setStatus(getReadyStatus());
+    setStatus(showStartPanel ? getReadyStatus() : "新的一局已准备好，直接开始吧");
     updateDangerUI();
     updateHud();
     updateCoachUI();
     updateObjectiveUI();
     renderOnboardingChecklist();
     updateAnalyticsPanel();
+  }
+
+  function quickRestartRun() {
+    resetGame({ showStartPanel: false });
+    startRun();
   }
 
   function createBlob(level, x, y, vx = 0, vy = 0) {
@@ -4760,6 +4766,7 @@
       if (isMobileMode) {
         const dx = clientX - state.pointerStartX;
         const dy = clientY - state.pointerStartY;
+        const travel = Math.hypot(dx, dy);
         const dt = Math.max(16, performance.now() - state.pointerStartTime);
         const downward = Math.max(0, dy);
         const speed = downward / dt;
@@ -4769,8 +4776,10 @@
         const power = clamp(0.18 + distanceRatio * 0.42 + speedRatio * 0.3 - horizontalPenalty, 0.16, 0.9);
         if (downward > 12) {
           dropBlob(power);
+        } else if (travel <= 14) {
+          dropBlob(0.36);
         } else {
-          setStatus("轻轻向下滑一下就能投放，滑得更长更快会更重");
+          setStatus("点一下就会直接下落，也可以向下滑动投放");
         }
       } else {
         dropBlob();
@@ -4882,14 +4891,20 @@
     }
   });
 
-  restartBtn.addEventListener("click", resetGame);
-  resultRestartBtn?.addEventListener("click", resetGame);
-  resultCloseBtn?.addEventListener("click", () => closePanel(resultPanel));
+  restartBtn.addEventListener("click", () => {
+    if (state.started || state.gameOver) {
+      quickRestartRun();
+      return;
+    }
+    resetGame();
+  });
+  resultRestartBtn?.addEventListener("click", quickRestartRun);
   startGameBtn?.addEventListener("click", startRun);
   resumeGameBtn?.addEventListener("click", () => {
     closePanel(pausePanel);
     setStatus(getPlayStatus());
   });
+  pauseRestartBtn?.addEventListener("click", quickRestartRun);
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
     setStatus("先看一下说明，再继续试玩");
