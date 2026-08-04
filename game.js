@@ -3704,7 +3704,11 @@
       age: 0,
       mood: FACE_MOODS[Math.floor(Math.random() * FACE_MOODS.length)],
       blinkOffset: Math.random() * Math.PI * 2,
+      blinkTimer: 0,
+      blinkCooldown: 1.2 + Math.random() * 2.8,
       pulse: Math.random() * Math.PI * 2,
+      nodPhase: Math.random() * Math.PI * 2,
+      settledTime: 0,
       expression: "idle",
       expressionTimer: 0,
       smileSeed: Math.random() * Math.PI * 2
@@ -4107,6 +4111,38 @@
       }
     }
 
+    let activeBlinkCount = 0;
+    for (const blob of state.blobs) {
+      blob.blinkTimer = Math.max(0, blob.blinkTimer || 0);
+      blob.blinkCooldown = Math.max(0, (blob.blinkCooldown || 0) - dt);
+
+      const speed = Math.hypot(blob.vx, blob.vy);
+      const settled = blob.y + blob.r >= FLOOR_Y - 0.6 || speed < 26;
+      blob.settledTime = settled ? Math.min(8, (blob.settledTime || 0) + dt) : 0;
+
+      if (blob.level < 3) {
+        blob.blinkTimer = 0;
+        continue;
+      }
+
+      if (blob.blinkTimer > 0) {
+        blob.blinkTimer = Math.max(0, blob.blinkTimer - dt);
+        if (blob.blinkTimer > 0) {
+          activeBlinkCount += 1;
+        }
+        continue;
+      }
+
+      if (blob.blinkCooldown <= 0 && blob.settledTime > 0.28 && activeBlinkCount < 5) {
+        const blinkChance = blob.level >= 6 ? 0.46 : 0.34;
+        if (Math.random() < dt * blinkChance) {
+          blob.blinkTimer = 0.08 + Math.random() * 0.08;
+          blob.blinkCooldown = 1.5 + Math.random() * 2.6 + blob.level * 0.08;
+          activeBlinkCount += 1;
+        }
+      }
+    }
+
     // ---- Danger rule v3 (requested) ----
     // Only consider the STACK (blobs in pit and not fast-falling).
     // Shake when stack approaches warning zone.
@@ -4362,96 +4398,79 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  function drawBlobAccessories(x, y, radius, level, preview = false) {
+  function getBlobPose(blob, radius, preview = false) {
+    if (preview) {
+      return {
+        offsetX: 0,
+        offsetY: 0,
+        rotation: 0,
+        nodProgress: 0,
+        squashX: 1,
+        squashY: 1
+      };
+    }
+
+    const settledRatio = clamp((blob.settledTime || 0) / 0.5, 0, 1);
+    const beat = (Math.sin(state.time * 4.2 + (blob.nodPhase || 0)) + 1) * 0.5;
+    const nodProgress = settledRatio * beat;
+
+    return {
+      offsetX: -radius * 0.028 * nodProgress,
+      offsetY: radius * 0.032 * nodProgress,
+      rotation: (-0.045 * settledRatio) + (-0.135 * nodProgress),
+      nodProgress,
+      squashX: 1 + nodProgress * 0.018,
+      squashY: 1 - nodProgress * 0.03
+    };
+  }
+
+  function drawBlobAccessories(x, y, radius, level, preview = false, pose = null) {
+    if (level < 4) return;
+
+    const nodProgress = preview ? 0 : pose?.nodProgress || 0;
+    const hairSwing = radius * (0.06 + nodProgress * 0.18);
+
     ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
-    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.strokeStyle = "rgba(32,38,64,0.88)";
     ctx.lineCap = "round";
-    ctx.lineWidth = Math.max(1.5, radius * 0.06);
-
-    if (level >= 1) {
-      const wiggle = preview ? 0 : Math.sin(state.time * 2.8 + level) * radius * 0.05;
-      ctx.beginPath();
-      ctx.moveTo(x - radius * 0.28, y - radius * 0.58);
-      ctx.quadraticCurveTo(x - radius * 0.14, y - radius * 0.92 + wiggle, x - radius * 0.02, y - radius * 0.62);
-      ctx.stroke();
-    }
-
-    if (level >= 2) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius * 0.18, y - radius * 0.54);
-      ctx.quadraticCurveTo(x + radius * 0.42, y - radius * 0.82, x + radius * 0.28, y - radius * 0.42);
-      ctx.stroke();
-    }
-
-    if (level >= 4) {
-      const orbitY = y - radius * 0.72;
-      ctx.beginPath();
-      ctx.arc(x, orbitY, Math.max(3, radius * 0.1), 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (level >= 6) {
-      ctx.strokeStyle = "rgba(255,255,255,0.12)";
-      ctx.lineWidth = Math.max(1, radius * 0.045);
-      ctx.beginPath();
-      ctx.ellipse(x, y, radius * 1.15, radius * 0.32, 0, 0.1, Math.PI - 0.1);
-      ctx.stroke();
-    }
-
-    if (level >= 7) {
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.beginPath();
-      ctx.arc(x - radius * 0.4, y - radius * 0.05, Math.max(2, radius * 0.08), 0, Math.PI * 2);
-      ctx.arc(x + radius * 0.42, y + radius * 0.02, Math.max(2, radius * 0.08), 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // tier emblem: a tiny shape band on the top (helps辨识度)
-    if (level >= 3) {
-      ctx.save();
-      ctx.translate(x, y - radius * 0.72);
-      ctx.rotate(preview ? 0 : Math.sin(state.time * 1.6 + level) * 0.12);
-      ctx.strokeStyle = "rgba(255,255,255,0.18)";
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = Math.max(1, radius * 0.04);
-      const s = Math.max(5, radius * 0.18);
-      ctx.beginPath();
-      if (level < 6) {
-        // diamond
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s, 0);
-        ctx.lineTo(0, s);
-        ctx.lineTo(-s, 0);
-        ctx.closePath();
-      } else {
-        // star-ish
-        for (let i = 0; i < 5; i++) {
-          const a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
-          const a2 = a + Math.PI / 5;
-          ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
-          ctx.lineTo(Math.cos(a2) * s * 0.5, Math.sin(a2) * s * 0.5);
-        }
-        ctx.closePath();
-      }
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
+    ctx.lineWidth = Math.max(1.8, radius * 0.05);
+    ctx.beginPath();
+    ctx.moveTo(x, y - radius * 0.86);
+    ctx.quadraticCurveTo(
+      x - radius * 0.04 - hairSwing * 0.45,
+      y - radius * 1.14,
+      x - radius * 0.1 - hairSwing,
+      y - radius * 1.3
+    );
+    ctx.stroke();
     ctx.restore();
   }
 
   function drawFace(blob, preview = false) {
     const { x, y, r: radius, level } = blob;
-    const blink = preview ? 1 : Math.sin(state.time * 2.2 + blob.blinkOffset) > 0.985 ? 0.12 : 1;
-    const idleSmile = preview ? false : Math.sin(state.time * 0.8 + blob.smileSeed) > 0.88;
+    const blink = preview ? 1 : level >= 3 ? ((blob.blinkTimer || 0) > 0 ? clamp(blob.blinkTimer / 0.08, 0.08, 1) : 1) : 1;
     const expression = preview ? "idle" : blob.expression || "idle";
     const eyeOffsetX = radius * 0.28;
     const eyeOffsetY = radius * 0.14;
-    const scleraW = Math.max(5.6, radius * 0.15);
-    const scleraH = Math.max(7.2, radius * 0.18);
-    const pupilR = Math.max(2.2, radius * 0.055);
+    const scleraW = Math.max(5.4, radius * 0.145);
+    const scleraH = Math.max(5.8, radius * 0.14);
+    const pupilR = Math.max(2, radius * 0.045);
     const mouthY = y + radius * 0.18;
+
+    function drawSeriousBrows(kind = "normal") {
+      const browY = y - eyeOffsetY - scleraH * 1.15;
+      const innerLift = kind === "oops" ? scleraH * 0.22 : scleraH * 0.08;
+      const outerDrop = kind === "oops" ? scleraH * 0.14 : scleraH * 0.08;
+      ctx.strokeStyle = "rgba(17,22,42,0.95)";
+      ctx.lineWidth = Math.max(1.8, radius * 0.05);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x - eyeOffsetX - scleraW * 0.72, browY - outerDrop);
+      ctx.lineTo(x - eyeOffsetX + scleraW * 0.56, browY + innerLift);
+      ctx.moveTo(x + eyeOffsetX - scleraW * 0.56, browY + innerLift);
+      ctx.lineTo(x + eyeOffsetX + scleraW * 0.72, browY - outerDrop);
+      ctx.stroke();
+    }
 
     function drawNormalEyes(kind = "normal") {
       if (blink <= 0.2) {
@@ -4459,25 +4478,27 @@
         ctx.lineWidth = Math.max(2, radius * 0.06);
         ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(x - eyeOffsetX - scleraW * 0.75, y - eyeOffsetY);
-        ctx.lineTo(x - eyeOffsetX + scleraW * 0.75, y - eyeOffsetY);
-        ctx.moveTo(x + eyeOffsetX - scleraW * 0.75, y - eyeOffsetY);
-        ctx.lineTo(x + eyeOffsetX + scleraW * 0.75, y - eyeOffsetY);
+        ctx.moveTo(x - eyeOffsetX - scleraW * 0.72, y - eyeOffsetY - scleraH * 0.08);
+        ctx.lineTo(x - eyeOffsetX + scleraW * 0.72, y - eyeOffsetY + scleraH * 0.05);
+        ctx.moveTo(x + eyeOffsetX - scleraW * 0.72, y - eyeOffsetY + scleraH * 0.05);
+        ctx.lineTo(x + eyeOffsetX + scleraW * 0.72, y - eyeOffsetY - scleraH * 0.08);
         ctx.stroke();
+        drawSeriousBrows(kind);
         return;
       }
 
-      const tilt = kind === "oops" ? 0.12 : 0;
+      const tilt = kind === "oops" ? 0.08 : 0;
+      const eyeHeight = kind === "oops" ? scleraH * 0.9 : scleraH * 0.72;
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = "rgba(33, 46, 84, 0.34)";
       ctx.lineWidth = Math.max(1.2, radius * 0.03);
       ctx.beginPath();
-      ctx.ellipse(x - eyeOffsetX, y - eyeOffsetY, scleraW, scleraH * blink, -tilt, 0, Math.PI * 2);
-      ctx.ellipse(x + eyeOffsetX, y - eyeOffsetY, scleraW, scleraH * blink, tilt, 0, Math.PI * 2);
+      ctx.ellipse(x - eyeOffsetX, y - eyeOffsetY, scleraW, eyeHeight * blink, -tilt, 0, Math.PI * 2);
+      ctx.ellipse(x + eyeOffsetX, y - eyeOffsetY, scleraW, eyeHeight * blink, tilt, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      const pupilShiftY = kind === "oops" ? -scleraH * 0.05 : scleraH * 0.02;
+      const pupilShiftY = kind === "oops" ? -scleraH * 0.04 : scleraH * 0.01;
       ctx.fillStyle = "#1a2340";
       ctx.beginPath();
       ctx.arc(x - eyeOffsetX, y - eyeOffsetY + pupilShiftY, pupilR, 0, Math.PI * 2);
@@ -4489,6 +4510,7 @@
       ctx.arc(x - eyeOffsetX - pupilR * 0.25, y - eyeOffsetY - pupilR * 0.22, Math.max(1.1, pupilR * 0.3), 0, Math.PI * 2);
       ctx.arc(x + eyeOffsetX - pupilR * 0.25, y - eyeOffsetY - pupilR * 0.22, Math.max(1.1, pupilR * 0.3), 0, Math.PI * 2);
       ctx.fill();
+      drawSeriousBrows(kind);
     }
 
     function drawBonkEyes() {
@@ -4624,7 +4646,7 @@
         break;
       default:
         drawNormalEyes();
-        drawMouth(idleSmile ? "soft_smile" : "flat");
+        drawMouth("flat");
         break;
     }
   }
@@ -4639,17 +4661,25 @@
       radius *= 1 + Math.sin(state.time * 12) * 0.02;
     }
 
-    drawBlobGlow(x, y, radius, config.color, 0.12 + Math.min(0.08, blob.level * 0.01));
-    drawBlobCircle(x, y, radius, config.color);
-    drawBlobAccessories(x, y, radius, blob.level);
-    drawFace(blob, false);
+    const pose = getBlobPose(blob, radius, false);
+
+    ctx.save();
+    ctx.translate(x + pose.offsetX, y + pose.offsetY);
+    ctx.rotate(pose.rotation);
+    ctx.scale(pose.squashX, pose.squashY);
+
+    drawBlobGlow(0, 0, radius, config.color, 0.12 + Math.min(0.08, blob.level * 0.01));
+    drawBlobCircle(0, 0, radius, config.color);
+    drawBlobAccessories(0, 0, radius, blob.level, false, pose);
+    drawFace({ ...blob, x: 0, y: 0, r: radius }, false);
 
     if (blob.level >= 5) {
       ctx.fillStyle = "rgba(255,255,255,0.76)";
       ctx.font = `bold ${Math.max(10, radius * 0.32)}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(String(blob.level + 1), x, y + radius * 0.82);
+      ctx.fillText(String(blob.level + 1), 0, radius * 0.82);
     }
+    ctx.restore();
   }
 
   function drawPopups() {
