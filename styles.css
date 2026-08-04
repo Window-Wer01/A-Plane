@@ -396,7 +396,7 @@ code {
   bottom: 14px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   align-items: stretch;
   pointer-events: none;
@@ -425,6 +425,7 @@ code {
 }
 
 .next-pill,
+.time-pill,
 .score-pill,
 .best-pill {
   min-height: 58px;
@@ -1568,6 +1569,10 @@ code {
 
   .overlay-pill strong {
     font-size: 16px;
+  }
+
+  .compact-next-copy strong {
+    font-size: 14px;
   }
 
   .mobile-play-shell .overlay-danger-meter {

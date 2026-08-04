@@ -9,6 +9,7 @@
   const helpBtn = document.getElementById("helpBtn");
   const scoreValue = document.getElementById("scoreValue");
   const bestValue = document.getElementById("bestValue");
+  const timerValue = document.getElementById("timerValue");
   const nextBlob = document.getElementById("nextBlob");
   const nextName = document.getElementById("nextName");
   const nextHint = document.getElementById("nextHint");
@@ -152,7 +153,7 @@
     new URLSearchParams(window.location.search).get("mode") === "mobile";
 
   const WORLD = { width: 420, height: 760 };
-  const PIT = { x: 22, y: 112, width: 376, height: 614 };
+  const PIT = { x: 28, y: 120, width: 364, height: 592 };
   const FLOOR_Y = PIT.y + PIT.height;
   const DANGER_Y = PIT.y + 54;
   const WARNING_Y = PIT.y + 182;
@@ -182,16 +183,16 @@
   const STACK_SQUISH_DOWN = 18;
 
   const LEVELS = [
-    { name: "孢子", hint: "先铺底，别急着追高阶", color: "#7ecbff", score: 2, radius: 18 },
-    { name: "幼体", hint: "把小家伙们凑到一起", color: "#7fe7b1", score: 4, radius: 23 },
-    { name: "弹弹体", hint: "中盘开始讲究落点了", color: "#ffd36f", score: 8, radius: 29 },
-    { name: "泡泡怪", hint: "开始会挡路，得整理空间", color: "#ff9dd0", score: 16, radius: 36 },
-    { name: "凝胶兽", hint: "再往上就要小心危险线", color: "#a491ff", score: 32, radius: 44 },
-    { name: "触角球", hint: "大块头会把局面挤紧", color: "#64e0dc", score: 64, radius: 53 },
-    { name: "巨啵体", hint: "高手区间，留空比贪分更重要", color: "#ff8f9d", score: 128, radius: 63 },
-    { name: "母体球", hint: "这一颗值得一次全场播报", color: "#ffb17d", score: 256, radius: 75 },
-    { name: "星核团", hint: "已经很厉害了，别手抖", color: "#ffe17b", score: 512, radius: 88 },
-    { name: "宇宙团", hint: "封神局，记得截图炫耀", color: "#72d9ff", score: 1024, radius: 104 }
+    { name: "孢子", hint: "先铺底，别急着追高阶", color: "#7ecbff", score: 2, radius: 20 },
+    { name: "幼体", hint: "把小家伙们凑到一起", color: "#7fe7b1", score: 4, radius: 25 },
+    { name: "弹弹体", hint: "中盘开始讲究落点了", color: "#ffd36f", score: 8, radius: 31 },
+    { name: "泡泡怪", hint: "开始会挡路，得整理空间", color: "#ff9dd0", score: 16, radius: 38 },
+    { name: "凝胶兽", hint: "再往上就要小心危险线", color: "#a491ff", score: 32, radius: 46 },
+    { name: "触角球", hint: "大块头会把局面挤紧", color: "#64e0dc", score: 64, radius: 56 },
+    { name: "巨啵体", hint: "高手区间，留空比贪分更重要", color: "#ff8f9d", score: 128, radius: 67 },
+    { name: "母体球", hint: "这一颗值得一次全场播报", color: "#ffb17d", score: 256, radius: 79 },
+    { name: "星核团", hint: "已经很厉害了，别手抖", color: "#ffe17b", score: 512, radius: 92 },
+    { name: "宇宙团", hint: "封神局，记得截图炫耀", color: "#72d9ff", score: 1024, radius: 108 }
   ];
 
   const MERGE_EXPRESSIONS = [
@@ -2820,6 +2821,12 @@
     return `${mins}m ${secs}s`;
   }
 
+  function formatRunTimer(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  }
+
   function getRunSeconds() {
     if (!state.runStartTime) return 0;
     return Math.max(0, Math.round((performance.now() - state.runStartTime) / 1000));
@@ -3597,6 +3604,9 @@
   function updateHud() {
     scoreValue.textContent = String(state.score);
     bestValue.textContent = String(state.best);
+    if (timerValue) {
+      timerValue.textContent = formatRunTimer(getRunSeconds());
+    }
 
     const level = LEVELS[state.nextLevel];
     nextName.textContent = level.name;
@@ -4751,6 +4761,13 @@
   }
 
   function render() {
+    if (timerValue) {
+      if (!state.started) {
+        timerValue.textContent = "0:00";
+      } else if (!state.paused && !state.gameOver) {
+        timerValue.textContent = formatRunTimer(getRunSeconds());
+      }
+    }
     updateDangerShake();
     drawBackground();
     drawBursts();
