@@ -344,14 +344,14 @@
   let bgmIntervalId = null;
   let bgmStep = 0;
   const BGM_SEQUENCE = [
-    { bass: 220.0, lead: 659.25 },
-    { bass: 220.0, lead: 783.99 },
-    { bass: 246.94, lead: 880.0 },
-    { bass: 246.94, lead: 783.99 },
-    { bass: 196.0, lead: 659.25 },
-    { bass: 196.0, lead: 587.33 },
-    { bass: 174.61, lead: 523.25 },
-    { bass: 196.0, lead: 587.33 }
+    { bass: 110.0, pulse: 220.0, stab: 659.25, accent: true },
+    { bass: 110.0, pulse: 220.0, stab: 0, accent: false },
+    { bass: 123.47, pulse: 246.94, stab: 739.99, accent: true },
+    { bass: 123.47, pulse: 246.94, stab: 659.25, accent: false },
+    { bass: 98.0, pulse: 196.0, stab: 587.33, accent: true },
+    { bass: 98.0, pulse: 196.0, stab: 0, accent: false },
+    { bass: 110.0, pulse: 220.0, stab: 659.25, accent: true },
+    { bass: 110.0, pulse: 220.0, stab: 493.88, accent: false }
   ];
 
   function readSettings() {
@@ -2807,8 +2807,12 @@
     if (!ctxx || !settings.audioEnabled || !state.started || state.paused || state.gameOver) return;
     const note = BGM_SEQUENCE[bgmStep % BGM_SEQUENCE.length];
     bgmStep += 1;
-    playTone({ frequency: note.bass, duration: 0.26, type: "triangle", gain: 0.012 });
-    playTone({ frequency: note.lead, duration: 0.16, type: "sine", gain: 0.008 });
+    playTone({ frequency: note.bass, duration: 0.24, type: "sawtooth", gain: note.accent ? 0.014 : 0.011 });
+    playTone({ frequency: note.pulse, duration: 0.12, type: "triangle", gain: note.accent ? 0.012 : 0.009 });
+    if (note.stab) {
+      playTone({ frequency: note.stab, duration: note.accent ? 0.15 : 0.11, type: "square", gain: note.accent ? 0.0075 : 0.0055 });
+      playTone({ frequency: note.stab * 0.5, duration: 0.12, type: "sine", gain: 0.0038 });
+    }
   }
 
   function syncBgm() {
@@ -2819,7 +2823,7 @@
     ensureAudio();
     if (bgmIntervalId) return;
     playBgmStep();
-    bgmIntervalId = window.setInterval(playBgmStep, 320);
+    bgmIntervalId = window.setInterval(playBgmStep, 260);
   }
 
   function formatDuration(seconds) {
