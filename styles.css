@@ -389,6 +389,49 @@ code {
   pointer-events: none;
 }
 
+.overlay-hud {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  pointer-events: none;
+}
+
+.overlay-pill {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(18, 33, 68, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 22px rgba(12, 22, 46, 0.18);
+}
+
+.overlay-label {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.overlay-pill strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.next-pill {
+  grid-column: 1 / -1;
+}
+
+.overlay-next-meta {
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .danger-meter {
   margin-top: 14px;
   padding: 12px 14px;
@@ -1364,20 +1407,6 @@ code {
     margin-bottom: 10px;
   }
 
-  .mobile-play-shell .hud {
-    position: sticky;
-    top: calc(52px + max(8px, env(safe-area-inset-top)));
-    z-index: 2;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .mobile-play-shell .next-card {
-    grid-column: 1 / -1;
-  }
-
   .mobile-play-actions {
     position: sticky;
     top: 0;
@@ -1391,28 +1420,9 @@ code {
     padding: 12px;
   }
 
-  .mobile-play-shell .stat-card {
-    padding: 10px 12px 9px;
-    border-radius: 14px;
-  }
-
-  .mobile-play-shell .stat-card strong {
-    margin-top: 4px;
-    font-size: 20px;
-  }
-
-  .mobile-play-shell .stat-label {
-    font-size: 11px;
-  }
-
-  .mobile-play-shell .next-meta {
-    gap: 8px;
-    margin-top: 6px;
-  }
-
   .mobile-play-shell .next-blob {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
   }
 
   .coach-head {
@@ -1476,16 +1486,36 @@ code {
   }
 
   .mobile-play-shell #gameCanvas {
-    width: min(100%, calc((100dvh - 238px) * 0.5526));
-    max-height: calc(100dvh - 238px);
+    width: min(100%, calc((100dvh - 132px) * 0.5526));
+    max-height: calc(100dvh - 132px);
   }
 
   .status-banner {
-    top: 10px;
+    top: 94px;
     min-width: 0;
     max-width: calc(100% - 20px);
     padding: 8px 10px;
     font-size: 12px;
+  }
+
+  .overlay-hud {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    gap: 6px;
+  }
+
+  .overlay-pill {
+    padding: 7px 9px;
+    border-radius: 12px;
+  }
+
+  .overlay-pill strong {
+    font-size: 16px;
+  }
+
+  .overlay-next-meta {
+    gap: 6px;
   }
 
   .mobile-play-shell #dangerMeter {
