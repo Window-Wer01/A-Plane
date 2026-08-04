@@ -10,11 +10,6 @@
   <main class="app-shell mobile-play-shell">
     <section class="game-layout mobile-only-layout">
       <div class="game-panel">
-        <div class="mobile-play-actions">
-          <button id="pauseBtn" class="ghost-btn" type="button">暂停</button>
-          <button id="restartBtn" class="primary-btn" type="button">重开</button>
-        </div>
-
         <div class="canvas-wrap">
           <canvas id="gameCanvas" width="420" height="760" aria-label="啵啵星团手机验证版画布"></canvas>
           <div class="overlay-hud">
@@ -37,17 +32,21 @@
               </div>
             </div>
           </div>
+          <div class="overlay-controls">
+            <button id="pauseBtn" class="overlay-control-btn ghost-btn" type="button" aria-label="暂停游戏">暂停</button>
+            <button id="restartBtn" class="overlay-control-btn primary-btn" type="button" aria-label="重新开始">重开</button>
+          </div>
           <div id="statusBanner" class="status-banner">手机模式：点击直接下落，也可以下滑投放</div>
+          <section id="dangerMeter" class="danger-meter overlay-danger-meter" data-state="safe" aria-live="polite">
+            <div class="danger-meter-head">
+              <span>危险监测</span>
+              <strong id="dangerText">开始后会在这里显示危险状态</strong>
+            </div>
+            <div class="danger-bar">
+              <div id="dangerFill" class="danger-fill"></div>
+            </div>
+          </section>
         </div>
-        <section id="dangerMeter" class="danger-meter" data-state="safe" aria-live="polite">
-          <div class="danger-meter-head">
-            <span>危险监测</span>
-            <strong id="dangerText">开始后会在这里显示危险状态</strong>
-          </div>
-          <div class="danger-bar">
-            <div id="dangerFill" class="danger-fill"></div>
-          </div>
-        </section>
       </div>
     </section>
 
