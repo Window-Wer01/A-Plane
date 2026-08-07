@@ -9,6 +9,7 @@
   const helpBtn = document.getElementById("helpBtn");
   const scoreValue = document.getElementById("scoreValue");
   const bestValue = document.getElementById("bestValue");
+  const minStepValue = document.getElementById("minStepValue");
   const timerValue = document.getElementById("timerValue");
   const nextBlob = document.getElementById("nextBlob");
   const nextName = document.getElementById("nextName");
@@ -164,6 +165,7 @@
   const STACK_CHECK_MIN_Y = PIT.y + 36;
   const STACK_CHECK_MAX_VY = 240;
   const STORAGE_KEY = "blob-merge-prototype-best";
+  const KING_MIN_STEP_KEY = "blob-merge-prototype-king-min-steps";
   const LEADERBOARD_KEY = "blob-merge-prototype-local-scores";
   const PROGRESS_KEY = "blob-merge-prototype-progress";
   const ONBOARDING_KEY = "blob-merge-prototype-onboarding";
@@ -398,6 +400,23 @@
   function writeBest(value) {
     try {
       localStorage.setItem(STORAGE_KEY, String(value));
+    } catch {
+      // 忽略本地存储失败
+    }
+  }
+
+  function readKingMinSteps() {
+    try {
+      const raw = Number(localStorage.getItem(KING_MIN_STEP_KEY) || 0);
+      return raw > 0 ? raw : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function writeKingMinSteps(value) {
+    try {
+      localStorage.setItem(KING_MIN_STEP_KEY, String(value));
     } catch {
       // 忽略本地存储失败
     }
@@ -3146,11 +3165,7 @@
   }
 
   function setCoachMoment(stage, title, tip, duration = 4.5) {
-    state.tutorialStage = stage;
-    state.tutorialTitle = title;
-    state.tutorialTip = tip;
-    state.tutorialTimer = Math.max(state.tutorialTimer, duration);
-    updateCoachUI();
+    return;
   }
 
   function getCoachRecommendation() {
@@ -3627,6 +3642,10 @@
   function updateHud() {
     scoreValue.textContent = formatRunTimer(getRunSeconds());
     bestValue.textContent = String(state.dropCount);
+    if (minStepValue) {
+      const minSteps = readKingMinSteps();
+      minStepValue.textContent = minSteps > 0 ? String(minSteps) : "-";
+    }
     if (timerValue) {
       timerValue.textContent = "大王";
     }
@@ -4129,6 +4148,14 @@
         if (newLevel >= 6) {
           unlockMilestone("reach_level_7", "合出巨啵体", "你已经进入高手区间，这局值得截图。", "#fecaca");
         }
+        if (newLevel >= LEVELS.length - 1) {
+          setStatus("新的大王已经产生！");
+          spawnPopup(merged.x, merged.y - 34, "新的大王已经产生！", "#fde68a", "merge");
+          const currentMinSteps = readKingMinSteps();
+          if (currentMinSteps <= 0 || state.dropCount < currentMinSteps) {
+            writeKingMinSteps(state.dropCount);
+          }
+        }
         if (!state.midgameHintShown && state.maxLevelReached >= 4) {
           state.midgameHintShown = true;
           setCoachMoment(
@@ -4485,17 +4512,22 @@
     const browY = eyeY - radius * 0.12;
 
     ctx.save();
-    ctx.strokeStyle = "rgba(12,16,28,0.96)";
-    ctx.fillStyle = "rgba(12,16,28,0.92)";
+    ctx.fillStyle = "rgba(8,12,20,0.96)";
+    ctx.beginPath();
+    ctx.ellipse(x, y - radius * 0.07, radius * 0.48, radius * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,246,214,0.98)";
+    ctx.fillStyle = "rgba(255,246,214,0.98)";
     ctx.lineCap = "round";
 
     if (mood === "blink") {
-      ctx.lineWidth = Math.max(2.2, radius * 0.05);
+      ctx.lineWidth = Math.max(3.2, radius * 0.08);
       ctx.beginPath();
-      ctx.moveTo(x - eyeOffsetX - radius * 0.12, eyeY);
-      ctx.lineTo(x - eyeOffsetX + radius * 0.12, eyeY + radius * 0.02);
-      ctx.moveTo(x + eyeOffsetX - radius * 0.12, eyeY + radius * 0.02);
-      ctx.lineTo(x + eyeOffsetX + radius * 0.12, eyeY);
+      ctx.moveTo(x - eyeOffsetX - radius * 0.14, eyeY - radius * 0.01);
+      ctx.lineTo(x - eyeOffsetX + radius * 0.14, eyeY + radius * 0.03);
+      ctx.moveTo(x + eyeOffsetX - radius * 0.14, eyeY + radius * 0.03);
+      ctx.lineTo(x + eyeOffsetX + radius * 0.14, eyeY - radius * 0.01);
       ctx.stroke();
       ctx.restore();
       return;
@@ -4503,20 +4535,23 @@
 
     const lookLeft = mood === "angry_left";
     const pupilShift = lookLeft ? -radius * 0.055 : radius * 0.055;
-    ctx.lineWidth = Math.max(2.6, radius * 0.055);
+    ctx.strokeStyle = "rgba(255,108,108,0.98)";
+    ctx.lineWidth = Math.max(3.2, radius * 0.075);
     ctx.beginPath();
-    ctx.moveTo(x - eyeOffsetX - radius * 0.12, browY - radius * 0.05);
-    ctx.lineTo(x - eyeOffsetX + radius * 0.14, browY + radius * 0.04);
-    ctx.moveTo(x + eyeOffsetX - radius * 0.14, browY + radius * 0.04);
-    ctx.lineTo(x + eyeOffsetX + radius * 0.12, browY - radius * 0.05);
+    ctx.moveTo(x - eyeOffsetX - radius * 0.14, browY - radius * 0.07);
+    ctx.lineTo(x - eyeOffsetX + radius * 0.16, browY + radius * 0.06);
+    ctx.moveTo(x + eyeOffsetX - radius * 0.16, browY + radius * 0.06);
+    ctx.lineTo(x + eyeOffsetX + radius * 0.14, browY - radius * 0.07);
     ctx.stroke();
 
+    ctx.fillStyle = "rgba(255,246,214,0.98)";
     ctx.beginPath();
-    ctx.arc(x - eyeOffsetX + pupilShift, eyeY + radius * 0.02, Math.max(1.6, radius * 0.04), 0, Math.PI * 2);
-    ctx.arc(x + eyeOffsetX + pupilShift, eyeY + radius * 0.02, Math.max(1.6, radius * 0.04), 0, Math.PI * 2);
+    ctx.arc(x - eyeOffsetX + pupilShift, eyeY + radius * 0.03, Math.max(2.2, radius * 0.06), 0, Math.PI * 2);
+    ctx.arc(x + eyeOffsetX + pupilShift, eyeY + radius * 0.03, Math.max(2.2, radius * 0.06), 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.lineWidth = Math.max(2, radius * 0.045);
+    ctx.strokeStyle = "rgba(255,108,108,0.96)";
+    ctx.lineWidth = Math.max(2.4, radius * 0.055);
     ctx.beginPath();
     ctx.moveTo(x - radius * 0.16, y + radius * 0.21);
     ctx.quadraticCurveTo(x, y + radius * 0.11, x + radius * 0.16, y + radius * 0.21);
@@ -4863,10 +4898,19 @@
     ctx.scale(pose.squashX, pose.squashY);
     drawUnifiedBubbleBlob({ ...blob, x: 0, y: 0, r: radius }, config.color, false);
 
-    ctx.fillStyle = "rgba(255,255,255,0.82)";
-    ctx.font = `bold ${Math.max(10, radius * 0.28)}px sans-serif`;
+    const badgeR = Math.max(10, radius * 0.22);
+    ctx.fillStyle = "rgba(15,23,42,0.9)";
+    ctx.beginPath();
+    ctx.arc(radius * 0.42, radius * 0.58, badgeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.5, radius * 0.03);
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.98)";
+    ctx.font = `bold ${Math.max(11, radius * 0.24)}px sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(String(blob.level + 1), 0, radius * 0.84);
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(blob.level + 1), radius * 0.42, radius * 0.58);
     ctx.restore();
   }
 
@@ -4959,23 +5003,7 @@
     if (!gamePanel) {
       return;
     }
-
-    if (
-      state.gameOver ||
-      !settings.shakeEnabled ||
-      (state.warningLevel <= 0.02 && state.overlineTime <= 0)
-    ) {
-      gamePanel.style.transform = "";
-      return;
-    }
-
-    const intensity = clamp(state.warningLevel + (state.overlineTime / OVERLINE_LIMIT) * 0.85, 0, 1);
-    const amplitude = 0.6 + intensity * 3.4;
-    const x = Math.sin(state.time * 42) * amplitude;
-    const y = Math.cos(state.time * 31) * amplitude * 0.52;
-    const rotate = Math.sin(state.time * 24) * amplitude * 0.08;
-    const scale = 1 + state.cameraPunch;
-    gamePanel.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rotate.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+    gamePanel.style.transform = "";
   }
 
   function render() {
