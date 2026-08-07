@@ -294,6 +294,8 @@
     warningLevel: 0,
     overlineTime: 0,
     dropCooldown: 0,
+    idleSinceDrop: 0,
+    rabbitLookPhase: 0,
     gameOver: false,
     paused: false,
     maxLevelReached: 0,
@@ -3789,6 +3791,7 @@
     const initialVx = (Math.random() - 0.5) * 6;
     const blob = createBlob(state.nextLevel, x, SPAWN_Y, initialVx, initialVy);
     state.blobs.push(blob);
+    state.idleSinceDrop = 0;
     state.dropCount += 1;
     completeOnboardingStep("first_drop");
     const centerMin = PIT.x + PIT.width * 0.32;
@@ -3879,6 +3882,7 @@
     state.time += dt;
     state.tutorialTimer = Math.max(0, state.tutorialTimer - dt);
     state.maxBlobsOnBoard = Math.max(state.maxBlobsOnBoard, state.blobs.length);
+    state.idleSinceDrop += dt;
     const runSeconds = getRunSeconds();
     if (runSeconds >= 60) {
       unlockMilestone("survive_60s", "稳住 60 秒", "这局已经能把节奏稳住 1 分钟以上了。", "#a7f3d0");
@@ -4320,8 +4324,6 @@
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
-
-      drawBlobPreview(guideX, SPAWN_Y, state.nextLevel);
     }
   }
 
@@ -4342,6 +4344,90 @@
     drawBlobCircle(x, y, config.radius, config.color);
     drawBlobAccessories(x, y, config.radius, level, true);
     drawFace(previewBlob, true);
+    ctx.restore();
+  }
+
+  function drawRabbitGuide(x, y) {
+    const idleTime = state.idleSinceDrop || 0;
+    const blinkClosed = idleTime >= 15 && idleTime < 15.22;
+    const lookAround = idleTime >= 20;
+    const lookWave = lookAround ? Math.sin((state.time - 20) * 2.4) : 0;
+    const headTilt = lookAround ? lookWave * 0.18 : 0;
+    const eyeShiftX = lookAround ? lookWave * 4.5 : 0;
+    const bodyY = y - 2;
+
+    ctx.save();
+    ctx.translate(x, bodyY);
+    ctx.rotate(headTilt);
+
+    ctx.fillStyle = "rgba(244, 248, 255, 0.98)";
+    ctx.strokeStyle = "rgba(76, 96, 140, 0.42)";
+    ctx.lineWidth = 1.6;
+
+    ctx.beginPath();
+    ctx.ellipse(-9, -26, 8, 20, -0.16 + headTilt * 0.4, 0, Math.PI * 2);
+    ctx.ellipse(9, -26, 8, 20, 0.16 + headTilt * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, -2, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 14, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255, 206, 218, 0.88)";
+    ctx.beginPath();
+    ctx.ellipse(-9, -27, 2.5, 8.5, -0.18, 0, Math.PI * 2);
+    ctx.ellipse(9, -27, 2.5, 8.5, 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(27, 36, 58, 0.95)";
+    ctx.lineWidth = 2.1;
+    ctx.lineCap = "round";
+    if (blinkClosed) {
+      ctx.beginPath();
+      ctx.moveTo(-6 + eyeShiftX, -5);
+      ctx.lineTo(-1 + eyeShiftX, -5.4);
+      ctx.moveTo(1 + eyeShiftX, -5.4);
+      ctx.lineTo(6 + eyeShiftX, -5);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(-4 + eyeShiftX, -5, 1.8, 0, Math.PI * 2);
+      ctx.arc(4 + eyeShiftX, -5, 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(27, 36, 58, 0.95)";
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = "rgba(27, 36, 58, 0.95)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-7 + eyeShiftX, -11.5);
+    ctx.lineTo(-1 + eyeShiftX, -9.5);
+    ctx.moveTo(1 + eyeShiftX, -9.5);
+    ctx.lineTo(7 + eyeShiftX, -11.5);
+    ctx.stroke();
+
+    ctx.fillStyle = "#f39ab5";
+    ctx.beginPath();
+    ctx.moveTo(0, -1);
+    ctx.lineTo(-2.6, 1.8);
+    ctx.lineTo(2.6, 1.8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(27, 36, 58, 0.78)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-2.5, 4.6);
+    ctx.quadraticCurveTo(0, 6.4, 2.5, 4.6);
+    ctx.stroke();
+
     ctx.restore();
   }
 
@@ -4786,6 +4872,11 @@
     const sorted = [...state.blobs].sort((a, b) => a.y - b.y);
     for (const blob of sorted) {
       drawBlob(blob);
+    }
+    if (!state.gameOver) {
+      const guideX = clamp(state.pointerX, PIT.x + 12, PIT.x + PIT.width - 12);
+      drawRabbitGuide(guideX, SPAWN_Y - 6);
+      drawBlobPreview(guideX, SPAWN_Y, state.nextLevel);
     }
     drawPopups();
     drawGameOverOverlay();

@@ -449,13 +449,14 @@ code {
   justify-content: flex-start;
   gap: 6px;
   position: absolute;
-  right: 0;
-  top: 52px;
-  width: 62px;
-  min-height: 108px;
-  padding: 8px 6px;
+  right: -2px;
+  top: 58px;
+  width: 54px;
+  min-height: 94px;
+  padding: 7px 4px;
   flex-direction: column;
   border-radius: 14px;
+  opacity: 0.92;
 }
 
 .compact-next-copy {
@@ -466,10 +467,11 @@ code {
 .compact-next-copy strong {
   display: block;
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 12px;
   white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.05;
 }
 
 .compact-next-pill .overlay-label {
@@ -477,8 +479,8 @@ code {
 }
 
 .compact-next-pill .next-blob {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
 }
 
 .overlay-controls {
@@ -1614,17 +1616,17 @@ code {
   }
 
   .mobile-play-shell .compact-next-pill {
-    right: 0;
-    top: 46px;
-    width: 56px;
-    min-height: 96px;
-    padding: 7px 5px;
-    gap: 5px;
+    right: -2px;
+    top: 50px;
+    width: 50px;
+    min-height: 88px;
+    padding: 6px 4px;
+    gap: 4px;
   }
 
   .mobile-play-shell .compact-next-pill .next-blob {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
   }
 
   .mobile-play-shell .overlay-controls {
