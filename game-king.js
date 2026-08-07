@@ -3750,10 +3750,14 @@
   }
 
   function spawnPopup(x, y, text, color = "#fff7ed") {
+    const source = arguments[4] || "generic";
+    if (source !== "merge") return;
     state.popups.push({ x, y, text, color, life: 0.9 });
   }
 
   function spawnBurst(x, y, color, scale = 1, label = "") {
+    const source = arguments[5] || "generic";
+    if (source !== "merge") return;
     state.bursts.push({
       x,
       y,
@@ -3766,6 +3770,8 @@
   }
 
   function spawnSparks(x, y, color, count, speedBase, lifeBase) {
+    const source = arguments[6] || "generic";
+    if (source !== "merge") return;
     const n = Math.max(6, Math.floor(count));
     for (let i = 0; i < n; i++) {
       const a = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.35;
@@ -4075,13 +4081,14 @@
         }
         const newBestTierReached = newLevel > state.maxLevelReached;
         state.maxLevelReached = Math.max(state.maxLevelReached, newLevel);
-        spawnPopup(merged.x, merged.y, `啵！+${LEVELS[newLevel].score}`, LEVELS[newLevel].color);
+        spawnPopup(merged.x, merged.y, `啵！+${LEVELS[newLevel].score}`, LEVELS[newLevel].color, "merge");
         spawnBurst(
           merged.x,
           merged.y,
           LEVELS[newLevel].color,
           1 + newLevel * 0.24,
-          newLevel >= 5 ? LEVELS[newLevel].name : ""
+          newLevel >= 5 ? LEVELS[newLevel].name : "",
+          "merge"
         );
         spawnSparks(
           merged.x,
@@ -4089,7 +4096,8 @@
           LEVELS[newLevel].color,
           10 + newLevel * 2,
           160 + newLevel * 28,
-          0.55 + newLevel * 0.03
+          0.55 + newLevel * 0.03,
+          "merge"
         );
         if (newLevel >= 4) {
           state.cameraPunch = Math.max(state.cameraPunch, 0.02 + newLevel * 0.004);
@@ -4102,7 +4110,7 @@
         });
         if (newBestTierReached && newLevel >= 4) {
           setStatus(`达成 ${LEVELS[newLevel].name}！这一合很漂亮`);
-          spawnPopup(merged.x, merged.y - 26, `达成 ${LEVELS[newLevel].name}`, "#fef3c7");
+          spawnPopup(merged.x, merged.y - 26, `达成 ${LEVELS[newLevel].name}`, "#fef3c7", "merge");
         }
         if (state.mergeCount === 1) {
           unlockMilestone("first_merge", "第一次合并", "你已经完成第一次合并，玩法循环已经跑起来了。", "#fde68a");
@@ -4132,9 +4140,9 @@
         if (!state.recordBeaten && state.score > state.best) {
           state.recordBeaten = true;
           setStatus("水啦，纪录破去矣！继续冲，欲当大王咧");
-          spawnBurst(merged.x, merged.y - 18, "#fde68a", 2.2, "新纪录");
-          spawnSparks(merged.x, merged.y - 14, "#fde68a", 22, 260, 0.9);
-          state.cameraPunch = Math.max(state.cameraPunch, 0.05);
+          spawnBurst(merged.x, merged.y - 18, "#fde68a", 2.2, "新纪录", "merge");
+          spawnSparks(merged.x, merged.y - 14, "#fde68a", 22, 260, 0.9, "merge");
+          state.cameraPunch = Math.max(state.cameraPunch, 0.035);
           playTone({ frequency: 880, duration: 0.18, type: "triangle", gain: 0.04 });
         }
         updateHud();
@@ -4151,11 +4159,6 @@
       const settled = blob.y + blob.r >= FLOOR_Y - 0.6 || speed < 26;
       blob.settledTime = settled ? Math.min(8, (blob.settledTime || 0) + dt) : 0;
 
-      if (blob.level < 3) {
-        blob.blinkTimer = 0;
-        continue;
-      }
-
       if (blob.blinkTimer > 0) {
         blob.blinkTimer = Math.max(0, blob.blinkTimer - dt);
         if (blob.blinkTimer > 0) {
@@ -4164,8 +4167,8 @@
         continue;
       }
 
-      if (blob.blinkCooldown <= 0 && blob.settledTime > 0.28 && activeBlinkCount < 5) {
-        const blinkChance = blob.level >= 6 ? 0.46 : 0.34;
+      if (blob.blinkCooldown <= 0 && blob.settledTime > 0.28 && activeBlinkCount < 4) {
+        const blinkChance = blob.level >= 6 ? 0.34 : 0.24;
         if (Math.random() < dt * blinkChance) {
           blob.blinkTimer = 0.08 + Math.random() * 0.08;
           blob.blinkCooldown = 1.5 + Math.random() * 2.6 + blob.level * 0.08;
@@ -4174,20 +4177,19 @@
       }
     }
 
-    const midlineCandidates = state.blobs
-      .filter((blob) => blob.settledTime > 0.16 && blob.y - blob.r <= WARNING_Y + 18)
+    const boardMidlineY = PIT.y + PIT.height * 0.5;
+    const angryCandidate = state.blobs
+      .filter((blob) => (blob.level + 1) >= 6 && blob.settledTime > 0.16 && blob.y - blob.r <= boardMidlineY)
       .sort((a, b) => (a.y - a.r) - (b.y - b.r))
-      .slice(0, 4);
+      .slice(0, 1);
 
-    for (const blob of midlineCandidates) {
-      if (blob.level >= 5) {
-        blob.kingMood = blob.x <= PIT.x + PIT.width / 2 ? "angry_right" : "angry_left";
+    for (const blob of angryCandidate) {
+      if ((blob.expressionTimer || 0) <= 0.06) {
+        blob.kingMood = Math.random() < 0.5 ? "angry_left" : "angry_right";
         blob.expression = blob.kingMood;
-        blob.expressionTimer = Math.max(blob.expressionTimer || 0, 0.18);
-      } else {
-        blob.kingMood = "blink";
-        blob.blinkTimer = Math.max(blob.blinkTimer || 0, 0.12);
-        blob.blinkCooldown = Math.max(blob.blinkCooldown || 0, 0.9);
+        blob.expressionTimer = 0.32 + Math.random() * 0.28;
+      } else if (blob.expression === "angry_left" || blob.expression === "angry_right") {
+        blob.kingMood = blob.expression;
       }
     }
 
@@ -4861,12 +4863,10 @@
     ctx.scale(pose.squashX, pose.squashY);
     drawUnifiedBubbleBlob({ ...blob, x: 0, y: 0, r: radius }, config.color, false);
 
-    if (blob.level >= 5) {
-      ctx.fillStyle = "rgba(255,255,255,0.76)";
-      ctx.font = `bold ${Math.max(10, radius * 0.32)}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(String(blob.level + 1), 0, radius * 0.82);
-    }
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.font = `bold ${Math.max(10, radius * 0.28)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText(String(blob.level + 1), 0, radius * 0.84);
     ctx.restore();
   }
 
