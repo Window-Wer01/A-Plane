@@ -392,11 +392,11 @@ code {
 .overlay-hud {
   position: absolute;
   left: 10px;
-  right: 86px;
-  bottom: 14px;
+  right: 10px;
+  top: 10px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: auto auto 1fr auto;
   gap: 8px;
   align-items: stretch;
   pointer-events: none;
@@ -428,26 +428,57 @@ code {
 .time-pill,
 .score-pill,
 .best-pill {
-  min-height: 58px;
+  min-height: 40px;
+}
+
+.score-pill {
+  grid-column: 1;
+}
+
+.best-pill {
+  grid-column: 2;
+}
+
+.time-pill {
+  grid-column: 4;
 }
 
 .compact-next-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 6px;
+  position: absolute;
+  right: 0;
+  top: 52px;
+  width: 62px;
+  min-height: 108px;
+  padding: 8px 6px;
+  flex-direction: column;
+  border-radius: 14px;
 }
 
 .compact-next-copy {
   min-width: 0;
+  text-align: center;
 }
 
 .compact-next-copy strong {
   display: block;
   margin-top: 2px;
-  font-size: 15px;
-  white-space: nowrap;
+  font-size: 13px;
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.compact-next-pill .overlay-label {
+  font-size: 9px;
+}
+
+.compact-next-pill .next-blob {
+  width: 40px;
+  height: 40px;
 }
 
 .overlay-controls {
@@ -491,6 +522,7 @@ code {
 }
 
 .compact-danger-meter {
+  display: none;
   padding: 0;
   border: none;
   border-radius: 999px;
@@ -1547,44 +1579,59 @@ code {
   }
 
   .status-banner {
-    top: auto;
-    bottom: 94px;
+    top: 40%;
+    bottom: auto;
     min-width: 0;
-    max-width: calc(100% - 104px);
-    padding: 8px 10px;
+    max-width: calc(100% - 130px);
+    padding: 10px 16px;
     font-size: 12px;
   }
 
   .overlay-hud {
     left: 8px;
-    right: 74px;
-    bottom: 8px;
+    right: 8px;
+    top: 8px;
+    bottom: auto;
     gap: 6px;
+    grid-template-columns: auto auto 1fr auto;
   }
 
   .overlay-pill {
-    padding: 7px 9px;
+    padding: 6px 9px;
     border-radius: 12px;
   }
 
   .overlay-pill strong {
-    font-size: 16px;
+    font-size: 15px;
+  }
+
+  .overlay-label {
+    font-size: 9px;
   }
 
   .compact-next-copy strong {
-    font-size: 14px;
+    font-size: 12px;
   }
 
-  .mobile-play-shell .overlay-danger-meter {
-    left: 8px;
-    right: 74px;
-    bottom: 72px;
+  .mobile-play-shell .compact-next-pill {
+    right: 0;
+    top: 46px;
+    width: 56px;
+    min-height: 96px;
+    padding: 7px 5px;
+    gap: 5px;
+  }
+
+  .mobile-play-shell .compact-next-pill .next-blob {
+    width: 36px;
+    height: 36px;
   }
 
   .mobile-play-shell .overlay-controls {
     right: 8px;
     bottom: 8px;
     gap: 6px;
+    opacity: 0.64;
   }
 
   .mobile-play-shell .overlay-control-btn {

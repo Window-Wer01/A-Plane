@@ -181,9 +181,6 @@
   const MAX_FALL_SPEED_BASE = 660;
   const STACK_SQUISH_PUSH = 58;
   const STACK_SQUISH_DOWN = 18;
-  const TILT_MAX_DEG = 32;
-  const TILT_ACCEL_X = 420;
-  const TILT_SMOOTH = 7.5;
 
   const LEVELS = [
     { name: "孢子", hint: "先铺底，别急着追高阶", color: "#7ecbff", score: 2, radius: 20 },
@@ -318,11 +315,6 @@
     tutorialTimer: 0,
     warningHintShown: false,
     midgameHintShown: false,
-    tiltTargetX: 0,
-    tiltX: 0,
-    motionReady: false,
-    motionPermissionAsked: false,
-    motionListenerAttached: false,
     milestonesUnlocked: [],
     milestoneKeys: {},
     everInOverline: false,
@@ -3564,7 +3556,6 @@
 
   function startRun() {
     if (state.gameOver) return;
-    ensureMotionControls();
     state.started = true;
     state.paused = false;
     state.runStartTime = performance.now();
@@ -3597,61 +3588,6 @@
 
   function getBlobMaxFallSpeed(blob) {
     return MAX_FALL_SPEED_BASE * (0.92 + blob.level * 0.048);
-  }
-
-  function getScreenAngle() {
-    if (typeof screen !== "undefined" && screen.orientation && typeof screen.orientation.angle === "number") {
-      return screen.orientation.angle;
-    }
-    if (typeof window.orientation === "number") {
-      return window.orientation;
-    }
-    return 0;
-  }
-
-  function handleDeviceOrientation(event) {
-    if (!isMobileMode) return;
-    const angle = ((getScreenAngle() % 360) + 360) % 360;
-    const beta = Number.isFinite(event.beta) ? event.beta : 0;
-    const gamma = Number.isFinite(event.gamma) ? event.gamma : 0;
-
-    let rawTiltX = gamma;
-    if (angle === 90) {
-      rawTiltX = beta;
-    } else if (angle === 270) {
-      rawTiltX = -beta;
-    } else if (angle === 180) {
-      rawTiltX = -gamma;
-    }
-
-    state.tiltTargetX = clamp(rawTiltX / TILT_MAX_DEG, -1, 1);
-  }
-
-  function attachMotionListener() {
-    if (state.motionListenerAttached || !isMobileMode || typeof window === "undefined") return;
-    window.addEventListener("deviceorientation", handleDeviceOrientation, true);
-    state.motionListenerAttached = true;
-    state.motionReady = true;
-  }
-
-  function ensureMotionControls() {
-    if (!isMobileMode || state.motionReady || state.motionPermissionAsked) return;
-    state.motionPermissionAsked = true;
-
-    const motionEvent = typeof DeviceOrientationEvent !== "undefined" ? DeviceOrientationEvent : null;
-    if (motionEvent && typeof motionEvent.requestPermission === "function") {
-      motionEvent
-        .requestPermission()
-        .then((permissionState) => {
-          if (permissionState === "granted") {
-            attachMotionListener();
-          }
-        })
-        .catch(() => {});
-      return;
-    }
-
-    attachMotionListener();
   }
 
   function drawRoundedRect(x, y, w, h, r) {
@@ -3729,8 +3665,6 @@
     state.tutorialTimer = 0;
     state.warningHintShown = false;
     state.midgameHintShown = false;
-    state.tiltTargetX = 0;
-    state.tiltX = 0;
     state.milestonesUnlocked = [];
     state.milestoneKeys = {};
     state.everInOverline = false;
@@ -3945,7 +3879,6 @@
     state.time += dt;
     state.tutorialTimer = Math.max(0, state.tutorialTimer - dt);
     state.maxBlobsOnBoard = Math.max(state.maxBlobsOnBoard, state.blobs.length);
-    state.tiltX += (state.tiltTargetX - state.tiltX) * Math.min(1, dt * TILT_SMOOTH);
     const runSeconds = getRunSeconds();
     if (runSeconds >= 60) {
       unlockMilestone("survive_60s", "稳住 60 秒", "这局已经能把节奏稳住 1 分钟以上了。", "#a7f3d0");
@@ -3965,10 +3898,6 @@
       blob.expressionTimer = Math.max(0, blob.expressionTimer - dt);
       if (blob.expressionTimer <= 0) {
         blob.expression = "idle";
-      }
-      if (isMobileMode && state.motionReady) {
-        const tiltFactor = 0.88 + blob.level * 0.035;
-        blob.vx += state.tiltX * TILT_ACCEL_X * dt * tiltFactor;
       }
       blob.vy = Math.min(blob.vy + getBlobGravity(blob) * dt, getBlobMaxFallSpeed(blob));
       blob.x += blob.vx * dt;
@@ -4468,44 +4397,20 @@
   }
 
   function getBlobPose(blob, radius, preview = false) {
-    if (preview) {
-      return {
-        offsetX: 0,
-        offsetY: 0,
-        rotation: 0,
-        nodProgress: 0,
-        recoil: 0,
-        hairSwingX: 0,
-        squashX: 1,
-        squashY: 1
-      };
-    }
-
-    const settledRatio = clamp((blob.settledTime || 0) / 0.42, 0, 1);
-    const grooveRamp = clamp((blob.settledTime || 0) / 1.2, 0, 1);
-    const beat = state.time * Math.PI * 2.08;
-    const leadNod = Math.pow(Math.max(0, Math.sin(beat)), 1.2);
-    const followNod = Math.pow(Math.max(0, Math.sin(beat + Math.PI * 0.56)), 2.1) * 0.72;
-    const recoil = Math.pow(Math.max(0, Math.sin(beat + Math.PI * 0.92)), 1.6) * 0.36 * grooveRamp;
-    const nodProgress = clamp((leadNod + followNod) * grooveRamp, 0, 1.45);
-
     return {
-      offsetX: -radius * (0.018 * settledRatio + 0.038 * nodProgress - 0.012 * recoil),
-      offsetY: radius * (0.014 * settledRatio + 0.12 * nodProgress - 0.038 * recoil),
-      rotation: (-0.06 * settledRatio) + (-0.26 * nodProgress) + recoil * 0.08,
-      nodProgress,
-      recoil,
-      hairSwingX: radius * (0.05 + nodProgress * 0.28 - recoil * 0.08),
-      squashX: 1 + nodProgress * 0.085 - recoil * 0.02,
-      squashY: 1 - nodProgress * 0.14 + recoil * 0.05
+      offsetX: 0,
+      offsetY: 0,
+      rotation: 0,
+      nodProgress: 0,
+      recoil: 0,
+      hairSwingX: 0,
+      squashX: 1,
+      squashY: 1
     };
   }
 
   function drawBlobAccessories(x, y, radius, level, preview = false, pose = null) {
     if (level < 4) return;
-
-    const nodProgress = preview ? 0 : pose?.nodProgress || 0;
-    const hairSwing = preview ? radius * 0.06 : pose?.hairSwingX || radius * (0.06 + nodProgress * 0.18);
 
     ctx.save();
     ctx.strokeStyle = "rgba(32,38,64,0.88)";
@@ -4514,10 +4419,10 @@
     ctx.beginPath();
     ctx.moveTo(x, y - radius * 0.86);
     ctx.quadraticCurveTo(
-      x - radius * 0.03 - hairSwing * 0.42,
-      y - radius * (1.1 + nodProgress * 0.04),
-      x - radius * 0.08 - hairSwing,
-      y - radius * (1.24 + nodProgress * 0.08)
+      x - radius * 0.055,
+      y - radius * 1.08,
+      x - radius * 0.14,
+      y - radius * 1.22
     );
     ctx.stroke();
     ctx.restore();
@@ -4916,7 +4821,6 @@
 
   function beginPointerInteraction(clientX, clientY, pointerId) {
     ensureAudio();
-    ensureMotionControls();
     if (!state.started || (state.paused && !state.gameOver)) return false;
     state.pointerActive = true;
     state.pointerX = toWorldX(clientX);
