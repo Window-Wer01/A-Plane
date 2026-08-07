@@ -9,7 +9,7 @@
   const helpBtn = document.getElementById("helpBtn");
   const scoreValue = document.getElementById("scoreValue");
   const bestValue = document.getElementById("bestValue");
-  const minStepValue = document.getElementById("minStepValue");
+  let minStepValue = document.getElementById("minStepValue");
   const timerValue = document.getElementById("timerValue");
   const nextBlob = document.getElementById("nextBlob");
   const nextName = document.getElementById("nextName");
@@ -420,6 +420,20 @@
     } catch {
       // 忽略本地存储失败
     }
+  }
+
+  function ensureKingMinStepPill() {
+    if (minStepValue) return minStepValue;
+    const overlayHud = document.querySelector(".overlay-hud");
+    const bestPill = bestValue ? bestValue.closest(".overlay-pill") : null;
+    if (!overlayHud || !bestPill) return null;
+
+    const pill = document.createElement("div");
+    pill.className = "overlay-pill branch-best-pill compact-pill";
+    pill.innerHTML = '<span class="overlay-label">最少步数</span><strong id="minStepValue">-</strong>';
+    bestPill.insertAdjacentElement("afterend", pill);
+    minStepValue = pill.querySelector("#minStepValue");
+    return minStepValue;
   }
 
   function clamp(value, min, max) {
@@ -3642,6 +3656,7 @@
   function updateHud() {
     scoreValue.textContent = formatRunTimer(getRunSeconds());
     bestValue.textContent = String(state.dropCount);
+    ensureKingMinStepPill();
     if (minStepValue) {
       const minSteps = readKingMinSteps();
       minStepValue.textContent = minSteps > 0 ? String(minSteps) : "-";
@@ -5029,7 +5044,6 @@
     if (!state.gameOver) {
       const guideX = clamp(state.pointerX, PIT.x + 12, PIT.x + PIT.width - 12);
       drawBlobPreview(guideX, SPAWN_Y - 22, state.nextLevel);
-      drawRabbitGuide(guideX, SPAWN_Y + 6);
     }
     drawPopups();
     drawGameOverOverlay();
