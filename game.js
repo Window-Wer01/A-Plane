@@ -269,13 +269,16 @@
     r: Math.random() * 1.8 + 0.4,
     a: Math.random() * 0.5 + 0.18
   }));
-  const monsterCastImage = new Image();
-  monsterCastImage.src = "./assets/monster-cast.png";
-  const MONSTER_VARIANTS = {
-    yellow: { sx: 26, sy: 42, sw: 334, sh: 388 },
-    blue: { sx: 390, sy: 38, sw: 314, sh: 360 },
-    green: { sx: 232, sy: 356, sw: 470, sh: 396 }
+  const guideCreatureImage = new Image();
+  guideCreatureImage.src = "./assets/guide-creature.png";
+  const MONSTER_IMAGES = {
+    yellow: new Image(),
+    blue: new Image(),
+    green: new Image()
   };
+  MONSTER_IMAGES.yellow.src = "./assets/monster-yellow.png";
+  MONSTER_IMAGES.blue.src = "./assets/monster-blue.png";
+  MONSTER_IMAGES.green.src = "./assets/monster-green.png";
   const CREATURE_LEVEL_VARIANTS = {
     0: "yellow",
     3: "blue",
@@ -4278,11 +4281,31 @@
     ctx.fillStyle = nebulaB;
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
+    const bloom = ctx.createRadialGradient(WORLD.width * 0.5, PIT.y - 8, 16, WORLD.width * 0.5, PIT.y - 8, 120);
+    bloom.addColorStop(0, "rgba(99,102,241,0.22)");
+    bloom.addColorStop(0.5, "rgba(99,102,241,0.08)");
+    bloom.addColorStop(1, "rgba(99,102,241,0)");
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
     for (const star of stars) {
       ctx.fillStyle = `rgba(255,255,255,${star.a})`;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    if (guideCreatureImage.complete && guideCreatureImage.naturalWidth) {
+      ctx.save();
+      ctx.globalAlpha = 0.16;
+      ctx.drawImage(guideCreatureImage, 26, FLOOR_Y - 162, 76, 92);
+      ctx.globalAlpha = 0.2;
+      ctx.drawImage(guideCreatureImage, 96, FLOOR_Y - 255, 170, 206);
+      ctx.globalAlpha = 0.17;
+      ctx.drawImage(guideCreatureImage, 254, FLOOR_Y - 198, 122, 148);
+      ctx.globalAlpha = 0.1;
+      ctx.drawImage(guideCreatureImage, 302, FLOOR_Y - 124, 54, 66);
+      ctx.restore();
     }
 
     drawRoundedRect(PIT.x, PIT.y, PIT.width, PIT.height, 28);
@@ -4351,21 +4374,16 @@
       y,
       r: config.radius,
       level,
-      creatureVariant: getCreatureVariantForLevel(level),
       blinkOffset: 0,
       smileSeed: 0,
       expression: "idle"
     };
     ctx.save();
     ctx.globalAlpha = 0.96;
-    if (previewBlob.creatureVariant) {
-      drawCreatureBlob(previewBlob, true);
-    } else {
-      drawBlobGlow(x, y, config.radius, config.color, 0.18);
-      drawBlobCircle(x, y, config.radius, config.color);
-      drawBlobAccessories(x, y, config.radius, level, true);
-      drawFace(previewBlob, true);
-    }
+    drawBlobGlow(x, y, config.radius, config.color, 0.18);
+    drawBlobCircle(x, y, config.radius, config.color);
+    drawBlobAccessories(x, y, config.radius, level, true);
+    drawFace(previewBlob, true);
     ctx.restore();
   }
 
@@ -4376,19 +4394,23 @@
     const lookWave = lookAround ? Math.sin((state.time - 20) * 2.4) : 0;
     const headTilt = lookAround ? lookWave * 0.16 : 0;
     const eyeShiftX = lookAround ? lookWave * 3.2 : 0;
-    const bodyY = y + 10;
-    const drawW = 58;
-    const drawH = 66;
-    const sprite = MONSTER_VARIANTS.yellow;
+    const throwLift = state.pointerActive ? 2 : 0;
+    const bodyY = y + 18 + throwLift;
+    const drawW = 62;
+    const drawH = 70;
 
-    if (!monsterCastImage.complete || !monsterCastImage.naturalWidth) {
+    if (!guideCreatureImage.complete || !guideCreatureImage.naturalWidth) {
       return;
     }
 
     ctx.save();
     ctx.translate(x, bodyY);
     ctx.rotate(headTilt);
-    ctx.drawImage(monsterCastImage, sprite.sx, sprite.sy, sprite.sw, sprite.sh, -drawW / 2, -drawH * 0.88, drawW, drawH);
+    ctx.fillStyle = "rgba(69,53,173,0.24)";
+    ctx.beginPath();
+    ctx.ellipse(0, -9, 42, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.drawImage(guideCreatureImage, -drawW / 2, -drawH * 0.88, drawW, drawH);
 
     const leftEyeX = -6.3 + eyeShiftX;
     const rightEyeX = 6.1 + eyeShiftX;
@@ -4418,29 +4440,19 @@
   }
 
   function drawCreatureBlob(blob, preview = false) {
-    if (!blob.creatureVariant || !monsterCastImage.complete || !monsterCastImage.naturalWidth) {
+    if (!blob.creatureVariant) {
       return false;
     }
-    const sprite = MONSTER_VARIANTS[blob.creatureVariant];
-    if (!sprite) return false;
+    const image = MONSTER_IMAGES[blob.creatureVariant];
+    if (!image || !image.complete || !image.naturalWidth) return false;
 
     const radius = blob.r;
     const scale = preview ? 2.1 : 2.25;
     const drawW = radius * scale;
-    const drawH = drawW * (sprite.sh / sprite.sw);
+    const drawH = drawW * (image.naturalHeight / image.naturalWidth);
     const offsetY = preview ? -drawH * 0.48 : -drawH * 0.5;
 
-    ctx.drawImage(
-      monsterCastImage,
-      sprite.sx,
-      sprite.sy,
-      sprite.sw,
-      sprite.sh,
-      -drawW / 2,
-      offsetY,
-      drawW,
-      drawH
-    );
+    ctx.drawImage(image, -drawW / 2, offsetY, drawW, drawH);
     return true;
   }
 
@@ -4892,7 +4904,7 @@
     }
     if (!state.gameOver) {
       const guideX = clamp(state.pointerX, PIT.x + 12, PIT.x + PIT.width - 12);
-      drawBlobPreview(guideX, SPAWN_Y - 8, state.nextLevel);
+      drawBlobPreview(guideX, SPAWN_Y - 22, state.nextLevel);
       drawRabbitGuide(guideX, SPAWN_Y + 6);
     }
     drawPopups();
