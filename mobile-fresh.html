@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>啵啵星团 - 手机验证版 Fresh</title>
+  <link rel="stylesheet" href="./styles.css?v=20260807-fresh2" />
+</head>
+<body class="mobile-play-page">
+  <main class="app-shell mobile-play-shell">
+    <section class="game-layout mobile-only-layout">
+      <div class="game-panel">
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="420" height="760" aria-label="啵啵星团手机验证版画布"></canvas>
+          <div class="overlay-hud">
+            <div class="overlay-pill score-pill compact-pill">
+              <span class="overlay-label">分数</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="overlay-pill best-pill compact-pill">
+              <span class="overlay-label">最高分</span>
+              <strong id="bestValue">0</strong>
+            </div>
+            <div class="overlay-pill time-pill compact-pill">
+              <span class="overlay-label">用时</span>
+              <strong id="timerValue">0:00</strong>
+            </div>
+            <div class="overlay-pill next-pill compact-next-pill">
+              <div id="nextBlob" class="next-blob"></div>
+              <div class="compact-next-copy">
+                <span class="overlay-label">下一只</span>
+                <strong id="nextName">孢子</strong>
+              </div>
+            </div>
+          </div>
+          <div class="overlay-controls">
+            <button id="pauseBtn" class="overlay-control-btn ghost-btn" type="button" aria-label="暂停游戏">暂停</button>
+            <button id="restartBtn" class="overlay-control-btn primary-btn" type="button" aria-label="重新开始">重开</button>
+          </div>
+          <div id="statusBanner" class="status-banner">手机模式：点击直接下落，也可以下滑投放</div>
+          <section id="dangerMeter" class="danger-meter overlay-danger-meter compact-danger-meter" data-state="safe" aria-live="polite">
+            <div class="danger-bar compact-danger-bar">
+              <div id="dangerFill" class="danger-fill"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="startPanel" class="floating-panel mobile-start-panel hidden" aria-live="polite">
+      <div class="panel-card mobile-start-card">
+        <p class="eyebrow">准备开始</p>
+        <h2>先熟悉一下手势再开局</h2>
+        <p class="panel-copy">
+          手机版点击就能直接下落，也可以向下滑动投放。先轻轻铺底，再追第一次合并，局面会更稳。
+        </p>
+        <ul class="panel-list">
+          <li>左右移动先瞄准位置</li>
+          <li>点一下就会直接下落</li>
+          <li>向下滑动后松手也能投放</li>
+          <li>触碰红线后会进入 14 秒倒计时</li>
+        </ul>
+        <p class="panel-copy subtle-copy">建议：先轻放两三手，把底部铺开。</p>
+        <div class="panel-actions">
+          <button id="startGameBtn" class="primary-btn" type="button">开始试玩</button>
+          <button id="startHelpBtn" class="ghost-btn" type="button">先看说明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pausePanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">已暂停</p>
+        <h2>先停一下，接着再来</h2>
+        <p class="panel-copy">
+          继续后会保持当前堆叠和危险进度，不会重开这一局。
+        </p>
+        <div class="panel-actions">
+          <button id="resumeGameBtn" class="primary-btn" type="button">继续游戏</button>
+          <button id="pauseRestartBtn" class="ghost-btn" type="button">重新开始</button>
+          <button id="pauseHelpBtn" class="ghost-btn" type="button">看说明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">本局结算</p>
+        <h2 id="resultTitle">这局翻车了</h2>
+        <div class="result-grid">
+          <div class="mini-stat">
+            <span>本局分数</span>
+            <strong id="resultScore">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>历史最高</span>
+            <strong id="resultBest">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>用时</span>
+            <strong id="resultDuration">0s</strong>
+          </div>
+          <div class="mini-stat">
+            <span>合并次数</span>
+            <strong id="resultMerges">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>最高等级</span>
+            <strong id="resultTier">1</strong>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
+        </div>
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">本局复盘</p>
+              <h2 id="resultReviewTitle">这局还可以再稳一点</h2>
+            </div>
+          </div>
+          <p id="resultReviewTip" class="panel-copy">复盘会根据这局的堆叠、危险度和合并进度给出简单建议。</p>
+          <div id="resultReviewTags" class="result-tags"></div>
+        </section>
+
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">任务回看</p>
+              <h2 id="resultObjectiveTitle">这局主要卡在这里</h2>
+            </div>
+          </div>
+          <div class="objective-snapshot compact-snapshot">
+            <div class="objective-head">
+              <span id="resultObjectiveStage" class="objective-stage">阶段任务</span>
+              <strong id="resultObjectiveValue">0%</strong>
+            </div>
+            <p id="resultObjectiveTip" class="objective-tip">这里会回看这局结束前最关键的任务阶段。</p>
+          </div>
+        </section>
+
+        <section class="result-review">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">本局里程碑</p>
+              <h2>这局你解锁了</h2>
+            </div>
+          </div>
+          <div id="resultMilestones" class="milestone-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="leaderboardPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">本地排行榜</p>
+            <h2>最近最强 5 局</h2>
+          </div>
+          <button id="leaderboardCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <section class="history-summary">
+          <h2>最近几局概览</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>平均存活</span>
+              <strong id="historyAvgDuration">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均合并</span>
+              <strong id="historyAvgMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均危险峰值</span>
+              <strong id="historyAvgDanger">0%</strong>
+            </div>
+            <div class="mini-stat">
+              <span>常见翻车点</span>
+              <strong id="historyCommonFailure">暂无</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期进度</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>累计局数</span>
+              <strong id="progressTotalRuns">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计总分</span>
+              <strong id="progressTotalScore">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计合并</span>
+              <strong id="progressTotalMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>历史最高等级</span>
+              <strong id="progressBestTier">1</strong>
+            </div>
+            <div class="mini-stat">
+              <span>最长存活</span>
+              <strong id="progressLongestRun">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>已解锁里程碑</span>
+              <strong id="progressMilestones">0</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期成就总览</h2>
+          <div id="progressAchievementList" class="achievement-list"></div>
+        </section>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
+
+    <section id="helpPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">新手说明</p>
+            <h2>手机模式怎么玩</h2>
+          </div>
+          <button id="helpCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="panel-section">
+          <p class="panel-copy">这一版重点先验证手势和单人闭环，不要求极限分数，先感受投放和整理节奏。</p>
+          <ul class="panel-list">
+            <li>先左右拖动瞄准，再向下滑动释放</li>
+            <li>滑得轻会更柔和，滑得快会更有冲击力</li>
+            <li>危险条发黄表示接近顶部，发红表示已经开始倒计时</li>
+            <li>暂停、设置和本地榜都不会清掉当前局面</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="settingsPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">设置</p>
+            <h2>手机试玩选项</h2>
+          </div>
+          <button id="settingsCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="settings-list">
+          <label class="setting-row">
+            <span>音效</span>
+            <input id="audioToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row">
+            <span>危险晃动</span>
+            <input id="shakeToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row range-row">
+            <span>音量</span>
+            <input id="volumeRange" type="range" min="0" max="100" value="65" />
+          </label>
+        </div>
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">试玩管理</p>
+              <h2>只保留最必要操作</h2>
+            </div>
+          </div>
+          <div class="management-actions">
+            <button id="clearLeaderboardBtn" class="ghost-btn" type="button">清空排行榜</button>
+            <button id="resetProgressBtn" class="ghost-btn" type="button">重置长期进度</button>
+            <button id="resetAllDataBtn" class="ghost-btn danger-btn" type="button">全部重置</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.__BLOB_MOBILE_MODE__ = true;
+  </script>
+  <script src="./game.js?v=20260807-fresh2"></script>
+</body>
+</html>

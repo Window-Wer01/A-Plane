@@ -157,10 +157,6 @@
             <strong id="resultBest">0</strong>
           </div>
           <div class="mini-stat">
-            <span>最高等级</span>
-            <strong id="resultTier">1</strong>
-          </div>
-          <div class="mini-stat">
             <span>用时</span>
             <strong id="resultDuration">0s</strong>
           </div>
@@ -169,13 +165,12 @@
             <strong id="resultMerges">0</strong>
           </div>
           <div class="mini-stat">
-            <span>峰值危险</span>
-            <strong id="resultDangerPeak">0%</strong>
+            <span>最高等级</span>
+            <strong id="resultTier">1</strong>
           </div>
         </div>
         <div class="panel-actions">
           <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
-          <button id="resultCloseBtn" class="ghost-btn" type="button">先看看</button>
         </div>
         <section class="result-review">
           <div class="panel-head compact">
@@ -214,15 +209,6 @@
           <div id="resultMilestones" class="milestone-list"></div>
         </section>
 
-        <section class="result-review">
-          <div class="panel-head compact">
-            <div>
-              <p class="eyebrow">引导进度</p>
-              <h2>首次试玩已经走到哪</h2>
-            </div>
-          </div>
-          <div id="resultGuideList" class="guide-checklist"></div>
-        </section>
       </div>
     </section>
 
@@ -264,23 +250,9 @@
         <p class="panel-copy">
           当前进度已经保留。继续后可以直接接着投放，危险计时也会从暂停前的状态恢复。
         </p>
-        <section class="panel-subsection">
-          <div class="objective-snapshot">
-            <div class="objective-head">
-              <span id="pauseObjectiveStage" class="objective-stage">阶段任务</span>
-              <strong id="pauseObjectiveTitle">当前目标</strong>
-            </div>
-            <div class="objective-progress">
-              <div class="objective-bar">
-                <div id="pauseObjectiveFill" class="objective-fill"></div>
-              </div>
-              <span id="pauseObjectiveValue" class="objective-value">0%</span>
-            </div>
-            <p id="pauseObjectiveTip" class="objective-tip">这里会显示当前这局最该优先完成的任务。</p>
-          </div>
-        </section>
         <div class="panel-actions">
           <button id="resumeGameBtn" class="primary-btn" type="button">继续游戏</button>
+          <button id="pauseRestartBtn" class="ghost-btn" type="button">重新开始</button>
           <button id="pauseHelpBtn" class="ghost-btn" type="button">看说明</button>
         </div>
       </div>
