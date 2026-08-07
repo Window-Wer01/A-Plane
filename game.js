@@ -271,6 +271,8 @@
   }));
   const guideCreatureImage = new Image();
   guideCreatureImage.src = "./assets/guide-creature.png";
+  const bubbleCreatureImage = new Image();
+  bubbleCreatureImage.src = "./assets/bubble-creature.png";
   const MONSTER_IMAGES = {
     yellow: new Image(),
     blue: new Image(),
@@ -4380,10 +4382,7 @@
     };
     ctx.save();
     ctx.globalAlpha = 0.96;
-    drawBlobGlow(x, y, config.radius, config.color, 0.18);
-    drawBlobCircle(x, y, config.radius, config.color);
-    drawBlobAccessories(x, y, config.radius, level, true);
-    drawFace(previewBlob, true);
+    drawUnifiedBubbleBlob(previewBlob, config.color, true);
     ctx.restore();
   }
 
@@ -4454,6 +4453,38 @@
 
     ctx.drawImage(image, -drawW / 2, offsetY, drawW, drawH);
     return true;
+  }
+
+  function drawUnifiedBubbleBlob(blob, color, preview = false) {
+    const image = bubbleCreatureImage;
+    const radius = blob.r;
+    drawBlobGlow(0, 0, radius, color, preview ? 0.22 : 0.16 + Math.min(0.05, blob.level * 0.006));
+
+    ctx.save();
+    ctx.fillStyle = colorWithAlpha(color, preview ? 0.18 : 0.14);
+    ctx.beginPath();
+    ctx.arc(0, radius * 0.04, radius * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    if (image.complete && image.naturalWidth) {
+      const scale = preview ? 2.18 : 2.28;
+      const drawW = radius * scale;
+      const drawH = drawW * (image.naturalHeight / image.naturalWidth);
+      const offsetY = preview ? -drawH * 0.52 : -drawH * 0.54;
+
+      ctx.save();
+      ctx.shadowColor = colorWithAlpha(color, preview ? 0.28 : 0.24);
+      ctx.shadowBlur = radius * (preview ? 0.34 : 0.28);
+      ctx.drawImage(image, -drawW / 2, offsetY, drawW, drawH);
+      ctx.restore();
+      return true;
+    }
+
+    drawBlobCircle(0, 0, radius, color);
+    drawBlobAccessories(0, 0, radius, blob.level, preview);
+    drawFace({ ...blob, x: 0, y: 0, r: radius }, preview);
+    return false;
   }
 
   function drawBlobGlow(x, y, radius, color, alpha = 0.14) {
@@ -4758,15 +4789,7 @@
     ctx.translate(x + pose.offsetX, y + pose.offsetY);
     ctx.rotate(pose.rotation);
     ctx.scale(pose.squashX, pose.squashY);
-
-    if (blob.creatureVariant && drawCreatureBlob({ ...blob, x: 0, y: 0, r: radius }, false)) {
-      drawBlobGlow(0, 0, radius, config.color, 0.08 + Math.min(0.06, blob.level * 0.008));
-    } else {
-      drawBlobGlow(0, 0, radius, config.color, 0.12 + Math.min(0.08, blob.level * 0.01));
-      drawBlobCircle(0, 0, radius, config.color);
-      drawBlobAccessories(0, 0, radius, blob.level, false, pose);
-      drawFace({ ...blob, x: 0, y: 0, r: radius }, false);
-    }
+    drawUnifiedBubbleBlob({ ...blob, x: 0, y: 0, r: radius }, config.color, false);
 
     if (blob.level >= 5) {
       ctx.fillStyle = "rgba(255,255,255,0.76)";
