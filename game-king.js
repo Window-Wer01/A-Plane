@@ -2900,14 +2900,14 @@
 
   function getReadyStatus() {
     return isMobileMode
-      ? "准备开始：点击直接下落，也可以左右瞄准后滑动投放"
-      : "准备开始：移动鼠标瞄准，点击或按 Space 投放";
+      ? "怎么样，先桥好位嘿，点一下就落去矣"
+      : "怎么样，先对好位，按一下就给它落下去";
   }
 
   function getPlayStatus() {
     return isMobileMode
-      ? "继续：点击直接下落，也可以向下滑动投放"
-      : "继续整理空间，别让它们顶到红线";
+      ? "继续喔，轻轻放，毋通乱抛嘿"
+      : "继续拚啦，先顾好空间，毋通去噜到红线";
   }
 
   function openPanel(panel) {
@@ -3700,7 +3700,7 @@
       openPanel(startPanel);
     }
     updatePauseButton();
-    setStatus(showStartPanel ? getReadyStatus() : "新的一局已准备好，直接开始吧");
+    setStatus(showStartPanel ? getReadyStatus() : "新的一局拢传便便，来试试看你会当大王无");
     stopBgm();
     updateDangerUI();
     updateHud();
@@ -3844,9 +3844,9 @@
     }
     playTone({ frequency: 380 + power * 120, duration: 0.06, type: "triangle", gain: 0.025 });
     if (isMobileMode) {
-      setStatus(power < 0.32 ? "轻轻一滑，像泡泡一样落下去" : power > 0.72 ? "这一手有点猛，落得更重了" : "力度适中，继续整理空间");
+      setStatus(power < 0.32 ? "这手轻轻仔，水喔" : power > 0.72 ? "哎唷这手真大力，毋通冲太凶嘿" : "这手刚刚好，继续拚下去");
     } else {
-      setStatus("啵！继续整理空间，别让它们顶到危险线");
+      setStatus("啵一下，继续乔位，毋通乎伊顶到红线喔");
     }
   }
 
@@ -3894,7 +3894,7 @@
     updateCoachUI();
     updateObjectiveUI();
     updateObjectiveRewards();
-    setStatus("这一局结束了，点“重新开始”再来一次");
+    setStatus("这局先按呢啦，点重开搁拚一摆");
     playTone({ frequency: 220, duration: 0.16, type: "sawtooth", gain: 0.03 });
     setTimeout(() => openPanel(resultPanel), 180);
   }
@@ -4131,7 +4131,7 @@
         }
         if (!state.recordBeaten && state.score > state.best) {
           state.recordBeaten = true;
-          setStatus("新纪录达成！继续冲更高层级");
+          setStatus("水啦，纪录破去矣！继续冲，欲当大王咧");
           spawnBurst(merged.x, merged.y - 18, "#fde68a", 2.2, "新纪录");
           spawnSparks(merged.x, merged.y - 14, "#fde68a", 22, 260, 0.9);
           state.cameraPunch = Math.max(state.cameraPunch, 0.05);
@@ -4143,6 +4143,7 @@
 
     let activeBlinkCount = 0;
     for (const blob of state.blobs) {
+      blob.kingMood = null;
       blob.blinkTimer = Math.max(0, blob.blinkTimer || 0);
       blob.blinkCooldown = Math.max(0, (blob.blinkCooldown || 0) - dt);
 
@@ -4170,6 +4171,23 @@
           blob.blinkCooldown = 1.5 + Math.random() * 2.6 + blob.level * 0.08;
           activeBlinkCount += 1;
         }
+      }
+    }
+
+    const midlineCandidates = state.blobs
+      .filter((blob) => blob.settledTime > 0.16 && blob.y - blob.r <= WARNING_Y + 18)
+      .sort((a, b) => (a.y - a.r) - (b.y - b.r))
+      .slice(0, 4);
+
+    for (const blob of midlineCandidates) {
+      if (blob.level >= 5) {
+        blob.kingMood = blob.x <= PIT.x + PIT.width / 2 ? "angry_right" : "angry_left";
+        blob.expression = blob.kingMood;
+        blob.expressionTimer = Math.max(blob.expressionTimer || 0, 0.18);
+      } else {
+        blob.kingMood = "blink";
+        blob.blinkTimer = Math.max(blob.blinkTimer || 0, 0.12);
+        blob.blinkCooldown = Math.max(blob.blinkCooldown || 0, 0.9);
       }
     }
 
@@ -4211,7 +4229,7 @@
           state.everInOverline = true;
           state.overlineTime += dt;
           const remain = Math.max(0, OVERLINE_LIMIT - state.overlineTime);
-          setStatus(`危险！堆叠已触碰红线，${remain.toFixed(0)} 秒后结束`);
+          setStatus(`袂使喔！已经碰着红线矣，阁 ${remain.toFixed(0)} 秒就收摊`);
           if (state.overlineTime >= OVERLINE_LIMIT) {
             handleGameOver();
           }
@@ -4223,7 +4241,7 @@
             unlockMilestone("escape_overline", "险境脱离", "从触线倒计时里把局势拉回来了，干得漂亮。", "#bbf7d0");
           }
           if (state.warningLevel > 0.12) {
-            setStatus("危险区附近：继续整理空间，别让它们顶到红线");
+            setStatus("红线边仔矣，先乔空间，毋通去噜着嘿");
           }
         }
       } else {
@@ -4455,6 +4473,55 @@
     return true;
   }
 
+  function drawKingMoodOverlay(blob) {
+    const mood = blob.kingMood || null;
+    if (!mood) return;
+
+    const { x, y, r: radius } = blob;
+    const eyeOffsetX = radius * 0.28;
+    const eyeY = y - radius * 0.16;
+    const browY = eyeY - radius * 0.12;
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(12,16,28,0.96)";
+    ctx.fillStyle = "rgba(12,16,28,0.92)";
+    ctx.lineCap = "round";
+
+    if (mood === "blink") {
+      ctx.lineWidth = Math.max(2.2, radius * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(x - eyeOffsetX - radius * 0.12, eyeY);
+      ctx.lineTo(x - eyeOffsetX + radius * 0.12, eyeY + radius * 0.02);
+      ctx.moveTo(x + eyeOffsetX - radius * 0.12, eyeY + radius * 0.02);
+      ctx.lineTo(x + eyeOffsetX + radius * 0.12, eyeY);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    const lookLeft = mood === "angry_left";
+    const pupilShift = lookLeft ? -radius * 0.055 : radius * 0.055;
+    ctx.lineWidth = Math.max(2.6, radius * 0.055);
+    ctx.beginPath();
+    ctx.moveTo(x - eyeOffsetX - radius * 0.12, browY - radius * 0.05);
+    ctx.lineTo(x - eyeOffsetX + radius * 0.14, browY + radius * 0.04);
+    ctx.moveTo(x + eyeOffsetX - radius * 0.14, browY + radius * 0.04);
+    ctx.lineTo(x + eyeOffsetX + radius * 0.12, browY - radius * 0.05);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x - eyeOffsetX + pupilShift, eyeY + radius * 0.02, Math.max(1.6, radius * 0.04), 0, Math.PI * 2);
+    ctx.arc(x + eyeOffsetX + pupilShift, eyeY + radius * 0.02, Math.max(1.6, radius * 0.04), 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineWidth = Math.max(2, radius * 0.045);
+    ctx.beginPath();
+    ctx.moveTo(x - radius * 0.16, y + radius * 0.21);
+    ctx.quadraticCurveTo(x, y + radius * 0.11, x + radius * 0.16, y + radius * 0.21);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawUnifiedBubbleBlob(blob, color, preview = false) {
     const image = bubbleCreatureImage;
     const radius = blob.r;
@@ -4478,6 +4545,9 @@
       ctx.shadowBlur = radius * (preview ? 0.34 : 0.28);
       ctx.drawImage(image, -drawW / 2, offsetY, drawW, drawH);
       ctx.restore();
+      if (!preview) {
+        drawKingMoodOverlay(blob);
+      }
       return true;
     }
 
@@ -5008,7 +5078,7 @@
         } else if (travel <= 14) {
           dropBlob(0.36);
         } else {
-          setStatus("点一下就会直接下落，也可以向下滑动投放");
+          setStatus("点一下就落去矣，欲较细腻就向下滑");
         }
       } else {
         dropBlob();
@@ -5082,7 +5152,7 @@
           setStatus(getPlayStatus());
         } else if (state.panelsOpen === 0) {
           openPanel(pausePanel);
-          setStatus("已暂停，点继续或按 Esc 恢复");
+          setStatus("先歇睏一下，按继续就会当搁开始");
         }
       }
       return;
@@ -5136,15 +5206,15 @@
   pauseRestartBtn?.addEventListener("click", quickRestartRun);
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
-    setStatus("先看一下说明，再继续试玩");
+    setStatus("先瞄一下说明啦，看完搁继续");
   });
   startHelpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
-    setStatus("先看一下说明，再开始这一局");
+    setStatus("先看一下说明，等一下较袂手忙脚乱");
   });
   pauseHelpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
-    setStatus("先看说明，回来再继续");
+    setStatus("先看说明，转来阁拚");
   });
   helpCloseBtn?.addEventListener("click", () => {
     closePanel(helpPanel);
@@ -5153,7 +5223,7 @@
   leaderboardBtn?.addEventListener("click", () => {
     renderLeaderboard();
     openPanel(leaderboardPanel);
-    setStatus("看看本地排行榜，下一局再冲更高分");
+    setStatus("先看一下排行，下一局拚较少步啦");
   });
   leaderboardCloseBtn?.addEventListener("click", () => closePanel(leaderboardPanel));
   settingsBtn?.addEventListener("click", () => {
