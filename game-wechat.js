@@ -4,6 +4,7 @@
   const gamePanel = document.querySelector(".game-panel");
   const restartBtn = document.getElementById("restartBtn");
   const pauseBtn = document.getElementById("pauseBtn");
+  const gameMenuBtn = document.getElementById("gameMenuBtn");
   const leaderboardBtn = document.getElementById("leaderboardBtn");
   const settingsBtn = document.getElementById("settingsBtn");
   const helpBtn = document.getElementById("helpBtn");
@@ -453,17 +454,7 @@
   }
 
   function ensureKingMinStepPill() {
-    if (minStepValue) return minStepValue;
-    const overlayHud = document.querySelector(".overlay-hud");
-    const bestPill = bestValue ? bestValue.closest(".overlay-pill") : null;
-    if (!overlayHud || !bestPill) return null;
-
-    const pill = document.createElement("div");
-    pill.className = "overlay-pill branch-best-pill compact-pill";
-    pill.innerHTML = '<span class="overlay-label">最少步数</span><strong id="minStepValue">-</strong>';
-    bestPill.insertAdjacentElement("afterend", pill);
-    minStepValue = pill.querySelector("#minStepValue");
-    return minStepValue;
+    return minStepValue || null;
   }
 
   function readWechatRankCache() {
@@ -3838,12 +3829,8 @@
 
   function updateHud() {
     scoreValue.textContent = formatRunTimer(getRunSeconds());
-    bestValue.textContent = String(state.dropCount);
-    ensureKingMinStepPill();
-    if (minStepValue) {
-      const minSteps = readKingMinSteps();
-      minStepValue.textContent = minSteps > 0 ? String(minSteps) : "-";
-    }
+    const minSteps = readKingMinSteps();
+    bestValue.textContent = `${state.dropCount}/${minSteps > 0 ? minSteps : "-"}`;
     if (timerValue) {
       timerValue.textContent = "大王";
     }
@@ -5488,6 +5475,11 @@
   });
   rankBackBtn?.addEventListener("click", () => showShellScreen("menu"));
   petBackBtn?.addEventListener("click", () => showShellScreen("menu"));
+  gameMenuBtn?.addEventListener("click", () => {
+    pauseForShellNavigation();
+    showShellScreen("menu");
+    setStatus("已回到主界面，随时可以再开一局。");
+  });
   gameHomeBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
     showShellScreen("menu");

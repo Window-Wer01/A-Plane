@@ -6,6 +6,8 @@
 }
 
 .wechat-mini-shell {
+  --wx-banner-height: 96px;
+  --wx-game-safe-offset: 250px;
   position: relative;
   overflow: hidden;
   min-height: 100vh;
@@ -246,75 +248,72 @@
 }
 
 .wechat-game-layout .canvas-wrap {
-  width: min(100%, 344px);
+  width: min(100%, 420px, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
   margin: 0 auto;
 }
 
 .wechat-game-layout #gameCanvas {
-  max-width: 344px;
+  max-width: 100%;
+  max-height: calc(100dvh - var(--wx-game-safe-offset));
 }
 
 .wx-ad-stage {
   flex: 0 0 auto;
   margin-top: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
 }
 
 .wx-tv-ad-shell {
-  min-height: 156px;
-  padding: 14px 14px 24px;
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05)),
-    rgba(16, 24, 44, 0.88);
-  box-shadow: inset 0 0 0 8px #5e4734, inset 0 0 0 14px #2f394d, 0 16px 24px rgba(10, 18, 34, 0.22);
-}
-
-.wx-tv-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.72);
+  width: min(100%, 420px);
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .wx-tv-screen {
-  min-height: 112px;
-  border-radius: 16px;
+  min-height: var(--wx-banner-height);
+  border-radius: 14px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(113, 230, 255, 0.24), transparent 28%),
-    radial-gradient(circle at 80% 18%, rgba(255, 214, 102, 0.2), transparent 24%),
-    rgba(7, 16, 32, 0.96);
-  border: 2px solid rgba(255,255,255,0.06);
+    linear-gradient(180deg, #f8fbff 0%, #e9f1ff 100%);
+  border: 1px dashed rgba(58, 97, 196, 0.48);
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .wx-ad-placeholder span {
   display: block;
-  color: rgba(255,255,255,0.66);
-  font-size: 12px;
+  color: rgba(59, 80, 125, 0.82);
+  font-size: 11px;
   margin-bottom: 6px;
 }
 
 .wx-ad-placeholder strong {
   display: block;
-  font-size: 16px;
-}
-
-.wx-tv-feet {
-  width: 94px;
-  height: 12px;
-  margin: 14px auto 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #87684e, #5b4331);
+  font-size: 14px;
+  color: #26417d;
 }
 
 .wx-reward-card {
   text-align: left;
+}
+
+.wechat-game-layout .status-banner {
+  top: 86px;
+  min-width: 168px;
+  max-width: calc(100% - 26px);
+  padding: 8px 12px;
+  font-size: 12px;
+  background: rgba(25, 45, 92, 0.78);
+}
+
+.wechat-game-layout .best-pill strong {
+  white-space: nowrap;
+  font-size: 16px;
+  letter-spacing: 0.02em;
 }
 
 @media (max-width: 460px) {
@@ -335,11 +334,18 @@
   }
 
   .wechat-game-layout .canvas-wrap {
-    width: min(100%, 320px);
+    width: min(100%, 420px, calc((100dvh - 236px) * 420 / 760));
   }
 
   .wechat-game-layout #gameCanvas {
-    max-width: 320px;
+    max-width: 100%;
+    max-height: calc(100dvh - 236px);
+  }
+
+  .wechat-game-layout .status-banner {
+    top: 80px;
+    font-size: 11px;
+    padding: 7px 10px;
   }
 
   .wx-pet-stage {
