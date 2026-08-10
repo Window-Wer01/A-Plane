@@ -5405,7 +5405,7 @@
     }
   });
 
-  restartBtn.addEventListener("click", () => {
+  restartBtn?.addEventListener("click", () => {
     if (state.started || state.gameOver) {
       quickRestartRun();
       return;

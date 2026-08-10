@@ -6,13 +6,15 @@
 }
 
 .wechat-mini-shell {
-  --wx-banner-height: 88px;
-  --wx-game-safe-offset: 162px;
+  --wx-banner-height: 92px;
+  --wx-game-topbar-height: 64px;
+  --wx-game-bottom-gap: 8px;
+  --wx-game-safe-offset: calc(var(--wx-banner-height) + var(--wx-game-topbar-height) + var(--wx-game-bottom-gap) + 34px);
   position: relative;
   overflow: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 10px 10px 12px;
+  padding: 8px 8px 10px;
 }
 
 .wx-shell-notice {
@@ -228,9 +230,9 @@
 .wechat-screen#gameScreen:not(.hidden) {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: calc(100vh - 22px);
-  min-height: calc(100dvh - 22px);
+  gap: var(--wx-game-bottom-gap);
+  min-height: calc(100vh - 16px);
+  min-height: calc(100dvh - 16px);
 }
 
 .wechat-game-layout {
@@ -240,22 +242,89 @@
 }
 
 .wechat-game-layout .game-panel {
-  width: 100%;
+  width: min(100%, 420px);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 6px;
   padding: 0;
 }
 
-.wechat-game-layout .canvas-wrap {
-  width: min(100%, 420px, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
-  margin: 0 auto;
+.wx-game-topbar {
+  height: var(--wx-game-topbar-height);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.wx-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wx-hud-left .overlay-pill {
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.wx-next-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+}
+
+.wx-next-orb {
+  width: 42px;
+  height: 42px;
+}
+
+.wx-next-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.9);
+}
+
+.wx-hidden-meta {
+  display: none;
+}
+
+.wx-top-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wx-top-controls .overlay-control-btn {
+  min-height: 28px;
+  padding: 7px 12px;
+}
+
+.wechat-game-layout .canvas-wrap,
+.wx-board-shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
   background: transparent;
   border: none;
   box-shadow: none;
 }
 
 .wechat-game-layout #gameCanvas {
+  width: auto;
+  height: 100%;
   max-width: 100%;
   max-height: calc(100dvh - var(--wx-game-safe-offset));
 }
@@ -277,14 +346,14 @@
 
 .wx-tv-screen {
   min-height: var(--wx-banner-height);
-  border-radius: 10px;
+  border-radius: 14px;
   background:
-    linear-gradient(180deg, #f8fbff 0%, #e9f1ff 100%);
-  border: 1px dashed rgba(58, 97, 196, 0.48);
+    linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+  border: 1px dashed rgba(58, 97, 196, 0.42);
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .wx-ad-placeholder span {
@@ -305,20 +374,34 @@
 }
 
 .wechat-game-layout .status-banner {
-  display: none;
+  display: block;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  min-width: 180px;
+  max-width: min(290px, calc(100% - 36px));
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(57, 73, 134, 0.86);
+  border: 1px solid rgba(255,255,255,0.14);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .wechat-game-layout .best-pill strong {
   white-space: nowrap;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 0.02em;
 }
 
 @media (max-width: 460px) {
   .wechat-mini-shell {
-    --wx-banner-height: 82px;
-    --wx-game-safe-offset: 150px;
-    padding: 8px 8px 10px;
+    --wx-banner-height: 84px;
+    --wx-game-topbar-height: 60px;
+    --wx-game-bottom-gap: 6px;
+    --wx-game-safe-offset: calc(var(--wx-banner-height) + var(--wx-game-topbar-height) + var(--wx-game-bottom-gap) + 24px);
+    padding: 6px 6px 8px;
   }
 
   .wx-home-info-grid,
@@ -329,17 +412,38 @@
   }
 
   .wechat-screen#gameScreen:not(.hidden) {
-    min-height: calc(100vh - 16px);
-    min-height: calc(100dvh - 16px);
+    min-height: calc(100vh - 12px);
+    min-height: calc(100dvh - 12px);
   }
 
-  .wechat-game-layout .canvas-wrap {
-    width: min(100%, 420px, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
+  .wx-game-topbar {
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
   }
 
-  .wechat-game-layout #gameCanvas {
-    max-width: 100%;
-    max-height: calc(100dvh - var(--wx-game-safe-offset));
+  .wx-hud-left .overlay-pill {
+    padding: 7px 8px;
+  }
+
+  .wx-next-orb {
+    width: 38px;
+    height: 38px;
+  }
+
+  .wx-top-controls .overlay-control-btn {
+    min-height: 26px;
+    padding: 6px 11px;
+  }
+
+  .wechat-game-layout .status-banner {
+    top: 12px;
+    max-width: min(270px, calc(100% - 28px));
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .wx-tv-screen {
+    padding: 8px 10px;
   }
 
   .wx-pet-stage {
