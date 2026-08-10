@@ -1,0 +1,317 @@
+.wechat-mini-body {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 223, 119, 0.24), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(110, 224, 255, 0.22), transparent 26%),
+    linear-gradient(180deg, #4a72d8 0%, #2d4c9f 45%, #1e356f 100%);
+}
+
+.wechat-mini-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 14px 12px 24px;
+}
+
+.wx-shell-notice {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wechat-screen.hidden {
+  display: none;
+}
+
+.wx-home-screen,
+.wx-panel-screen {
+  display: block;
+}
+
+.wx-home-card,
+.wx-panel-card {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08)),
+    rgba(22, 42, 90, 0.82);
+  box-shadow: 0 22px 56px rgba(18, 32, 70, 0.24);
+}
+
+.wx-home-card {
+  padding: 24px 18px 20px;
+}
+
+.wx-home-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.wx-home-copy {
+  margin: 0;
+  color: rgba(248, 250, 252, 0.82);
+  line-height: 1.6;
+}
+
+.wx-home-mascot {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.14);
+  font-size: 34px;
+}
+
+.wx-menu-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.wx-menu-btn {
+  padding: 16px 14px;
+}
+
+.wx-home-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wx-info-tile {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(11, 25, 54, 0.44);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.wx-info-label {
+  display: block;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 6px;
+}
+
+.wx-info-tile strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.wx-info-tile p,
+.wx-pet-tip {
+  margin: 0;
+  color: rgba(248,250,252,0.8);
+  line-height: 1.55;
+}
+
+.wx-panel-card {
+  padding: 18px 16px 20px;
+}
+
+.wx-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.wx-rank-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.wx-friend-list .leaderboard-item {
+  grid-template-columns: 40px 1fr auto;
+}
+
+.wx-pet-stage {
+  position: relative;
+  padding: 8px 0 94px 0;
+}
+
+.wx-tv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wx-tv-card,
+.wx-tv-ad-shell {
+  position: relative;
+  border: none;
+  color: #f8fafc;
+  background: transparent;
+}
+
+.wx-tv-card {
+  min-height: 150px;
+  border-radius: 22px;
+  padding: 22px 16px 18px;
+  text-align: left;
+  cursor: pointer;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05)),
+    rgba(16, 24, 44, 0.88);
+  box-shadow: inset 0 0 0 8px #5e4734, inset 0 0 0 14px #2f394d, 0 16px 24px rgba(10, 18, 34, 0.22);
+}
+
+.wx-tv-card::after,
+.wx-tv-ad-shell::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -14px;
+  height: 12px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, #87684e, #5b4331);
+}
+
+.wx-tv-label {
+  display: inline-block;
+  font-size: 11px;
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.72);
+}
+
+.wx-tv-card strong {
+  display: block;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.wx-pet-viewer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.wx-pet-bubble {
+  max-width: 180px;
+  padding: 10px 12px;
+  border-radius: 16px 16px 16px 4px;
+  background: rgba(255,255,255,0.16);
+  color: #f8fafc;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wx-pet-avatar {
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(16,24,44,0.88);
+  box-shadow: inset 0 0 0 6px #5e4734, inset 0 0 0 11px #2f394d;
+  font-size: 28px;
+}
+
+.wx-game-shell-head {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wechat-game-layout {
+  display: block;
+}
+
+.wx-ad-stage {
+  margin-top: 14px;
+}
+
+.wx-tv-ad-shell {
+  padding: 14px 14px 24px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05)),
+    rgba(16, 24, 44, 0.88);
+  box-shadow: inset 0 0 0 8px #5e4734, inset 0 0 0 14px #2f394d, 0 16px 24px rgba(10, 18, 34, 0.22);
+}
+
+.wx-tv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+}
+
+.wx-tv-screen {
+  min-height: 112px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(113, 230, 255, 0.24), transparent 28%),
+    radial-gradient(circle at 80% 18%, rgba(255, 214, 102, 0.2), transparent 24%),
+    rgba(7, 16, 32, 0.96);
+  border: 2px solid rgba(255,255,255,0.06);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 12px;
+}
+
+.wx-ad-placeholder span {
+  display: block;
+  color: rgba(255,255,255,0.66);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.wx-ad-placeholder strong {
+  display: block;
+  font-size: 16px;
+}
+
+.wx-tv-feet {
+  width: 94px;
+  height: 12px;
+  margin: 14px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #87684e, #5b4331);
+}
+
+.wx-reward-card {
+  text-align: left;
+}
+
+@media (max-width: 460px) {
+  .wechat-mini-shell {
+    padding: 10px 8px 18px;
+  }
+
+  .wx-home-info-grid,
+  .wx-menu-buttons,
+  .wx-rank-summary,
+  .wx-game-shell-head,
+  .wx-tv-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wx-pet-stage {
+    padding-bottom: 86px;
+  }
+
+  .wx-pet-bubble {
+    max-width: 146px;
+  }
+}
