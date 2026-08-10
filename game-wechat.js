@@ -516,6 +516,9 @@
       if (!node) return;
       node.classList.toggle("hidden", key !== screen);
     });
+    if (shellNotice) {
+      shellNotice.classList.toggle("hidden", screen === "game");
+    }
     state.shellScreen = screen;
   }
 

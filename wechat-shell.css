@@ -6,13 +6,13 @@
 }
 
 .wechat-mini-shell {
-  --wx-banner-height: 96px;
-  --wx-game-safe-offset: 250px;
+  --wx-banner-height: 88px;
+  --wx-game-safe-offset: 162px;
   position: relative;
   overflow: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 14px 12px 24px;
+  padding: 10px 10px 12px;
 }
 
 .wx-shell-notice {
@@ -228,9 +228,9 @@
 .wechat-screen#gameScreen:not(.hidden) {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: calc(100vh - 86px);
-  min-height: calc(100dvh - 86px);
+  gap: 6px;
+  min-height: calc(100vh - 22px);
+  min-height: calc(100dvh - 22px);
 }
 
 .wechat-game-layout {
@@ -244,12 +244,15 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 10px;
+  padding: 0;
 }
 
 .wechat-game-layout .canvas-wrap {
   width: min(100%, 420px, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
   margin: 0 auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .wechat-game-layout #gameCanvas {
@@ -260,7 +263,7 @@
 .wx-ad-stage {
   flex: 0 0 auto;
   margin-top: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
 }
 
 .wx-tv-ad-shell {
@@ -274,7 +277,7 @@
 
 .wx-tv-screen {
   min-height: var(--wx-banner-height);
-  border-radius: 14px;
+  border-radius: 10px;
   background:
     linear-gradient(180deg, #f8fbff 0%, #e9f1ff 100%);
   border: 1px dashed rgba(58, 97, 196, 0.48);
@@ -302,12 +305,7 @@
 }
 
 .wechat-game-layout .status-banner {
-  top: 86px;
-  min-width: 168px;
-  max-width: calc(100% - 26px);
-  padding: 8px 12px;
-  font-size: 12px;
-  background: rgba(25, 45, 92, 0.78);
+  display: none;
 }
 
 .wechat-game-layout .best-pill strong {
@@ -318,7 +316,9 @@
 
 @media (max-width: 460px) {
   .wechat-mini-shell {
-    padding: 10px 8px 18px;
+    --wx-banner-height: 82px;
+    --wx-game-safe-offset: 150px;
+    padding: 8px 8px 10px;
   }
 
   .wx-home-info-grid,
@@ -329,23 +329,17 @@
   }
 
   .wechat-screen#gameScreen:not(.hidden) {
-    min-height: calc(100vh - 74px);
-    min-height: calc(100dvh - 74px);
+    min-height: calc(100vh - 16px);
+    min-height: calc(100dvh - 16px);
   }
 
   .wechat-game-layout .canvas-wrap {
-    width: min(100%, 420px, calc((100dvh - 236px) * 420 / 760));
+    width: min(100%, 420px, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
   }
 
   .wechat-game-layout #gameCanvas {
     max-width: 100%;
-    max-height: calc(100dvh - 236px);
-  }
-
-  .wechat-game-layout .status-banner {
-    top: 80px;
-    font-size: 11px;
-    padding: 7px 10px;
+    max-height: calc(100dvh - var(--wx-game-safe-offset));
   }
 
   .wx-pet-stage {
