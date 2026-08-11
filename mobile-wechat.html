@@ -73,31 +73,61 @@
             <p class="eyebrow">宠物乐园</p>
             <h2>电视机乐园</h2>
           </div>
+          <div class="mini-stat wx-pet-coin-stat">
+            <span>金币</span>
+            <strong id="petCoinValue">0</strong>
+          </div>
           <button id="petBackBtn" class="ghost-btn" type="button">返回主界面</button>
         </div>
         <p id="petGardenTip" class="panel-copy wx-pet-tip">四台电视都可以接不同激励广告内容，小宠物会在左下角等你点开。</p>
         <div class="wx-pet-stage">
           <div class="wx-tv-grid">
-            <button class="wx-tv-card" type="button" data-ad-slot="food">
-              <span class="wx-tv-label">零食频道</span>
-              <strong>观看激励广告</strong>
-            </button>
-            <button class="wx-tv-card" type="button" data-ad-slot="energy">
-              <span class="wx-tv-label">活力频道</span>
-              <strong>补充体力</strong>
-            </button>
-            <button class="wx-tv-card" type="button" data-ad-slot="toy">
-              <span class="wx-tv-label">玩具频道</span>
-              <strong>领玩具奖励</strong>
-            </button>
-            <button class="wx-tv-card" type="button" data-ad-slot="dress">
-              <span class="wx-tv-label">装扮频道</span>
-              <strong>开装扮宝箱</strong>
-            </button>
+            <article class="wx-tv-card" data-pet-slot="energy">
+              <span class="wx-tv-label">电视 A · 体力</span>
+              <strong>体力电视</strong>
+              <p id="petEnergyStatus" class="wx-tv-copy">10 点满值，24 小时逐步消耗。</p>
+              <div class="wx-tv-meter"><div id="petEnergyFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petEnergyValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="energy">看视频 +2</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="energy">金币买 +1</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="mood">
+              <span class="wx-tv-label">电视 B · 开心度</span>
+              <strong>开心电视</strong>
+              <p id="petMoodStatus" class="wx-tv-copy">超过 6 点后，提高 4 号以上大球出现概率。</p>
+              <div class="wx-tv-meter"><div id="petMoodFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petMoodValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="mood">看视频 +1</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="mood">金币买 +1</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="gift">
+              <span class="wx-tv-label">电视 C · 礼物</span>
+              <strong>礼物电视</strong>
+              <p id="petGiftStatus" class="wx-tv-copy">点击后有几率刷出礼物或 10 金币。</p>
+              <div class="wx-tv-stats"><span>已收礼物</span><strong id="petGiftValue">0 件</strong></div>
+              <div class="wx-tv-actions single">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="gift" data-pet-slot="gift">试试手气</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="clean">
+              <span class="wx-tv-label">电视 D · 清洁度</span>
+              <strong>清洁电视</strong>
+              <p id="petCleanStatus" class="wx-tv-copy">清洁完成后 24 小时逐步下降到 0。</p>
+              <div class="wx-tv-meter"><div id="petCleanFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petCleanValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="clean">看视频 +2</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="clean">金币买 +1</button>
+              </div>
+            </article>
           </div>
           <div class="wx-pet-viewer">
-            <div class="wx-pet-bubble">我一直在等你点电视耶！</div>
-            <div class="wx-pet-avatar">🐾</div>
+            <div id="petBubble" class="wx-pet-bubble">我一直在等你点电视耶！</div>
+            <div id="petAvatar" class="wx-pet-avatar">🐾</div>
           </div>
         </div>
       </div>
@@ -109,8 +139,8 @@
           <div class="wx-game-topbar">
             <div class="wx-hud-left">
               <div class="overlay-pill score-pill compact-pill">
-                <span class="overlay-label">时间</span>
-                <strong id="scoreValue">0:00</strong>
+                <span class="overlay-label">金币</span>
+                <strong id="scoreValue">0</strong>
               </div>
               <div class="overlay-pill best-pill compact-pill">
                 <span class="overlay-label">步数</span>
@@ -182,6 +212,14 @@
           <div class="mini-stat">
             <span>目标</span>
             <strong id="resultDuration">大王</strong>
+          </div>
+          <div class="mini-stat">
+            <span>金币奖励</span>
+            <strong id="resultCoins">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>金币总数</span>
+            <strong id="resultGoldTotal">0</strong>
           </div>
           <div class="mini-stat">
             <span>合并次数</span>

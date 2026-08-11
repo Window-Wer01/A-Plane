@@ -42,6 +42,20 @@
   const rankSyncState = document.getElementById("rankSyncState");
   const petBackBtn = document.getElementById("petBackBtn");
   const petGardenTip = document.getElementById("petGardenTip");
+  const petCoinValue = document.getElementById("petCoinValue");
+  const petEnergyStatus = document.getElementById("petEnergyStatus");
+  const petEnergyFill = document.getElementById("petEnergyFill");
+  const petEnergyValue = document.getElementById("petEnergyValue");
+  const petMoodStatus = document.getElementById("petMoodStatus");
+  const petMoodFill = document.getElementById("petMoodFill");
+  const petMoodValue = document.getElementById("petMoodValue");
+  const petGiftStatus = document.getElementById("petGiftStatus");
+  const petGiftValue = document.getElementById("petGiftValue");
+  const petCleanStatus = document.getElementById("petCleanStatus");
+  const petCleanFill = document.getElementById("petCleanFill");
+  const petCleanValue = document.getElementById("petCleanValue");
+  const petBubble = document.getElementById("petBubble");
+  const petAvatar = document.getElementById("petAvatar");
   const gameHomeBtn = document.getElementById("gameHomeBtn");
   const gameRankBtn = document.getElementById("gameRankBtn");
   const gamePetBtn = document.getElementById("gamePetBtn");
@@ -70,6 +84,8 @@
   const resultBest = document.getElementById("resultBest");
   const resultTier = document.getElementById("resultTier");
   const resultDuration = document.getElementById("resultDuration");
+  const resultCoins = document.getElementById("resultCoins");
+  const resultGoldTotal = document.getElementById("resultGoldTotal");
   const resultMerges = document.getElementById("resultMerges");
   const resultDangerPeak = document.getElementById("resultDangerPeak");
   const resultReviewTitle = document.getElementById("resultReviewTitle");
@@ -195,6 +211,8 @@
   const WECHAT_RANK_CACHE_KEY = "blob-merge-prototype-wechat-friend-rank";
   const WECHAT_LAST_VISIT_KEY = "blob-merge-prototype-wechat-last-visit";
   const WECHAT_LAST_RANK_KEY = "blob-merge-prototype-wechat-last-rank";
+  const WECHAT_GOLD_KEY = "blob-merge-prototype-wechat-gold";
+  const WECHAT_PET_STATE_KEY = "blob-merge-prototype-wechat-pet-state";
   const LEADERBOARD_KEY = "blob-merge-prototype-local-scores";
   const PROGRESS_KEY = "blob-merge-prototype-progress";
   const ONBOARDING_KEY = "blob-merge-prototype-onboarding";
@@ -380,7 +398,11 @@
     selectedBackupGroupFilter: "all",
     archivedBackupKeyword: "",
     shellScreen: "menu",
-    cachedFriendLeaderboard: []
+    cachedFriendLeaderboard: [],
+    coins: 0,
+    pet: null,
+    rewardCoinsEarned: 0,
+    successRun: false
   };
 
   const settings = readSettings();
@@ -455,6 +477,146 @@
 
   function ensureKingMinStepPill() {
     return minStepValue || null;
+  }
+
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const HOUR_MS = 60 * 60 * 1000;
+  const PET_MAX_VALUE = 10;
+  const PET_BUY_COST = {
+    energy: 3,
+    mood: 5,
+    clean: 3
+  };
+  const PET_GIFT_POOL = [
+    { label: "墨镜", type: "gift" },
+    { label: "头戴小花", type: "gift" },
+    { label: "金币包", type: "coins", coins: 10 },
+    { label: "糖果徽章", type: "gift" }
+  ];
+
+  function readGold() {
+    try {
+      const raw = Number(localStorage.getItem(WECHAT_GOLD_KEY) || 0);
+      return raw > 0 ? Math.floor(raw) : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function writeGold(value) {
+    try {
+      localStorage.setItem(WECHAT_GOLD_KEY, String(Math.max(0, Math.floor(value))));
+    } catch {
+      // 忽略本地存储失败
+    }
+  }
+
+  function createDefaultPetState(now = Date.now()) {
+    return {
+      energy: { value: 6, lastTick: now },
+      mood: { value: 4, lastTick: now, holdUntil: 0 },
+      clean: { value: 6, lastTick: now },
+      gifts: [],
+      lastAnimation: {
+        emoji: "🐾",
+        text: "我一直在等你点电视耶！"
+      }
+    };
+  }
+
+  function readPetState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WECHAT_PET_STATE_KEY) || "null");
+      if (!saved || typeof saved !== "object") {
+        return createDefaultPetState();
+      }
+      const now = Date.now();
+      return {
+        energy: {
+          value: Number(saved.energy?.value ?? 6),
+          lastTick: Number(saved.energy?.lastTick ?? now)
+        },
+        mood: {
+          value: Number(saved.mood?.value ?? 4),
+          lastTick: Number(saved.mood?.lastTick ?? now),
+          holdUntil: Number(saved.mood?.holdUntil ?? 0)
+        },
+        clean: {
+          value: Number(saved.clean?.value ?? 6),
+          lastTick: Number(saved.clean?.lastTick ?? now)
+        },
+        gifts: Array.isArray(saved.gifts) ? saved.gifts.slice(0, 20) : [],
+        lastAnimation: {
+          emoji: saved.lastAnimation?.emoji || "🐾",
+          text: saved.lastAnimation?.text || "我一直在等你点电视耶！"
+        }
+      };
+    } catch {
+      return createDefaultPetState();
+    }
+  }
+
+  function writePetState(petState) {
+    try {
+      localStorage.setItem(WECHAT_PET_STATE_KEY, JSON.stringify(petState));
+    } catch {
+      // 忽略本地存储失败
+    }
+  }
+
+  function decayLinearValue(currentValue, lastTick, now, maxKeepMs = DAY_MS) {
+    const elapsed = Math.max(0, now - lastTick);
+    const decay = (elapsed / maxKeepMs) * PET_MAX_VALUE;
+    return clamp(currentValue - decay, 0, PET_MAX_VALUE);
+  }
+
+  function getPetSnapshot(now = Date.now()) {
+    const pet = readPetState();
+    pet.energy.value = decayLinearValue(pet.energy.value, pet.energy.lastTick, now);
+    pet.energy.lastTick = now;
+
+    const moodDecayStart = pet.mood.holdUntil > 0 ? Math.max(pet.mood.lastTick, pet.mood.holdUntil) : pet.mood.lastTick;
+    if (now > moodDecayStart) {
+      pet.mood.value = decayLinearValue(pet.mood.value, moodDecayStart, now);
+    }
+    pet.mood.lastTick = now;
+
+    pet.clean.value = decayLinearValue(pet.clean.value, pet.clean.lastTick, now);
+    pet.clean.lastTick = now;
+
+    writePetState(pet);
+    return pet;
+  }
+
+  function setPetAnimation(emoji, text) {
+    state.pet.lastAnimation = { emoji, text };
+    writePetState(state.pet);
+  }
+
+  function addCoins(amount) {
+    state.coins = Math.max(0, state.coins + amount);
+    writeGold(state.coins);
+    updateHud();
+    renderPetSystem();
+  }
+
+  function spendCoins(amount) {
+    if (state.coins < amount) {
+      return false;
+    }
+    state.coins -= amount;
+    writeGold(state.coins);
+    updateHud();
+    renderPetSystem();
+    return true;
+  }
+
+  function computeRunCoinReward(durationSeconds, mergeCount) {
+    const byTime = durationSeconds >= 180;
+    const byMerges = mergeCount >= 200;
+    if (!byTime && !byMerges) return 0;
+    if (byTime && byMerges) return 20;
+    return 12;
   }
 
   function readWechatRankCache() {
@@ -599,7 +761,7 @@
     localStorage.setItem(WECHAT_LAST_VISIT_KEY, String(now));
   }
 
-  function openRewardModal(slot) {
+  function openRewardModal(slot, customCopy = "") {
     if (!rewardModal || !rewardModalTitle || !rewardModalCopy) return;
     const map = {
       food: ["零食频道", "这里未来会接看广告领零食的激励流程。"],
@@ -609,8 +771,158 @@
     };
     const [title, copy] = map[slot] || ["激励广告", "这里未来会接微信小游戏激励广告内容。"];
     rewardModalTitle.textContent = title;
-    rewardModalCopy.textContent = copy;
+    rewardModalCopy.textContent = customCopy || copy;
     openPanel(rewardModal);
+  }
+
+  function getPetDisplayState(pet) {
+    if (pet.energy.value <= 0) {
+      return { emoji: "😴", text: "体力归零，宠物闭上眼睛休息中。" };
+    }
+    if (pet.clean.value <= 0) {
+      return { emoji: "🫧", text: "清洁度归零，宠物现在脏脏的，想洗澡。" };
+    }
+    if (pet.mood.value <= 0) {
+      return { emoji: "🥺", text: "开心度归零，宠物看起来有点萎靡。" };
+    }
+    return pet.lastAnimation || { emoji: "🐾", text: "我一直在等你点电视耶！" };
+  }
+
+  function renderPetSystem() {
+    if (!state.pet) {
+      state.pet = getPetSnapshot();
+    }
+    const pet = state.pet;
+    if (scoreValue) {
+      scoreValue.textContent = String(state.coins);
+    }
+    if (petCoinValue) {
+      petCoinValue.textContent = String(state.coins);
+    }
+
+    if (petEnergyFill) petEnergyFill.style.width = `${(pet.energy.value / PET_MAX_VALUE) * 100}%`;
+    if (petEnergyValue) petEnergyValue.textContent = `${Math.round(pet.energy.value * 10) / 10}/10`;
+    if (petEnergyStatus) {
+      petEnergyStatus.textContent = pet.energy.value <= 0
+        ? "体力归零，宠物正在闭眼休息。"
+        : `体力剩余 ${Math.round(pet.energy.value * 10) / 10} 点，看视频可补 +2。`;
+    }
+
+    if (petMoodFill) petMoodFill.style.width = `${(pet.mood.value / PET_MAX_VALUE) * 100}%`;
+    if (petMoodValue) petMoodValue.textContent = `${Math.round(pet.mood.value * 10) / 10}/10`;
+    if (petMoodStatus) {
+      petMoodStatus.textContent = pet.mood.value > 6
+        ? "开心度已超过 6 点，4 号以上大球掉落概率提升中。"
+        : pet.mood.value <= 0
+          ? "开心度归零，宠物变得无精打采。"
+          : "开心度越高，后续成功率越容易被拉起来。";
+    }
+
+    if (petCleanFill) petCleanFill.style.width = `${(pet.clean.value / PET_MAX_VALUE) * 100}%`;
+    if (petCleanValue) petCleanValue.textContent = `${Math.round(pet.clean.value * 10) / 10}/10`;
+    if (petCleanStatus) {
+      petCleanStatus.textContent = pet.clean.value <= 0
+        ? "清洁度归零，宠物现在灰扑扑的。"
+        : `清洁度剩余 ${Math.round(pet.clean.value * 10) / 10} 点，看视频可补 +2。`;
+    }
+
+    if (petGiftValue) petGiftValue.textContent = `${pet.gifts.length} 件`;
+    if (petGiftStatus) {
+      const latestGift = pet.gifts[pet.gifts.length - 1];
+      petGiftStatus.textContent = latestGift
+        ? `最近拿到：${latestGift.label}`
+        : "点击有机会拿到墨镜、小花或金币包。";
+    }
+
+    const displayState = getPetDisplayState(pet);
+    if (petBubble) petBubble.textContent = displayState.text;
+    if (petAvatar) petAvatar.textContent = displayState.emoji;
+    if (petGardenTip) {
+      petGardenTip.textContent = pet.mood.value > 6
+        ? "开心度已激活大球加成，当前游玩更容易掉出 4 号以上大球。"
+        : "四台电视现在都接上了数值系统，先体验功能和数值变化。";
+    }
+  }
+
+  function applyPetAction(slot, action) {
+    state.pet = getPetSnapshot();
+    const pet = state.pet;
+    const now = Date.now();
+
+    if (action === "watch") {
+      if (slot === "energy") {
+        pet.energy.value = clamp(pet.energy.value + 2, 0, PET_MAX_VALUE);
+        pet.energy.lastTick = now;
+        setPetAnimation("🍪", "宠物正在吃饼干，体力恢复了 2 点。");
+        openRewardModal("energy", "本次看视频获得体力 +2，并播放吃饼干/糖葫芦动画占位。");
+      } else if (slot === "mood") {
+        pet.mood.value = clamp(pet.mood.value + 1, 0, PET_MAX_VALUE);
+        pet.mood.lastTick = now;
+        if (pet.mood.value > 6) {
+          pet.mood.holdUntil = now + 6 * HOUR_MS;
+        }
+        setPetAnimation("⚽", "宠物正在玩球摇摆，开心度提升了 1 点。");
+        openRewardModal("energy", "本次看视频获得开心度 +1，并触发玩球/扭动身体动画占位。");
+      } else if (slot === "clean") {
+        pet.clean.value = clamp(pet.clean.value + 2, 0, PET_MAX_VALUE);
+        pet.clean.lastTick = now;
+        setPetAnimation("🛁", "宠物正在洗澡刷牙，清洁度恢复了 2 点。");
+        openRewardModal("dress", "本次看视频获得清洁度 +2，并触发洗澡/刷牙动画占位。");
+      }
+      writePetState(pet);
+      renderPetSystem();
+      return;
+    }
+
+    if (action === "buy") {
+      const cost = PET_BUY_COST[slot];
+      if (!cost) return;
+      if (!spendCoins(cost)) {
+        openRewardModal("gift", "金币不够，先去游戏里拿奖励，或者看电视累积资源。");
+        return;
+      }
+      if (slot === "energy") {
+        pet.energy.value = clamp(pet.energy.value + 1, 0, PET_MAX_VALUE);
+        pet.energy.lastTick = now;
+        setPetAnimation("🥠", "你花金币补了 1 点体力，宠物继续有力气看着你。");
+      } else if (slot === "mood") {
+        pet.mood.value = clamp(pet.mood.value + 1, 0, PET_MAX_VALUE);
+        pet.mood.lastTick = now;
+        if (pet.mood.value > 6) {
+          pet.mood.holdUntil = now + 6 * HOUR_MS;
+        }
+        setPetAnimation("💃", "你花金币补了 1 点开心度，宠物开始扭来扭去。");
+      } else if (slot === "clean") {
+        pet.clean.value = clamp(pet.clean.value + 1, 0, PET_MAX_VALUE);
+        pet.clean.lastTick = now;
+        setPetAnimation("🪥", "你花金币补了 1 点清洁度，宠物看起来清爽不少。");
+      }
+      writePetState(pet);
+      renderPetSystem();
+      return;
+    }
+
+    if (action === "gift" && slot === "gift") {
+      const success = Math.random() < 0.48;
+      if (!success) {
+        setPetAnimation("📺", "这次电视里什么都没刷出来，再试一次看看。");
+        writePetState(pet);
+        renderPetSystem();
+        openRewardModal("toy", "这次没有刷出礼物，下次再来碰碰运气。");
+        return;
+      }
+      const prize = PET_GIFT_POOL[Math.floor(Math.random() * PET_GIFT_POOL.length)];
+      if (prize.type === "coins") {
+        addCoins(prize.coins || 10);
+        setPetAnimation("💰", "刷出了金币包，直接到账 10 金币。");
+      } else {
+        pet.gifts.push({ label: prize.label, time: now });
+        setPetAnimation("🎁", `刷出了${prize.label}，礼物会一直保留。`);
+      }
+      writePetState(pet);
+      renderPetSystem();
+      openRewardModal("toy", prize.type === "coins" ? "恭喜刷出金币包，已获得 10 金币。" : `恭喜刷出礼物：${prize.label}。`);
+    }
   }
 
   function clamp(value, min, max) {
@@ -627,15 +939,31 @@
             { level: 3, weight: 4 }
           ]
         : DROP_POOL;
-    const total = openingPool.reduce((sum, item) => sum + item.weight, 0);
+    const pet = state.pet || getPetSnapshot();
+    state.pet = pet;
+    const moodBonus = pet.mood.value > 6 ? (pet.mood.value - 6) / 4 : 0;
+    const adjustedPool = openingPool.map((item) => {
+      let weight = item.weight;
+      if (moodBonus > 0) {
+        if (item.level >= 3) {
+          weight *= 1 + moodBonus * 2.6;
+        } else if (item.level === 2) {
+          weight *= 1 + moodBonus * 0.9;
+        } else {
+          weight *= 1 - moodBonus * 0.18;
+        }
+      }
+      return { ...item, weight };
+    });
+    const total = adjustedPool.reduce((sum, item) => sum + item.weight, 0);
     let roll = Math.random() * total;
-    for (const item of openingPool) {
+    for (const item of adjustedPool) {
       roll -= item.weight;
       if (roll <= 0) {
         return item.level;
       }
     }
-    return openingPool[0].level;
+    return adjustedPool[0].level;
   }
 
   function readLeaderboard() {
@@ -3831,7 +4159,12 @@
   }
 
   function updateHud() {
-    scoreValue.textContent = formatRunTimer(getRunSeconds());
+    if (scoreValue) {
+      scoreValue.textContent = String(state.coins);
+    }
+    if (petCoinValue) {
+      petCoinValue.textContent = String(state.coins);
+    }
     const minSteps = readKingMinSteps();
     bestValue.textContent = `${state.dropCount}/${minSteps > 0 ? minSteps : "-"}`;
     if (timerValue) {
@@ -3878,6 +4211,8 @@
     state.paused = true;
     state.maxLevelReached = 0;
     state.recordBeaten = false;
+    state.rewardCoinsEarned = 0;
+    state.successRun = false;
     state.runStartTime = 0;
     state.cameraPunch = 0;
     state.time = 0;
@@ -3895,6 +4230,7 @@
     state.milestoneKeys = {};
     state.everInOverline = false;
     state.failureType = "";
+    state.pet = getPetSnapshot();
     state.taskRewardKeys = {};
     state.lastObjectiveSnapshot = null;
     closePanel(startPanel);
@@ -4063,17 +4399,22 @@
     }
   }
 
-  function handleGameOver() {
+  function handleGameOver(outcome = "fail") {
     const finalObjectiveSnapshot = getObjectiveData();
-    completeOnboardingStep("first_gameover");
+    if (outcome !== "success") {
+      completeOnboardingStep("first_gameover");
+    }
+    state.successRun = outcome === "success";
     state.gameOver = true;
     state.started = false;
     state.paused = true;
     stopBgm();
     state.lastObjectiveSnapshot = getResultObjectiveSnapshotData(finalObjectiveSnapshot);
-    state.tutorialStage = "本局结束";
-    state.tutorialTitle = "可以回看局面，再开下一局";
-    state.tutorialTip = "如果是被顶线打断，下一局可以更早处理高处堆叠，不要一直往中心最高点加压。";
+    state.tutorialStage = outcome === "success" ? "任务完成" : "本局结束";
+    state.tutorialTitle = outcome === "success" ? "大王已经合出来了" : "可以回看局面，再开下一局";
+    state.tutorialTip = outcome === "success"
+      ? "这一局已经达成目标，接下来可以回看步数、用时和金币奖励。"
+      : "如果是被顶线打断，下一局可以更早处理高处堆叠，不要一直往中心最高点加压。";
     state.tutorialTimer = 999;
     if (gamePanel) {
       gamePanel.style.transform = "";
@@ -4084,18 +4425,33 @@
       spawnPopup(WORLD.width / 2, 126, "新纪录！", "#fde68a");
     }
     const durationSeconds = Math.max(1, getRunSeconds());
+    const rewardCoins = computeRunCoinReward(durationSeconds, state.mergeCount);
+    state.rewardCoinsEarned = rewardCoins;
+    if (rewardCoins > 0) {
+      addCoins(rewardCoins);
+    }
     pushLeaderboardEntry();
     updateProgress(durationSeconds);
     renderProgressSummary();
-    if (resultTitle) resultTitle.textContent = "这次离大王还有多远";
+    if (resultTitle) resultTitle.textContent = outcome === "success" ? "任务完成，大王已经出现了！" : "这次离大王还有多远";
     if (resultScore) resultScore.textContent = formatRunTimer(getRunSeconds());
     if (resultBest) resultBest.textContent = String(state.dropCount);
     if (resultTier) resultTier.textContent = String(getCurrentTopTier());
     if (resultDuration) {
-      resultDuration.textContent = "大王";
-      renderResultReview(durationSeconds);
+      resultDuration.textContent = outcome === "success" ? "已完成" : "大王";
+      if (outcome === "success") {
+        if (resultReviewTitle) resultReviewTitle.textContent = "这局已经顺利把大王合出来了";
+        if (resultReviewTip) resultReviewTip.textContent = "现在重点看步数、用时和金币奖励，后面可以继续压缩成功步数。";
+        if (resultReviewTags) {
+          resultReviewTags.innerHTML = `<span class="result-tag">成功通关</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">用时 ${formatRunTimer(getRunSeconds())}</span>`;
+        }
+      } else {
+        renderResultReview(durationSeconds);
+      }
     }
     renderResultObjectiveSnapshot(state.lastObjectiveSnapshot);
+    if (resultCoins) resultCoins.textContent = rewardCoins > 0 ? `+${rewardCoins}` : "0";
+    if (resultGoldTotal) resultGoldTotal.textContent = String(state.coins);
     if (resultMerges) resultMerges.textContent = String(state.mergeCount);
     if (resultDangerPeak) {
       resultDangerPeak.textContent = `${Math.round(clamp(state.peakWarningLevel, 0, 1) * 100)}%`;
@@ -4107,8 +4463,8 @@
     updateCoachUI();
     updateObjectiveUI();
     updateObjectiveRewards();
-    setStatus("这局先按呢啦，点重开搁拚一摆");
-    playTone({ frequency: 220, duration: 0.16, type: "sawtooth", gain: 0.03 });
+    setStatus(outcome === "success" ? "任务完成，来看看这局拿到多少金币。" : "这局先按呢啦，点重开搁拚一摆");
+    playTone({ frequency: outcome === "success" ? 520 : 220, duration: 0.16, type: outcome === "success" ? "triangle" : "sawtooth", gain: 0.03 });
     setTimeout(() => openPanel(resultPanel), 180);
   }
 
@@ -4343,6 +4699,8 @@
           if (currentMinSteps <= 0 || state.dropCount < currentMinSteps) {
             writeKingMinSteps(state.dropCount);
           }
+          handleGameOver("success");
+          return;
         }
         if (!state.midgameHintShown && state.maxLevelReached >= 4) {
           state.midgameHintShown = true;
@@ -5462,11 +5820,8 @@
   });
   menuPetBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
-    if (petGardenTip) {
-      petGardenTip.textContent = getShellOnline()
-        ? "有网络时，这里未来可以切不同激励广告内容。"
-        : "现在离线中，电视内容先用占位说明，回来联网再同步。";
-    }
+    state.pet = getPetSnapshot();
+    renderPetSystem();
     showShellScreen("pet");
   });
   menuExitBtn?.addEventListener("click", () => {
@@ -5495,16 +5850,18 @@
   });
   gamePetBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
+    state.pet = getPetSnapshot();
+    renderPetSystem();
     showShellScreen("pet");
   });
   rankRefreshBtn?.addEventListener("click", () => {
     renderFriendRankScreen(true);
     syncShellEntryMessage();
   });
-  document.querySelectorAll("[data-ad-slot]").forEach((button) => {
+  document.querySelectorAll("[data-pet-action]").forEach((button) => {
     button.addEventListener("click", () => {
       if (!(button instanceof HTMLElement)) return;
-      openRewardModal(button.dataset.adSlot || "");
+      applyPetAction(button.dataset.petSlot || "", button.dataset.petAction || "");
     });
   });
   rewardCloseBtn?.addEventListener("click", () => closePanel(rewardModal));
@@ -6690,6 +7047,9 @@
   renderRestoreRecords();
   renderImportPreview("选择一个 JSON 文件后，这里会先显示导入预览和差异摘要。", true);
   updatePauseButton();
+  state.coins = readGold();
+  state.pet = getPetSnapshot();
+  renderPetSystem();
   renderFriendRankScreen(false);
   syncShellEntryMessage();
   if (typeof window !== "undefined") {
