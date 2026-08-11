@@ -816,11 +816,13 @@
     if (petMoodFill) petMoodFill.style.width = `${(pet.mood.value / PET_MAX_VALUE) * 100}%`;
     if (petMoodValue) petMoodValue.textContent = `${Math.round(pet.mood.value * 10) / 10}/10`;
     if (petMoodStatus) {
-      petMoodStatus.textContent = pet.mood.value > 6
-        ? "开心度已超过 6 点，4 号以上大球掉落概率提升中。"
-        : pet.mood.value <= 0
-          ? "开心度归零，宠物变得无精打采。"
-          : "开心度越高，后续成功率越容易被拉起来。";
+      petMoodStatus.textContent = pet.mood.value >= PET_MAX_VALUE
+        ? "开心度满值，5级以上大球出现概率大幅提升。"
+        : pet.mood.value > 6
+          ? "开心度已超过 6 点，较大的球开始更容易出现。"
+          : pet.mood.value <= 0
+            ? "开心度归零，宠物变得无精打采。"
+            : "开心度越高，后续成功率越容易被拉起来。";
     }
 
     if (petCleanFill) petCleanFill.style.width = `${(pet.clean.value / PET_MAX_VALUE) * 100}%`;
@@ -947,15 +949,18 @@
     const pet = state.pet || getPetSnapshot();
     state.pet = pet;
     const moodBonus = pet.mood.value > 6 ? (pet.mood.value - 6) / 4 : 0;
+    const maxMoodBoost = pet.mood.value >= PET_MAX_VALUE - 0.01;
     const adjustedPool = openingPool.map((item) => {
       let weight = item.weight;
       if (moodBonus > 0) {
-        if (item.level >= 3) {
+        if (maxMoodBoost && item.level >= 4) {
+          weight *= 1 + moodBonus * 5.4;
+        } else if (item.level >= 3) {
           weight *= 1 + moodBonus * 2.6;
         } else if (item.level === 2) {
           weight *= 1 + moodBonus * 0.9;
         } else {
-          weight *= 1 - moodBonus * 0.18;
+          weight *= 1 - moodBonus * (maxMoodBoost ? 0.32 : 0.18);
         }
       }
       return { ...item, weight };
