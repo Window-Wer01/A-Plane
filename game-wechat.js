@@ -611,12 +611,17 @@
     return true;
   }
 
-  function computeRunCoinReward(durationSeconds, mergeCount) {
+  function computeRunCoinReward(durationSeconds, mergeCount, outcome = "fail", dropCount = 0) {
     const byTime = durationSeconds >= 180;
     const byMerges = mergeCount >= 200;
-    if (!byTime && !byMerges) return 0;
-    if (byTime && byMerges) return 20;
-    return 12;
+    if (outcome === "success") {
+      let reward = 10;
+      if (dropCount <= 160) {
+        reward += (Math.floor((160 - dropCount) / 10) + 1) * 10;
+      }
+      return reward;
+    }
+    return byTime || byMerges ? 1 : 0;
   }
 
   function readWechatRankCache() {
@@ -4410,8 +4415,8 @@
     state.paused = true;
     stopBgm();
     state.lastObjectiveSnapshot = getResultObjectiveSnapshotData(finalObjectiveSnapshot);
-    state.tutorialStage = outcome === "success" ? "任务完成" : "本局结束";
-    state.tutorialTitle = outcome === "success" ? "大王已经合出来了" : "可以回看局面，再开下一局";
+    state.tutorialStage = outcome === "success" ? "挑战成功" : "本局结束";
+    state.tutorialTitle = outcome === "success" ? "挑战成功" : "可以回看局面，再开下一局";
     state.tutorialTip = outcome === "success"
       ? "这一局已经达成目标，接下来可以回看步数、用时和金币奖励。"
       : "如果是被顶线打断，下一局可以更早处理高处堆叠，不要一直往中心最高点加压。";
@@ -4425,7 +4430,7 @@
       spawnPopup(WORLD.width / 2, 126, "新纪录！", "#fde68a");
     }
     const durationSeconds = Math.max(1, getRunSeconds());
-    const rewardCoins = computeRunCoinReward(durationSeconds, state.mergeCount);
+    const rewardCoins = computeRunCoinReward(durationSeconds, state.mergeCount, outcome, state.dropCount);
     state.rewardCoinsEarned = rewardCoins;
     if (rewardCoins > 0) {
       addCoins(rewardCoins);
@@ -4433,17 +4438,22 @@
     pushLeaderboardEntry();
     updateProgress(durationSeconds);
     renderProgressSummary();
-    if (resultTitle) resultTitle.textContent = outcome === "success" ? "任务完成，大王已经出现了！" : "这次离大王还有多远";
+    if (resultTitle) resultTitle.textContent = outcome === "success" ? "挑战成功" : "这次离大王还有多远";
     if (resultScore) resultScore.textContent = formatRunTimer(getRunSeconds());
     if (resultBest) resultBest.textContent = String(state.dropCount);
     if (resultTier) resultTier.textContent = String(getCurrentTopTier());
     if (resultDuration) {
       resultDuration.textContent = outcome === "success" ? "已完成" : "大王";
       if (outcome === "success") {
-        if (resultReviewTitle) resultReviewTitle.textContent = "这局已经顺利把大王合出来了";
-        if (resultReviewTip) resultReviewTip.textContent = "现在重点看步数、用时和金币奖励，后面可以继续压缩成功步数。";
+        const extraReward = Math.max(0, rewardCoins - 10);
+        if (resultReviewTitle) resultReviewTitle.textContent = "10级生物已合成，步数统计已停止";
+        if (resultReviewTip) {
+          resultReviewTip.textContent = extraReward > 0
+            ? `基础奖励 10 金币，步数压到 ${state.dropCount} 手后额外奖励 ${extraReward} 金币。`
+            : "基础奖励 10 金币；继续压缩成功步数到 160 手内，还能拿到更高阶梯奖励。";
+        }
         if (resultReviewTags) {
-          resultReviewTags.innerHTML = `<span class="result-tag">成功通关</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">用时 ${formatRunTimer(getRunSeconds())}</span>`;
+          resultReviewTags.innerHTML = `<span class="result-tag">挑战成功</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">用时 ${formatRunTimer(getRunSeconds())}</span>`;
         }
       } else {
         renderResultReview(durationSeconds);
@@ -4463,7 +4473,7 @@
     updateCoachUI();
     updateObjectiveUI();
     updateObjectiveRewards();
-    setStatus(outcome === "success" ? "任务完成，来看看这局拿到多少金币。" : "这局先按呢啦，点重开搁拚一摆");
+    setStatus(outcome === "success" ? "挑战成功，来看看这局一共拿到多少金币。" : "这局先按呢啦，点重开搁拚一摆");
     playTone({ frequency: outcome === "success" ? 520 : 220, duration: 0.16, type: outcome === "success" ? "triangle" : "sawtooth", gain: 0.03 });
     setTimeout(() => openPanel(resultPanel), 180);
   }
@@ -5554,11 +5564,7 @@
 
   function render() {
     if (scoreValue) {
-      if (!state.started) {
-        scoreValue.textContent = "0:00";
-      } else if (!state.paused && !state.gameOver) {
-        scoreValue.textContent = formatRunTimer(getRunSeconds());
-      }
+      scoreValue.textContent = String(state.coins);
     }
     if (timerValue) {
       timerValue.textContent = "大王";
