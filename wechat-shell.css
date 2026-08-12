@@ -383,6 +383,36 @@
   font-size: 13px;
 }
 
+.wx-game-pet-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 6px 0 8px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(20, 31, 67, 0.74);
+  color: #f8fafc;
+  text-align: left;
+}
+
+.wx-game-pet-emoji {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  flex: none;
+}
+
+.wx-game-pet-text {
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(248,250,252,0.92);
+}
+
 .wechat-game-layout .canvas-wrap,
 .wx-board-shell {
   position: relative;
@@ -515,6 +545,15 @@
     min-height: 28px;
     padding: 6px 0;
     font-size: 12px;
+  }
+
+  .wx-game-pet-chip {
+    margin: 4px 0 6px;
+    padding: 7px 10px;
+  }
+
+  .wx-game-pet-text {
+    font-size: 11px;
   }
 
   .wechat-game-layout .status-banner {

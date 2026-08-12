@@ -79,7 +79,7 @@
           </div>
           <button id="petBackBtn" class="ghost-btn" type="button">返回主界面</button>
         </div>
-        <p id="petGardenTip" class="panel-copy wx-pet-tip">四台电视都可以接不同激励广告内容，小宠物会在左下角等你点开。</p>
+        <p id="petGardenTip" class="panel-copy wx-pet-tip">三项数值默认从 5 开始，局内体验会跟着体力、快乐和清洁实时变化。</p>
         <div class="wx-pet-stage">
           <div class="wx-tv-grid">
             <article class="wx-tv-card" data-pet-slot="energy">
@@ -96,7 +96,7 @@
             <article class="wx-tv-card" data-pet-slot="mood">
               <span class="wx-tv-label">电视 B · 开心度</span>
               <strong>开心电视</strong>
-              <p id="petMoodStatus" class="wx-tv-copy">满值时会明显提高 5 号以上大球出现概率。</p>
+              <p id="petMoodStatus" class="wx-tv-copy">快乐越高，4号以上大球越容易出现，还可能多拿金币。</p>
               <div class="wx-tv-meter"><div id="petMoodFill" class="wx-tv-meter-fill"></div></div>
               <div class="wx-tv-stats"><span>当前值</span><strong id="petMoodValue">0/10</strong></div>
               <div class="wx-tv-actions">
@@ -116,7 +116,7 @@
             <article class="wx-tv-card" data-pet-slot="clean">
               <span class="wx-tv-label">电视 D · 清洁度</span>
               <strong>清洁电视</strong>
-              <p id="petCleanStatus" class="wx-tv-copy">会同时影响体力和快乐值的衰减速度。</p>
+              <p id="petCleanStatus" class="wx-tv-copy">清洁会直接影响风险线高度和局内容错空间。</p>
               <div class="wx-tv-meter"><div id="petCleanFill" class="wx-tv-meter-fill"></div></div>
               <div class="wx-tv-stats"><span>当前值</span><strong id="petCleanValue">0/10</strong></div>
               <div class="wx-tv-actions">
@@ -157,6 +157,10 @@
               <button id="pauseBtn" class="overlay-control-btn ghost-btn" type="button" aria-label="暂停游戏">暂停</button>
             </div>
           </div>
+          <button id="gamePetChip" class="wx-game-pet-chip" type="button" aria-label="查看宠物状态并快速恢复">
+            <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
+            <span id="gamePetText" class="wx-game-pet-text">点我查看宠物状态</span>
+          </button>
           <div class="canvas-wrap wx-board-shell">
             <canvas id="gameCanvas" width="420" height="760" aria-label="我要当大王微信小游戏壳子画布"></canvas>
             <div id="statusBanner" class="status-banner">手机模式：点击直接下落，也可以下滑投放</div>

@@ -24,6 +24,9 @@
   const objectiveValue = document.getElementById("objectiveValue");
   const objectiveTip = document.getElementById("objectiveTip");
   const statusBanner = document.getElementById("statusBanner");
+  const gamePetChip = document.getElementById("gamePetChip");
+  const gamePetEmoji = document.getElementById("gamePetEmoji");
+  const gamePetText = document.getElementById("gamePetText");
   const shellNotice = document.getElementById("shellNotice");
   const shellNetworkState = document.getElementById("shellNetworkState");
   const shellWelcomeTip = document.getElementById("shellWelcomeTip");
@@ -203,7 +206,7 @@
   const SPAWN_Y = 78;
   const BASE_GRAVITY = 560;
   const DROP_COOLDOWN = 0.26;
-  const OVERLINE_LIMIT = 14;
+  const OVERLINE_LIMIT = 12;
   const STACK_CHECK_MIN_Y = PIT.y + 36;
   const STACK_CHECK_MAX_VY = 240;
   const STORAGE_KEY = "blob-merge-prototype-best";
@@ -213,6 +216,7 @@
   const WECHAT_LAST_RANK_KEY = "blob-merge-prototype-wechat-last-rank";
   const WECHAT_GOLD_KEY = "blob-merge-prototype-wechat-gold";
   const WECHAT_PET_STATE_KEY = "blob-merge-prototype-wechat-pet-state";
+  const WECHAT_DAILY_STATE_KEY = "blob-merge-prototype-wechat-daily-state";
   const LEADERBOARD_KEY = "blob-merge-prototype-local-scores";
   const PROGRESS_KEY = "blob-merge-prototype-progress";
   const ONBOARDING_KEY = "blob-merge-prototype-onboarding";
@@ -482,12 +486,24 @@
 
   const DAY_MS = 24 * 60 * 60 * 1000;
   const HOUR_MS = 60 * 60 * 1000;
+  const MINUTE_MS = 60 * 1000;
   const PET_MAX_VALUE = 10;
-  const PET_BASE_DECAY_PER_MS = PET_MAX_VALUE / DAY_MS;
-  const PET_BUY_COST = {
-    energy: 3,
-    mood: 5,
-    clean: 3
+  const ACTIVE_DECAY_WINDOW_MS = 90 * 1000;
+  const PET_VIDEO_BUFF_MS = 5 * MINUTE_MS;
+  const PET_ONLINE_DECAY_PER_HOUR = {
+    energy: 1,
+    mood: 1.67,
+    clean: 0.83
+  };
+  const PET_OFFLINE_DECAY_PER_HOUR = {
+    energy: 0.5,
+    mood: 0.83,
+    clean: 0.42
+  };
+  const PET_BUY_PRICING = {
+    energy: { base: 6, limit: 5, extra: 10 },
+    mood: { base: 10, limit: 3, extra: 15 },
+    clean: { base: 5, limit: 5, extra: 8 }
   };
   const PET_GIFT_POOL = [
     { label: "墨镜", type: "gift" },
@@ -496,25 +512,151 @@
     { label: "糖果徽章", type: "gift" }
   ];
 
-  function getCleanDecayMultiplier(cleanValue) {
-    if (cleanValue >= 9) return 0.6;
-    if (cleanValue >= 7) return 0.8;
-    if (cleanValue >= 5) return 1;
-    if (cleanValue >= 3) return 1.3;
-    return 1.6;
-  }
-
   function getEnergyLaunchRule(energyValue) {
     if (energyValue >= 8) {
-      return { key: "free", cooldown: 0, text: "体力充沛，可连续发射。" };
+      return { key: "free", cooldown: 0, text: "活力充沛，发射完全跟手。" };
     }
     if (energyValue >= 5) {
-      return { key: "cooldown", cooldown: 0.3, text: "体力正常，每次发射后等待 0.3 秒。" };
+      return { key: "two_thirds", cooldown: 0, text: "状态正常，需等前球落到 2/3 区域。" };
     }
-    if (energyValue >= 2) {
-      return { key: "two_thirds", cooldown: 0, text: "体力偏低，前一球落到屏幕 2/3 后才能再发。" };
+    if (energyValue >= 3) {
+      return { key: "bottom", cooldown: 0, text: "有点累了，必须等前球落底。" };
     }
-    return { key: "bottom", cooldown: 0, text: "体力告急，必须等前一球落底或合成结束。" };
+    return { key: "cooldown", cooldown: 0.2, text: "明显疲惫，发射会有 0.2 秒冷却。" };
+  }
+
+  function getEnergyDecayMultiplier(energyValue) {
+    if (energyValue >= 8) return 0.7;
+    if (energyValue >= 5) return 1;
+    if (energyValue >= 3) return 1.2;
+    return 1.4;
+  }
+
+  function getMoodGameplayProfile(moodValue) {
+    if (moodValue >= 8) {
+      return {
+        extraWeight: 0.25,
+        mergeCoins: 1,
+        emoji: "😄",
+        text: "开心，跳跃中",
+        vibe: "暖色光效已激活"
+      };
+    }
+    if (moodValue >= 5) {
+      return {
+        extraWeight: 0.05,
+        mergeCoins: 0,
+        emoji: "🙂",
+        text: "平静",
+        vibe: "大球概率轻微提升"
+      };
+    }
+    if (moodValue >= 3) {
+      return {
+        extraWeight: 0,
+        mergeCoins: 0,
+        emoji: "😐",
+        text: "低沉",
+        vibe: "没有额外加成"
+      };
+    }
+    return {
+      extraWeight: 0,
+      mergeCoins: 0,
+      emoji: "🥺",
+      text: "低落",
+      vibe: "画面会偏灰冷"
+    };
+  }
+
+  function getCleanRiskProfile(cleanValue) {
+    if (cleanValue >= 8) {
+      return { ratio: 0.85, emoji: "✨", text: "干净闪亮", effect: "画面明亮，无污渍" };
+    }
+    if (cleanValue >= 5) {
+      return { ratio: 0.75, emoji: "🫧", text: "正常", effect: "风险线维持基准高度" };
+    }
+    if (cleanValue >= 3) {
+      return { ratio: 0.7, emoji: "🧹", text: "微脏", effect: "边缘会有淡淡灰尘" };
+    }
+    return { ratio: 0.65, emoji: "🪣", text: "脏乱", effect: "污渍明显，容错空间更紧" };
+  }
+
+  function getDangerLineY() {
+    const pet = state.pet || getPetSnapshot();
+    const profile = getCleanRiskProfile(pet.clean.value);
+    return PIT.y + PIT.height * (1 - profile.ratio);
+  }
+
+  function getWarningLineY() {
+    const pet = state.pet || getPetSnapshot();
+    const profile = getCleanRiskProfile(pet.clean.value);
+    const warningRatio = Math.max(0.5, profile.ratio - 0.15);
+    return PIT.y + PIT.height * (1 - warningRatio);
+  }
+
+  function getTodayKey(now = new Date()) {
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function readDailyState(now = new Date()) {
+    const today = getTodayKey(now);
+    try {
+      const saved = JSON.parse(localStorage.getItem(WECHAT_DAILY_STATE_KEY) || "null");
+      if (saved && saved.date === today) {
+        return {
+          date: today,
+          firstRunClaimed: Boolean(saved.firstRunClaimed),
+          videoBonusCount: Number(saved.videoBonusCount || 0),
+          purchases: {
+            energy: Number(saved.purchases?.energy || 0),
+            mood: Number(saved.purchases?.mood || 0),
+            clean: Number(saved.purchases?.clean || 0)
+          }
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      date: today,
+      firstRunClaimed: false,
+      videoBonusCount: 0,
+      purchases: { energy: 0, mood: 0, clean: 0 }
+    };
+  }
+
+  function writeDailyState(dailyState) {
+    try {
+      localStorage.setItem(WECHAT_DAILY_STATE_KEY, JSON.stringify(dailyState));
+    } catch {
+      // ignore
+    }
+  }
+
+  function getCurrentBuyCost(slot) {
+    const pricing = PET_BUY_PRICING[slot];
+    if (!pricing) return 0;
+    const dailyState = readDailyState();
+    const count = Number(dailyState.purchases?.[slot] || 0);
+    return count < pricing.limit ? pricing.base : pricing.extra;
+  }
+
+  function registerDailyPurchase(slot) {
+    const dailyState = readDailyState();
+    dailyState.purchases[slot] = Number(dailyState.purchases?.[slot] || 0) + 1;
+    writeDailyState(dailyState);
+  }
+
+  function consumeVideoCoinBonus() {
+    const dailyState = readDailyState();
+    if (dailyState.videoBonusCount >= 3) return 0;
+    dailyState.videoBonusCount += 1;
+    writeDailyState(dailyState);
+    return 2;
   }
 
   function readGold() {
@@ -536,9 +678,9 @@
 
   function createDefaultPetState(now = Date.now()) {
     return {
-      energy: { value: 5, lastTick: now },
-      mood: { value: 5, lastTick: now, holdUntil: 0 },
-      clean: { value: 5, lastTick: now },
+      energy: { value: 5, lastTick: now, buffUntil: 0 },
+      mood: { value: 5, lastTick: now, buffUntil: 0 },
+      clean: { value: 5, lastTick: now, buffUntil: 0 },
       gifts: [],
       lastAnimation: {
         emoji: "🐾",
@@ -557,16 +699,18 @@
       return {
         energy: {
           value: Number(saved.energy?.value ?? 5),
-          lastTick: Number(saved.energy?.lastTick ?? now)
+          lastTick: Number(saved.energy?.lastTick ?? now),
+          buffUntil: Number(saved.energy?.buffUntil ?? 0)
         },
         mood: {
           value: Number(saved.mood?.value ?? 5),
           lastTick: Number(saved.mood?.lastTick ?? now),
-          holdUntil: Number(saved.mood?.holdUntil ?? 0)
+          buffUntil: Number(saved.mood?.buffUntil ?? 0)
         },
         clean: {
           value: Number(saved.clean?.value ?? 5),
-          lastTick: Number(saved.clean?.lastTick ?? now)
+          lastTick: Number(saved.clean?.lastTick ?? now),
+          buffUntil: Number(saved.clean?.buffUntil ?? 0)
         },
         gifts: Array.isArray(saved.gifts) ? saved.gifts.slice(0, 20) : [],
         lastAnimation: {
@@ -587,31 +731,70 @@
     }
   }
 
-  function decayLinearValue(currentValue, lastTick, now, maxKeepMs = DAY_MS) {
+  function splitDecayElapsed(lastTick, now) {
     const elapsed = Math.max(0, now - lastTick);
-    const decay = (elapsed / maxKeepMs) * PET_MAX_VALUE;
-    return clamp(currentValue - decay, 0, PET_MAX_VALUE);
+    const onlineElapsed = Math.min(elapsed, ACTIVE_DECAY_WINDOW_MS);
+    const offlineElapsed = Math.max(0, elapsed - onlineElapsed);
+    return { onlineElapsed, offlineElapsed };
   }
 
-  function decayByElapsed(currentValue, lastTick, now, ratePerMs) {
-    const elapsed = Math.max(0, now - lastTick);
-    return clamp(currentValue - elapsed * ratePerMs, 0, PET_MAX_VALUE);
+  function applyDecayWindow(value, elapsedMs, ratePerHour, buffMultiplier) {
+    if (elapsedMs <= 0 || ratePerHour <= 0) return value;
+    const ratePerMs = ratePerHour / HOUR_MS;
+    return clamp(value - elapsedMs * ratePerMs * buffMultiplier, 0, PET_MAX_VALUE);
+  }
+
+  function decayAttributeValue(currentValue, lastTick, now, onlineRate, offlineRate, buffUntil = 0, extraMultiplier = 1) {
+    const { onlineElapsed, offlineElapsed } = splitDecayElapsed(lastTick, now);
+    const onlineStart = now - onlineElapsed;
+    let value = currentValue;
+    if (offlineElapsed > 0) {
+      const offlineBuffMultiplier = buffUntil > onlineStart - offlineElapsed ? 0.5 : 1;
+      value = applyDecayWindow(value, offlineElapsed, offlineRate * extraMultiplier, offlineBuffMultiplier);
+    }
+    if (onlineElapsed > 0) {
+      const buffCovered = Math.max(0, Math.min(now, buffUntil) - onlineStart);
+      const normalCovered = Math.max(0, onlineElapsed - buffCovered);
+      value = applyDecayWindow(value, buffCovered, onlineRate * extraMultiplier, 0.5);
+      value = applyDecayWindow(value, normalCovered, onlineRate * extraMultiplier, 1);
+    }
+    return value;
   }
 
   function getPetSnapshot(now = Date.now()) {
     const pet = readPetState();
-    pet.clean.value = decayByElapsed(pet.clean.value, pet.clean.lastTick, now, PET_BASE_DECAY_PER_MS);
-    pet.clean.lastTick = now;
-    const cleanMultiplier = getCleanDecayMultiplier(pet.clean.value);
-
-    pet.energy.value = decayByElapsed(pet.energy.value, pet.energy.lastTick, now, PET_BASE_DECAY_PER_MS * cleanMultiplier);
+    const energyDecayMultiplier = getEnergyDecayMultiplier(pet.energy.value);
+    pet.energy.value = decayAttributeValue(
+      pet.energy.value,
+      pet.energy.lastTick,
+      now,
+      PET_ONLINE_DECAY_PER_HOUR.energy,
+      PET_OFFLINE_DECAY_PER_HOUR.energy,
+      pet.energy.buffUntil
+    );
     pet.energy.lastTick = now;
 
-    const moodDecayStart = pet.mood.holdUntil > 0 ? Math.max(pet.mood.lastTick, pet.mood.holdUntil) : pet.mood.lastTick;
-    if (now > moodDecayStart) {
-      pet.mood.value = decayByElapsed(pet.mood.value, moodDecayStart, now, PET_BASE_DECAY_PER_MS * cleanMultiplier);
-    }
+    pet.mood.value = decayAttributeValue(
+      pet.mood.value,
+      pet.mood.lastTick,
+      now,
+      PET_ONLINE_DECAY_PER_HOUR.mood,
+      PET_OFFLINE_DECAY_PER_HOUR.mood,
+      pet.mood.buffUntil,
+      energyDecayMultiplier
+    );
     pet.mood.lastTick = now;
+
+    pet.clean.value = decayAttributeValue(
+      pet.clean.value,
+      pet.clean.lastTick,
+      now,
+      PET_ONLINE_DECAY_PER_HOUR.clean,
+      PET_OFFLINE_DECAY_PER_HOUR.clean,
+      pet.clean.buffUntil,
+      energyDecayMultiplier
+    );
+    pet.clean.lastTick = now;
 
     writePetState(pet);
     return pet;
@@ -629,6 +812,13 @@
     renderPetSystem();
   }
 
+  function awardRunCoins(amount) {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (safeAmount <= 0) return;
+    state.rewardCoinsEarned += safeAmount;
+    addCoins(safeAmount);
+  }
+
   function spendCoins(amount) {
     if (state.coins < amount) {
       return false;
@@ -640,17 +830,12 @@
     return true;
   }
 
-  function computeRunCoinReward(durationSeconds, mergeCount, outcome = "fail", dropCount = 0) {
-    const byTime = durationSeconds >= 180;
-    const byMerges = mergeCount >= 200;
-    if (outcome === "success") {
-      let reward = 10;
-      if (dropCount <= 160) {
-        reward += (Math.floor((160 - dropCount) / 10) + 1) * 10;
-      }
-      return reward;
-    }
-    return byTime || byMerges ? 1 : 0;
+  function computeRunCoinReward(outcome = "fail", dropCount = 0) {
+    if (outcome !== "success") return 0;
+    if (dropCount <= 110) return 15;
+    if (dropCount <= 130) return 10;
+    if (dropCount <= 150) return 6;
+    return 3;
   }
 
   function readWechatRankCache() {
@@ -810,14 +995,17 @@
   }
 
   function getPetDisplayState(pet) {
-    if (pet.energy.value <= 0) {
-      return { emoji: "😴", text: "体力归零，宠物闭上眼睛休息中。" };
+    if (pet.mood.value >= 8 && pet.energy.value >= 8) {
+      return { emoji: "😄", text: "活力满满，今天特别想跟你一起冲高分。" };
     }
-    if (pet.clean.value <= 0) {
-      return { emoji: "🫧", text: "清洁度归零，宠物现在脏脏的，想洗澡。" };
+    if (pet.energy.value <= 2 || pet.mood.value <= 2) {
+      return { emoji: "🥺", text: "有点撑不住了，点我就能快速补状态。" };
     }
-    if (pet.mood.value <= 0) {
-      return { emoji: "🥺", text: "开心度归零，宠物看起来有点萎靡。" };
+    if (pet.clean.value <= 2) {
+      return { emoji: "🫧", text: "屏幕脏脏的，风险线已经压低了。" };
+    }
+    if (pet.energy.value <= 4) {
+      return { emoji: "😴", text: "有点累了，发射节奏会被拖慢。" };
     }
     return pet.lastAnimation || { emoji: "🐾", text: "我一直在等你点电视耶！" };
   }
@@ -837,28 +1025,23 @@
     if (petEnergyFill) petEnergyFill.style.width = `${(pet.energy.value / PET_MAX_VALUE) * 100}%`;
     if (petEnergyValue) petEnergyValue.textContent = `${Math.round(pet.energy.value * 10) / 10}/10`;
     if (petEnergyStatus) {
-      petEnergyStatus.textContent = `${getEnergyLaunchRule(pet.energy.value).text} 当前 ${Math.round(pet.energy.value * 10) / 10}/10。`;
+      const energyRule = getEnergyLaunchRule(pet.energy.value);
+      const decayMultiplier = getEnergyDecayMultiplier(pet.energy.value);
+      petEnergyStatus.textContent = `${energyRule.text} 快乐/清洁衰减倍率 ×${decayMultiplier.toFixed(1)}，当前补点 ${getCurrentBuyCost("energy")} 金币。`;
     }
 
     if (petMoodFill) petMoodFill.style.width = `${(pet.mood.value / PET_MAX_VALUE) * 100}%`;
     if (petMoodValue) petMoodValue.textContent = `${Math.round(pet.mood.value * 10) / 10}/10`;
     if (petMoodStatus) {
-      petMoodStatus.textContent = pet.mood.value >= PET_MAX_VALUE
-        ? "开心度满值，5级以上大球出现概率大幅提升。"
-        : pet.mood.value > 6
-          ? "开心度已超过 6 点，较大的球开始更容易出现。"
-          : pet.mood.value <= 0
-            ? "开心度归零，宠物变得无精打采。"
-            : "开心度越高，后续成功率越容易被拉起来。";
+      const moodProfile = getMoodGameplayProfile(pet.mood.value);
+      petMoodStatus.textContent = `当前${moodProfile.text}，4号以上大球权重 +${Math.round(moodProfile.extraWeight * 100)}%，合成额外金币 ${moodProfile.mergeCoins > 0 ? `+${moodProfile.mergeCoins}` : "无"}，补点 ${getCurrentBuyCost("mood")} 金币。`;
     }
 
     if (petCleanFill) petCleanFill.style.width = `${(pet.clean.value / PET_MAX_VALUE) * 100}%`;
     if (petCleanValue) petCleanValue.textContent = `${Math.round(pet.clean.value * 10) / 10}/10`;
     if (petCleanStatus) {
-      const cleanMultiplier = getCleanDecayMultiplier(pet.clean.value);
-      petCleanStatus.textContent = pet.clean.value <= 0
-        ? "清洁度归零，体力和快乐都会加速流失，还会出现明显污渍。"
-        : `当前倍率 ×${cleanMultiplier.toFixed(1)}，并且每次合成额外消耗 0.1 清洁度。`;
+      const cleanProfile = getCleanRiskProfile(pet.clean.value);
+      petCleanStatus.textContent = `当前${cleanProfile.text}，风险线高度 ${Math.round(cleanProfile.ratio * 100)}%，${cleanProfile.effect}，补点 ${getCurrentBuyCost("clean")} 金币。`;
     }
 
     if (petGiftValue) petGiftValue.textContent = `${pet.gifts.length} 件`;
@@ -872,10 +1055,11 @@
     const displayState = getPetDisplayState(pet);
     if (petBubble) petBubble.textContent = displayState.text;
     if (petAvatar) petAvatar.textContent = displayState.emoji;
+    if (gamePetEmoji) gamePetEmoji.textContent = displayState.emoji;
+    if (gamePetText) gamePetText.textContent = displayState.text;
     if (petGardenTip) {
-      petGardenTip.textContent = pet.mood.value > 6
-        ? "开心度已激活大球加成，清洁度越高，体力和快乐流失越慢。"
-        : "体力现在绑定发射节奏，清洁度会同步影响体力和快乐的衰减速度。";
+      const cleanProfile = getCleanRiskProfile(pet.clean.value);
+      petGardenTip.textContent = `体力控制发射节奏，快乐决定大球和额外金币，清洁会把风险线压到 ${Math.round(cleanProfile.ratio * 100)}% 高度。`;
     }
   }
 
@@ -885,24 +1069,29 @@
     const now = Date.now();
 
     if (action === "watch") {
+      let bonusCoins = 0;
       if (slot === "energy") {
         pet.energy.value = clamp(pet.energy.value + 2, 0, PET_MAX_VALUE);
         pet.energy.lastTick = now;
+        pet.energy.buffUntil = now + PET_VIDEO_BUFF_MS;
         setPetAnimation("🍪", "宠物正在吃饼干，体力恢复了 2 点。");
-        openRewardModal("energy", "本次看视频获得体力 +2，并播放吃饼干/糖葫芦动画占位。");
+        openRewardModal("energy", "本次看视频获得体力 +2，且接下来 5 分钟体力衰减减半。");
       } else if (slot === "mood") {
         pet.mood.value = clamp(pet.mood.value + 1, 0, PET_MAX_VALUE);
         pet.mood.lastTick = now;
-        if (pet.mood.value > 6) {
-          pet.mood.holdUntil = now + 6 * HOUR_MS;
-        }
+        pet.mood.buffUntil = now + PET_VIDEO_BUFF_MS;
         setPetAnimation("⚽", "宠物正在玩球摇摆，开心度提升了 1 点。");
-        openRewardModal("energy", "本次看视频获得开心度 +1，并触发玩球/扭动身体动画占位。");
+        openRewardModal("energy", "本次看视频获得开心度 +1，且接下来 5 分钟快乐衰减减半。");
       } else if (slot === "clean") {
         pet.clean.value = clamp(pet.clean.value + 2, 0, PET_MAX_VALUE);
         pet.clean.lastTick = now;
+        pet.clean.buffUntil = now + PET_VIDEO_BUFF_MS;
         setPetAnimation("🛁", "宠物正在洗澡刷牙，清洁度恢复了 2 点。");
-        openRewardModal("dress", "本次看视频获得清洁度 +2，并触发洗澡/刷牙动画占位。");
+        openRewardModal("dress", "本次看视频获得清洁度 +2，且接下来 5 分钟清洁衰减减半。");
+      }
+      bonusCoins = consumeVideoCoinBonus();
+      if (bonusCoins > 0) {
+        addCoins(bonusCoins);
       }
       writePetState(pet);
       renderPetSystem();
@@ -910,27 +1099,25 @@
     }
 
     if (action === "buy") {
-      const cost = PET_BUY_COST[slot];
+      const cost = getCurrentBuyCost(slot);
       if (!cost) return;
       if (!spendCoins(cost)) {
         openRewardModal("gift", "金币不够，先去游戏里拿奖励，或者看电视累积资源。");
         return;
       }
+      registerDailyPurchase(slot);
       if (slot === "energy") {
         pet.energy.value = clamp(pet.energy.value + 1, 0, PET_MAX_VALUE);
         pet.energy.lastTick = now;
-        setPetAnimation("🥠", "你花金币补了 1 点体力，宠物继续有力气看着你。");
+        setPetAnimation("🥠", `你花了 ${cost} 金币补了 1 点体力。`);
       } else if (slot === "mood") {
         pet.mood.value = clamp(pet.mood.value + 1, 0, PET_MAX_VALUE);
         pet.mood.lastTick = now;
-        if (pet.mood.value > 6) {
-          pet.mood.holdUntil = now + 6 * HOUR_MS;
-        }
-        setPetAnimation("💃", "你花金币补了 1 点开心度，宠物开始扭来扭去。");
+        setPetAnimation("💃", `你花了 ${cost} 金币补了 1 点开心度。`);
       } else if (slot === "clean") {
         pet.clean.value = clamp(pet.clean.value + 1, 0, PET_MAX_VALUE);
         pet.clean.lastTick = now;
-        setPetAnimation("🪥", "你花金币补了 1 点清洁度，宠物看起来清爽不少。");
+        setPetAnimation("🪥", `你花了 ${cost} 金币补了 1 点清洁度。`);
       }
       writePetState(pet);
       renderPetSystem();
@@ -976,19 +1163,14 @@
         : DROP_POOL;
     const pet = state.pet || getPetSnapshot();
     state.pet = pet;
-    const moodBonus = pet.mood.value > 6 ? (pet.mood.value - 6) / 4 : 0;
-    const maxMoodBoost = pet.mood.value >= PET_MAX_VALUE - 0.01;
+    const moodProfile = getMoodGameplayProfile(pet.mood.value);
     const adjustedPool = openingPool.map((item) => {
       let weight = item.weight;
-      if (moodBonus > 0) {
-        if (maxMoodBoost && item.level >= 4) {
-          weight *= 1 + moodBonus * 5.4;
-        } else if (item.level >= 3) {
-          weight *= 1 + moodBonus * 2.6;
-        } else if (item.level === 2) {
-          weight *= 1 + moodBonus * 0.9;
-        } else {
-          weight *= 1 - moodBonus * (maxMoodBoost ? 0.32 : 0.18);
+      if (moodProfile.extraWeight > 0) {
+        if (item.level >= 3) {
+          weight *= 1 + moodProfile.extraWeight;
+        } else if (item.level <= 1) {
+          weight *= 1 - moodProfile.extraWeight * 0.35;
         }
       }
       return { ...item, weight };
@@ -3694,6 +3876,7 @@
     let meterState = "safe";
     let ratio = 0;
     let text = "开始后会在这里显示危险状态";
+    const cleanProfile = state.pet ? getCleanRiskProfile(state.pet.clean.value) : getCleanRiskProfile(5);
 
     if (state.gameOver) {
       meterState = "critical";
@@ -3708,10 +3891,10 @@
     } else if (state.warningLevel > 0.15) {
       meterState = "warning";
       ratio = clamp(state.warningLevel * 0.82, 0, 1);
-      text = state.warningLevel > 0.58 ? "接近红线，优先清理上层" : "正在接近危险区";
+      text = state.warningLevel > 0.58 ? "接近红线，优先清理上层" : `风险线处于 ${Math.round(cleanProfile.ratio * 100)}% 高度`;
     } else {
       ratio = clamp(state.warningLevel * 0.45, 0, 0.24);
-      text = "当前安全，可以继续铺底";
+      text = `当前安全，清洁状态为${cleanProfile.text}`;
     }
 
     dangerMeter.dataset.state = meterState;
@@ -4251,6 +4434,7 @@
     state.recordBeaten = false;
     state.rewardCoinsEarned = 0;
     state.successRun = false;
+    state.lastDroppedBlobId = null;
     state.runStartTime = 0;
     state.cameraPunch = 0;
     state.time = 0;
@@ -4490,10 +4674,16 @@
       spawnPopup(WORLD.width / 2, 126, "新纪录！", "#fde68a");
     }
     const durationSeconds = Math.max(1, getRunSeconds());
-    const rewardCoins = computeRunCoinReward(durationSeconds, state.mergeCount, outcome, state.dropCount);
-    state.rewardCoinsEarned = rewardCoins;
-    if (rewardCoins > 0) {
-      addCoins(rewardCoins);
+    const baseRewardCoins = computeRunCoinReward(outcome, state.dropCount);
+    const dailyState = readDailyState();
+    const firstRunBonus = outcome === "success" && !dailyState.firstRunClaimed ? 3 : 0;
+    if (firstRunBonus > 0) {
+      dailyState.firstRunClaimed = true;
+      writeDailyState(dailyState);
+    }
+    const settlementCoins = baseRewardCoins + firstRunBonus;
+    if (settlementCoins > 0) {
+      awardRunCoins(settlementCoins);
     }
     pushLeaderboardEntry();
     updateProgress(durationSeconds);
@@ -4505,22 +4695,20 @@
     if (resultDuration) {
       resultDuration.textContent = outcome === "success" ? "已完成" : "大王";
       if (outcome === "success") {
-        const extraReward = Math.max(0, rewardCoins - 10);
         if (resultReviewTitle) resultReviewTitle.textContent = "10级生物已合成，步数统计已停止";
         if (resultReviewTip) {
-          resultReviewTip.textContent = extraReward > 0
-            ? `基础奖励 10 金币，步数压到 ${state.dropCount} 手后额外奖励 ${extraReward} 金币。`
-            : "基础奖励 10 金币；继续压缩成功步数到 160 手内，还能拿到更高阶梯奖励。";
+          const dailyText = firstRunBonus > 0 ? "，含每日首局 +3" : "";
+          resultReviewTip.textContent = `步数 ${state.dropCount} 手，结算基础奖励 ${baseRewardCoins} 金币${dailyText}。快乐值和清洁加成带来的局内金币也已一起计入本局奖励。`;
         }
         if (resultReviewTags) {
-          resultReviewTags.innerHTML = `<span class="result-tag">挑战成功</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">用时 ${formatRunTimer(getRunSeconds())}</span>`;
+          resultReviewTags.innerHTML = `<span class="result-tag">挑战成功</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">结算 ${settlementCoins}</span>`;
         }
       } else {
         renderResultReview(durationSeconds);
       }
     }
     renderResultObjectiveSnapshot(state.lastObjectiveSnapshot);
-    if (resultCoins) resultCoins.textContent = rewardCoins > 0 ? `+${rewardCoins}` : "0";
+    if (resultCoins) resultCoins.textContent = state.rewardCoinsEarned > 0 ? `+${state.rewardCoinsEarned}` : "0";
     if (resultGoldTotal) resultGoldTotal.textContent = String(state.coins);
     if (resultMerges) resultMerges.textContent = String(state.mergeCount);
     if (resultDangerPeak) {
@@ -4544,6 +4732,10 @@
     state.tutorialTimer = Math.max(0, state.tutorialTimer - dt);
     state.maxBlobsOnBoard = Math.max(state.maxBlobsOnBoard, state.blobs.length);
     state.idleSinceDrop += dt;
+    if (state.started && state.time % 0.5 < dt) {
+      state.pet = getPetSnapshot();
+      renderPetSystem();
+    }
     const runSeconds = getRunSeconds();
     if (runSeconds >= 60) {
       unlockMilestone("survive_60s", "稳住 60 秒", "这局已经能把节奏稳住 1 分钟以上了。", "#a7f3d0");
@@ -4715,6 +4907,16 @@
         state.pet.clean.value = clamp(state.pet.clean.value - 0.1, 0, PET_MAX_VALUE);
         state.pet.clean.lastTick = Date.now();
         writePetState(state.pet);
+        const moodProfile = getMoodGameplayProfile(state.pet.mood.value);
+        const mergeCoinBonus = moodProfile.mergeCoins + (state.pet.clean.value >= 8 ? 1 : 0);
+        if (mergeCoinBonus > 0) {
+          awardRunCoins(mergeCoinBonus);
+          spawnPopup(merged.x, merged.y - 30, `金币 +${mergeCoinBonus}`, "#fde68a", "merge");
+          if (moodProfile.mergeCoins > 0) {
+            spawnSparks(merged.x, merged.y - 18, "#facc15", 12, 220, 0.72, "merge");
+            playTone({ frequency: 880, duration: 0.08, type: "triangle", gain: 0.03 });
+          }
+        }
         completeOnboardingStep("first_merge");
         if (state.firstMergeAt <= 0) {
           state.firstMergeAt = getRunSeconds();
@@ -4858,7 +5060,9 @@
 
     if (!state.gameOver && state.started) {
       if (hasStackCandidate) {
-        const warning = clamp((WARNING_Y - stackTop) / (WARNING_Y - PIT.y), 0, 1);
+        const dynamicWarningY = getWarningLineY();
+        const dynamicDangerY = getDangerLineY();
+        const warning = clamp((dynamicWarningY - stackTop) / (dynamicWarningY - PIT.y), 0, 1);
         state.warningLevel = Math.max(0, state.warningLevel * 0.82 + warning * 0.18);
         state.peakWarningLevel = Math.max(state.peakWarningLevel, state.warningLevel);
         if (!state.warningHintShown && state.warningLevel > 0.22) {
@@ -4874,7 +5078,7 @@
           );
         }
 
-        if (stackTop <= DANGER_Y) {
+        if (stackTop <= dynamicDangerY) {
           if (state.overlineTime <= 0) {
             state.triggeredDangerCount += 1;
           }
@@ -4998,6 +5202,8 @@
     ctx.restore();
 
     ctx.save();
+    const dangerY = getDangerLineY();
+    const warningY = getWarningLineY();
     ctx.strokeStyle = `rgba(251,113,133,${0.26 + Math.min(0.62, state.warningLevel * 0.95)})`;
     ctx.lineWidth = isMobileMode ? 4 : 3;
     if (isMobileMode) {
@@ -5006,8 +5212,8 @@
     }
     ctx.setLineDash([8, 8]);
     ctx.beginPath();
-    ctx.moveTo(PIT.x + 10, DANGER_Y);
-    ctx.lineTo(PIT.x + PIT.width - 10, DANGER_Y);
+    ctx.moveTo(PIT.x + 10, dangerY);
+    ctx.lineTo(PIT.x + PIT.width - 10, dangerY);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
@@ -5015,11 +5221,11 @@
     if (!isMobileMode) {
       ctx.fillStyle = "rgba(255,255,255,0.18)";
       ctx.font = "12px sans-serif";
-      ctx.fillText("危险线", PIT.x + 12, DANGER_Y - 8);
+      ctx.fillText("危险线", PIT.x + 12, dangerY - 8);
     }
 
     if (state.warningLevel > 0.02) {
-      const warningHeight = Math.max(0, WARNING_Y - PIT.y);
+      const warningHeight = Math.max(0, warningY - PIT.y);
       ctx.fillStyle = `rgba(251,113,133,${Math.min(0.12, state.warningLevel * 0.12)})`;
       ctx.fillRect(PIT.x + 2, PIT.y + 2, PIT.width - 4, warningHeight);
     }
@@ -5509,7 +5715,7 @@
     let y = blob.y;
     let radius = blob.r;
 
-    if (state.gameOver && blob.y - blob.r < DANGER_Y) {
+    if (state.gameOver && blob.y - blob.r < getDangerLineY()) {
       radius *= 1 + Math.sin(state.time * 12) * 0.02;
     }
 
@@ -5922,6 +6128,12 @@
     showShellScreen("rank");
   });
   gamePetBtn?.addEventListener("click", () => {
+    pauseForShellNavigation();
+    state.pet = getPetSnapshot();
+    renderPetSystem();
+    showShellScreen("pet");
+  });
+  gamePetChip?.addEventListener("click", () => {
     pauseForShellNavigation();
     state.pet = getPetSnapshot();
     renderPetSystem();
