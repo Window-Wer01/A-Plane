@@ -140,7 +140,8 @@
             <div class="wx-hud-left">
               <div class="overlay-pill score-pill compact-pill">
                 <span class="overlay-label">金币</span>
-                <strong id="scoreValue">0</strong>
+                <strong id="scoreValue" class="coin-display">0</strong>
+                <span id="coinFxLayer" class="coin-fx-layer" aria-hidden="true"></span>
               </div>
               <div class="overlay-pill best-pill compact-pill">
                 <span class="overlay-label">步数</span>
@@ -161,6 +162,11 @@
             <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
             <span id="gamePetText" class="wx-game-pet-text">点我查看宠物状态</span>
           </button>
+          <section class="wx-live-status-panel" aria-label="局内三值影响说明">
+            <div id="gameEnergySummary" class="wx-live-status-item">体力 5/10：发射节奏正常</div>
+            <div id="gameMoodSummary" class="wx-live-status-item">快乐 5/10：大球概率轻微提升</div>
+            <div id="gameCleanSummary" class="wx-live-status-item">清洁 5/10：风险线基准高度 75%</div>
+          </section>
           <div class="canvas-wrap wx-board-shell">
             <canvas id="gameCanvas" width="420" height="760" aria-label="我要当大王微信小游戏壳子画布"></canvas>
             <div id="statusBanner" class="status-banner">手机模式：点击直接下落，也可以下滑投放</div>

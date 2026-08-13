@@ -9,6 +9,8 @@
   const settingsBtn = document.getElementById("settingsBtn");
   const helpBtn = document.getElementById("helpBtn");
   const scoreValue = document.getElementById("scoreValue");
+  const scorePill = document.querySelector(".score-pill");
+  const coinFxLayer = document.getElementById("coinFxLayer");
   const bestValue = document.getElementById("bestValue");
   let minStepValue = document.getElementById("minStepValue");
   const timerValue = document.getElementById("timerValue");
@@ -27,6 +29,9 @@
   const gamePetChip = document.getElementById("gamePetChip");
   const gamePetEmoji = document.getElementById("gamePetEmoji");
   const gamePetText = document.getElementById("gamePetText");
+  const gameEnergySummary = document.getElementById("gameEnergySummary");
+  const gameMoodSummary = document.getElementById("gameMoodSummary");
+  const gameCleanSummary = document.getElementById("gameCleanSummary");
   const shellNotice = document.getElementById("shellNotice");
   const shellNetworkState = document.getElementById("shellNetworkState");
   const shellWelcomeTip = document.getElementById("shellWelcomeTip");
@@ -217,7 +222,10 @@
   const WECHAT_GOLD_KEY = "blob-merge-prototype-wechat-gold";
   const WECHAT_PET_STATE_KEY = "blob-merge-prototype-wechat-pet-state";
   const WECHAT_DAILY_STATE_KEY = "blob-merge-prototype-wechat-daily-state";
+  const WECHAT_BALANCE_PROFILE_KEY = "blob-merge-prototype-wechat-balance-profile";
   const LEADERBOARD_KEY = "blob-merge-prototype-local-scores";
+  const CURRENT_BALANCE_PROFILE = "2026-08-13-balance-hotfix-2";
+  const DEFAULT_START_GOLD = 6;
   const PROGRESS_KEY = "blob-merge-prototype-progress";
   const ONBOARDING_KEY = "blob-merge-prototype-onboarding";
   const IMPORT_BACKUP_KEY = "blob-merge-prototype-last-import-backup";
@@ -407,7 +415,10 @@
     pet: null,
     rewardCoinsEarned: 0,
     successRun: false,
-    lastDroppedBlobId: null
+    lastDroppedBlobId: null,
+    coinDisplayValue: readGold(),
+    coinFrenzyCleanupTimer: 0,
+    coinFxAnimatingUntil: 0
   };
 
   const settings = readSettings();
@@ -517,12 +528,12 @@
       return { key: "free", cooldown: 0, text: "活力充沛，发射完全跟手。" };
     }
     if (energyValue >= 5) {
-      return { key: "two_thirds", cooldown: 0, text: "状态正常，需等前球落到 2/3 区域。" };
+      return { key: "cooldown", cooldown: 0.18, text: "状态正常，连续发射会有很短的节奏间隔。" };
     }
     if (energyValue >= 3) {
-      return { key: "bottom", cooldown: 0, text: "有点累了，必须等前球落底。" };
+      return { key: "cooldown", cooldown: 0.42, text: "有点累了，发射节奏会明显放慢。" };
     }
-    return { key: "cooldown", cooldown: 0.2, text: "明显疲惫，发射会有 0.2 秒冷却。" };
+    return { key: "cooldown", cooldown: 0.72, text: "明显疲惫，发射频率会被压得很慢。" };
   }
 
   function getEnergyDecayMultiplier(energyValue) {
@@ -659,12 +670,27 @@
     return 2;
   }
 
+  function ensureBalanceBaseline() {
+    try {
+      const profile = localStorage.getItem(WECHAT_BALANCE_PROFILE_KEY) || "";
+      if (profile === CURRENT_BALANCE_PROFILE) {
+        return;
+      }
+      writeGold(DEFAULT_START_GOLD);
+      writePetState(createDefaultPetState());
+      writeDailyState(readDailyState(new Date()));
+      localStorage.setItem(WECHAT_BALANCE_PROFILE_KEY, CURRENT_BALANCE_PROFILE);
+    } catch {
+      // ignore
+    }
+  }
+
   function readGold() {
     try {
-      const raw = Number(localStorage.getItem(WECHAT_GOLD_KEY) || 0);
-      return raw > 0 ? Math.floor(raw) : 0;
+      const raw = Number(localStorage.getItem(WECHAT_GOLD_KEY) || DEFAULT_START_GOLD);
+      return raw >= 0 ? Math.floor(raw) : DEFAULT_START_GOLD;
     } catch {
-      return 0;
+      return DEFAULT_START_GOLD;
     }
   }
 
@@ -805,9 +831,164 @@
     writePetState(state.pet);
   }
 
+  function isCoinFrenzyActive() {
+    const pet = state.pet || getPetSnapshot();
+    state.pet = pet;
+    return pet.mood.value >= 8;
+  }
+
+  function resetCoinPopAnimation() {
+    if (!scoreValue) return;
+    scoreValue.classList.remove("is-frenzy-pop");
+    void scoreValue.offsetWidth;
+    scoreValue.classList.add("is-frenzy-pop");
+  }
+
+  function buildStaticCoinNode(char) {
+    const node = document.createElement("span");
+    node.className = "coin-digit static";
+    const inner = document.createElement("span");
+    inner.className = "coin-digit-char";
+    inner.textContent = char;
+    node.appendChild(inner);
+    return node;
+  }
+
+  function buildRollingCoinNode(fromChar, toChar) {
+    const node = document.createElement("span");
+    node.className = "coin-digit";
+    const stack = document.createElement("span");
+    stack.className = "coin-digit-stack";
+    const fromRow = document.createElement("span");
+    fromRow.className = "coin-digit-row";
+    fromRow.textContent = fromChar;
+    const toRow = document.createElement("span");
+    toRow.className = "coin-digit-row";
+    toRow.textContent = toChar;
+    stack.appendChild(fromRow);
+    stack.appendChild(toRow);
+    node.appendChild(stack);
+    return node;
+  }
+
+  function renderCoinCounter(value, animate = false, previousValue = null) {
+    if (!scoreValue) return;
+    const next = String(Math.max(0, Math.floor(value)));
+    if (!animate || previousValue == null || previousValue === value) {
+      scoreValue.innerHTML = "";
+      for (const char of next) {
+        scoreValue.appendChild(buildStaticCoinNode(char));
+      }
+      state.coinDisplayValue = value;
+      return;
+    }
+    const prev = String(Math.max(0, Math.floor(previousValue)));
+    const width = Math.max(prev.length, next.length);
+    const prevPadded = prev.padStart(width, "0");
+    const nextPadded = next.padStart(width, "0");
+    scoreValue.innerHTML = "";
+    for (let i = 0; i < width; i += 1) {
+      const fromChar = prevPadded[i];
+      const toChar = nextPadded[i];
+      const node = fromChar === toChar
+        ? buildStaticCoinNode(toChar)
+        : buildRollingCoinNode(fromChar, toChar);
+      scoreValue.appendChild(node);
+    }
+    requestAnimationFrame(() => {
+      scoreValue.querySelectorAll(".coin-digit:not(.static)").forEach((node) => {
+        node.classList.add("is-rolling");
+      });
+    });
+    state.coinFxAnimatingUntil = Date.now() + 390;
+    window.setTimeout(() => {
+      renderCoinCounter(value, false, null);
+    }, 390);
+    state.coinDisplayValue = value;
+  }
+
+  function clearCoinFrenzyVisual() {
+    if (scorePill) {
+      scorePill.classList.remove("is-frenzy");
+    }
+    if (scoreValue) {
+      scoreValue.classList.remove("is-frenzy-pop");
+    }
+  }
+
+  function spawnCoinParticles(count = 4) {
+    if (!coinFxLayer) return;
+    for (let i = 0; i < count; i += 1) {
+      const particle = document.createElement("span");
+      particle.className = "coin-fx-particle";
+      particle.style.setProperty("--coin-x", `${42 + Math.random() * 20}%`);
+      particle.style.setProperty("--coin-size", `${6 + Math.random() * 6}px`);
+      particle.style.setProperty("--coin-dx", `${(Math.random() - 0.5) * 54}px`);
+      particle.style.setProperty("--coin-dy", `${-18 - Math.random() * 34}px`);
+      coinFxLayer.appendChild(particle);
+      window.setTimeout(() => particle.remove(), 680);
+    }
+  }
+
+  function playCoinFrenzyDings(amount) {
+    const dingCount = Math.max(1, Math.min(3, Math.floor(amount)));
+    for (let i = 0; i < dingCount; i += 1) {
+      window.setTimeout(() => {
+        playTone({ frequency: 1180 + i * 120, duration: 0.1, type: "triangle", gain: 0.034 });
+      }, i * 85);
+    }
+  }
+
+  function triggerCoinFrenzyFx(amount) {
+    if (!isCoinFrenzyActive()) {
+      clearCoinFrenzyVisual();
+      return;
+    }
+    if (scorePill) {
+      scorePill.classList.add("is-frenzy");
+    }
+    resetCoinPopAnimation();
+    spawnCoinParticles(3 + Math.min(2, Math.max(0, Math.floor(amount))));
+    playCoinFrenzyDings(amount);
+    if (state.coinFrenzyCleanupTimer) {
+      window.clearTimeout(state.coinFrenzyCleanupTimer);
+    }
+    state.coinFrenzyCleanupTimer = window.setTimeout(() => {
+      if (!isCoinFrenzyActive()) {
+        clearCoinFrenzyVisual();
+      }
+    }, 760);
+  }
+
+  function updateCoinDisplays({ animate = false, previousValue = null, frenzy = false, delta = 0 } = {}) {
+    const animatingNow = Date.now() < state.coinFxAnimatingUntil;
+    if (animate || !animatingNow) {
+      renderCoinCounter(state.coins, animate, previousValue ?? state.coinDisplayValue);
+    }
+    if (petCoinValue) {
+      petCoinValue.textContent = String(state.coins);
+    }
+    if (scorePill) {
+      scorePill.classList.toggle("is-frenzy", isCoinFrenzyActive());
+    }
+    if (frenzy && delta > 0) {
+      triggerCoinFrenzyFx(delta);
+    } else if (!isCoinFrenzyActive()) {
+      clearCoinFrenzyVisual();
+    }
+  }
+
   function addCoins(amount) {
-    state.coins = Math.max(0, state.coins + amount);
+    const safeAmount = Math.max(0, Math.floor(amount));
+    const previousCoins = state.coins;
+    state.coins = Math.max(0, state.coins + safeAmount);
     writeGold(state.coins);
+    updateCoinDisplays({
+      animate: safeAmount > 0,
+      previousValue: previousCoins,
+      frenzy: safeAmount > 0 && isCoinFrenzyActive(),
+      delta: safeAmount
+    });
     updateHud();
     renderPetSystem();
   }
@@ -1010,17 +1191,19 @@
     return pet.lastAnimation || { emoji: "🐾", text: "我一直在等你点电视耶！" };
   }
 
+  function setLiveStatusSummary(node, text, level = "normal") {
+    if (!node) return;
+    node.textContent = text;
+    node.classList.toggle("is-warning", level === "warning");
+    node.classList.toggle("is-danger", level === "danger");
+  }
+
   function renderPetSystem() {
     if (!state.pet) {
       state.pet = getPetSnapshot();
     }
     const pet = state.pet;
-    if (scoreValue) {
-      scoreValue.textContent = String(state.coins);
-    }
-    if (petCoinValue) {
-      petCoinValue.textContent = String(state.coins);
-    }
+    updateCoinDisplays();
 
     if (petEnergyFill) petEnergyFill.style.width = `${(pet.energy.value / PET_MAX_VALUE) * 100}%`;
     if (petEnergyValue) petEnergyValue.textContent = `${Math.round(pet.energy.value * 10) / 10}/10`;
@@ -1061,6 +1244,24 @@
       const cleanProfile = getCleanRiskProfile(pet.clean.value);
       petGardenTip.textContent = `体力控制发射节奏，快乐决定大球和额外金币，清洁会把风险线压到 ${Math.round(cleanProfile.ratio * 100)}% 高度。`;
     }
+    const energyRule = getEnergyLaunchRule(pet.energy.value);
+    const moodProfile = getMoodGameplayProfile(pet.mood.value);
+    const cleanProfile = getCleanRiskProfile(pet.clean.value);
+    setLiveStatusSummary(
+      gameEnergySummary,
+      `体力 ${Math.round(pet.energy.value * 10) / 10}/10：${energyRule.text}`,
+      pet.energy.value <= 2 ? "danger" : pet.energy.value <= 4 ? "warning" : "normal"
+    );
+    setLiveStatusSummary(
+      gameMoodSummary,
+      `快乐 ${Math.round(pet.mood.value * 10) / 10}/10：4号以上概率 +${Math.round(moodProfile.extraWeight * 100)}%，合成金币 ${moodProfile.mergeCoins > 0 ? `+${moodProfile.mergeCoins}` : "无"}`,
+      pet.mood.value <= 2 ? "danger" : pet.mood.value <= 4 ? "warning" : "normal"
+    );
+    setLiveStatusSummary(
+      gameCleanSummary,
+      `清洁 ${Math.round(pet.clean.value * 10) / 10}/10：风险线 ${Math.round(cleanProfile.ratio * 100)}%，${cleanProfile.effect}`,
+      pet.clean.value <= 2 ? "danger" : pet.clean.value <= 4 ? "warning" : "normal"
+    );
   }
 
   function applyPetAction(slot, action) {
@@ -4380,12 +4581,7 @@
   }
 
   function updateHud() {
-    if (scoreValue) {
-      scoreValue.textContent = String(state.coins);
-    }
-    if (petCoinValue) {
-      petCoinValue.textContent = String(state.coins);
-    }
+    updateCoinDisplays();
     const minSteps = readKingMinSteps();
     bestValue.textContent = `${state.dropCount}/${minSteps > 0 ? minSteps : "-"}`;
     if (timerValue) {
@@ -4577,21 +4773,7 @@
     state.pet = getPetSnapshot();
     const energyValue = state.pet.energy.value;
     const rule = getEnergyLaunchRule(energyValue);
-    if (rule.key === "free" || rule.key === "cooldown") {
-      return { ok: true, rule };
-    }
-    const previousBlob = state.lastDroppedBlobId
-      ? state.blobs.find((blob) => blob.id === state.lastDroppedBlobId)
-      : null;
-    if (!previousBlob) {
-      return { ok: true, rule };
-    }
-    if (rule.key === "two_thirds") {
-      const thresholdY = PIT.y + PIT.height * (2 / 3);
-      return { ok: previousBlob.y >= thresholdY, rule };
-    }
-    const reachedBottom = previousBlob.y + previousBlob.r >= FLOOR_Y - 2;
-    return { ok: reachedBottom, rule };
+    return { ok: true, rule };
   }
 
   function dropBlob(releasePower = 0.25) {
@@ -4904,9 +5086,6 @@
         state.score += LEVELS[newLevel].score;
         state.mergeCount += 1;
         state.pet = getPetSnapshot();
-        state.pet.clean.value = clamp(state.pet.clean.value - 0.1, 0, PET_MAX_VALUE);
-        state.pet.clean.lastTick = Date.now();
-        writePetState(state.pet);
         const moodProfile = getMoodGameplayProfile(state.pet.mood.value);
         const mergeCoinBonus = moodProfile.mergeCoins + (state.pet.clean.value >= 8 ? 1 : 0);
         if (mergeCoinBonus > 0) {
@@ -5836,9 +6015,6 @@
   }
 
   function render() {
-    if (scoreValue) {
-      scoreValue.textContent = String(state.coins);
-    }
     if (timerValue) {
       timerValue.textContent = "大王";
     }
@@ -7332,6 +7508,7 @@
   renderRestoreRecords();
   renderImportPreview("选择一个 JSON 文件后，这里会先显示导入预览和差异摘要。", true);
   updatePauseButton();
+  ensureBalanceBaseline();
   state.coins = readGold();
   state.pet = getPetSnapshot();
   renderPetSystem();
