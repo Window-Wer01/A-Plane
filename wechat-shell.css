@@ -9,7 +9,7 @@
   --wx-banner-height: 92px;
   --wx-game-topbar-height: 112px;
   --wx-game-bottom-gap: 4px;
-  --wx-game-safe-offset: calc(var(--wx-banner-height) + var(--wx-game-topbar-height) + var(--wx-game-bottom-gap) + 18px);
+  --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   position: relative;
   overflow: hidden;
   min-height: 100vh;
@@ -298,7 +298,7 @@
   display: block;
   min-height: calc(100vh - 16px);
   min-height: calc(100dvh - 16px);
-  padding-bottom: calc(var(--wx-banner-height) + env(safe-area-inset-bottom, 0px) + 6px);
+  padding-bottom: 0;
 }
 
 .wechat-game-layout {
@@ -308,7 +308,7 @@
 
 .wechat-game-layout .game-panel {
   width: 100%;
-  max-width: 456px;
+  max-width: none;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -583,23 +583,56 @@
 .wx-game-stage {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   height: 100%;
 }
 
-.wx-game-topbar {
-  display: grid;
-  grid-template-columns: 54px 104px 42px 98px minmax(118px, 1fr);
-  gap: 6px;
+.wx-board-stage {
+  position: relative;
   width: 100%;
-  min-height: var(--wx-game-topbar-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: calc(100dvh - var(--wx-game-safe-offset) - 28px);
+  border-radius: 0;
+}
+
+.wx-stage-overlay {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.wx-stage-overlay > * {
+  pointer-events: auto;
+}
+
+.wx-left-stack {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wx-game-topbar {
+  position: absolute;
+  left: 56px;
+  right: 4px;
+  top: 4px;
+  display: grid;
+  grid-template-columns: 76px 30px 60px minmax(0, 1fr);
+  gap: 4px;
+  min-height: 52px;
   align-items: stretch;
 }
 
 .wx-top-panel,
 .wx-return-btn {
-  min-height: 86px;
-  border-radius: 12px;
+  min-height: 46px;
+  border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.12);
   background:
     linear-gradient(180deg, rgba(21, 36, 88, 0.92) 0%, rgba(17, 28, 74, 0.96) 100%);
@@ -607,38 +640,39 @@
 }
 
 .wx-top-panel {
-  padding: 8px 8px 7px;
+  padding: 5px 6px 4px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   min-width: 0;
 }
 
 .wx-panel-label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 10px;
+  margin-bottom: 3px;
+  font-size: 8px;
   line-height: 1;
   color: rgba(219, 234, 254, 0.82);
   letter-spacing: 0.03em;
 }
 
 .wx-return-btn {
-  padding: 0;
+  padding: 0 4px;
   color: #eef2ff;
-  font-size: 14px;
+  min-height: 28px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .wx-step-values {
   display: flex;
   align-items: baseline;
-  gap: 3px;
-  margin-top: auto;
+  gap: 2px;
+  margin-top: 0;
 }
 
 .wx-step-current {
-  font-size: 24px;
+  font-size: 17px;
   line-height: 1;
   color: #ffffff;
   font-weight: 800;
@@ -646,12 +680,12 @@
 
 .wx-step-separator {
   color: rgba(255,255,255,0.62);
-  font-size: 18px;
+  font-size: 13px;
   line-height: 1;
 }
 
 .wx-step-best {
-  font-size: 24px;
+  font-size: 17px;
   line-height: 1;
   color: #ff5f5f;
   font-weight: 900;
@@ -659,21 +693,25 @@
 
 .wx-resource-panel {
   align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .wx-resource-bars {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   align-items: end;
-  gap: 4px;
-  flex: 1 1 auto;
+  justify-content: center;
+  gap: 3px;
+  flex: none;
   width: 100%;
-  min-height: 58px;
+  min-height: 34px;
 }
 
 .wx-resource-bar {
   position: relative;
-  align-self: stretch;
+  width: 6px;
+  height: 34px;
   border-radius: 999px;
   background: rgba(255,255,255,0.12);
   overflow: hidden;
@@ -701,20 +739,22 @@
 }
 
 .wx-next-center {
-  justify-content: flex-start;
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .wx-next-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-top: auto;
+  gap: 2px;
+  margin-top: 0;
 }
 
 .wx-next-orb {
-  width: 42px;
-  height: 42px;
+  width: 26px;
+  height: 26px;
 }
 
 .wx-next-meta {
@@ -724,15 +764,15 @@
 
 .wx-next-label {
   display: block;
-  font-size: 10px;
+  font-size: 8px;
   line-height: 1;
   color: rgba(255,255,255,0.82);
 }
 
 .wx-next-meta strong {
   display: block;
-  margin-top: 3px;
-  font-size: 12px;
+  margin-top: 2px;
+  font-size: 10px;
   line-height: 1.2;
   color: #ffffff;
 }
@@ -751,21 +791,21 @@
 
 .wx-message-screen {
   flex: 1 1 auto;
-  min-height: 70px;
-  padding: 7px 8px;
-  border-radius: 10px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border-radius: 7px;
   background: linear-gradient(180deg, rgba(5, 10, 24, 0.95) 0%, rgba(10, 18, 38, 0.98) 100%);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
 }
 
 .wx-message-line {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.28;
+  font-size: 9px;
+  line-height: 1.2;
   color: rgba(226, 232, 240, 0.88);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -793,37 +833,29 @@
   }
 }
 
-.wx-game-main {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 92px;
-  gap: 8px;
-  align-items: stretch;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .wx-side-coin {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 10px 4px 8px;
-  border-radius: 12px;
+  justify-content: center;
+  gap: 3px;
+  min-height: 18px;
+  padding: 1px 3px 2px;
+  border-radius: 0;
   background: rgba(18, 32, 84, 0.92);
   border: 1px solid rgba(255,255,255,0.1);
   overflow: visible;
 }
 
 .wx-side-coin-icon {
-  font-size: 13px;
+  font-size: 9px;
   line-height: 1;
   color: #fde68a;
 }
 
 .wx-side-coin .coin-display {
-  font-size: 18px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 800;
   color: #ffffff;
@@ -833,14 +865,13 @@
   inset: 0;
 }
 
-.wx-board-column {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.wx-side-mascot {
+.wx-stage-mascot {
   position: relative;
+  position: absolute;
+  right: 28px;
+  top: 38px;
+  width: 92px;
+  height: 112px;
   border: none;
   background: transparent;
   padding: 0;
@@ -848,36 +879,37 @@
   align-items: flex-start;
   justify-content: center;
   min-width: 0;
+  z-index: 7;
 }
 
-.wx-side-mascot-antennas::before,
-.wx-side-mascot-antennas::after {
+.wx-stage-mascot-antennas::before,
+.wx-stage-mascot-antennas::after {
   content: "";
   position: absolute;
-  top: 16px;
+  top: 4px;
   width: 3px;
-  height: 28px;
+  height: 30px;
   border-radius: 999px;
   background: rgba(27, 17, 64, 0.9);
   transform-origin: bottom center;
 }
 
-.wx-side-mascot-antennas::before {
-  right: 46px;
-  transform: rotate(-16deg);
+.wx-stage-mascot-antennas::before {
+  right: 44px;
+  transform: rotate(-14deg);
 }
 
-.wx-side-mascot-antennas::after {
-  right: 28px;
-  transform: rotate(12deg);
+.wx-stage-mascot-antennas::after {
+  right: 24px;
+  transform: rotate(10deg);
 }
 
-.wx-side-mascot-body {
+.wx-stage-mascot-body {
   position: absolute;
-  top: 34px;
-  right: 8px;
-  width: 72px;
-  height: 72px;
+  top: 24px;
+  right: 0;
+  width: 78px;
+  height: 78px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,0.82), rgba(255,255,255,0) 24%),
@@ -889,8 +921,8 @@
   animation: wx_mascot_wobble 2.8s ease-in-out infinite;
 }
 
-.wx-side-mascot-body::before,
-.wx-side-mascot-body::after {
+.wx-stage-mascot-body::before,
+.wx-stage-mascot-body::after {
   content: "";
   position: absolute;
   top: 22px;
@@ -901,18 +933,18 @@
   box-shadow: inset 0 -2px 0 rgba(15, 23, 42, 0.06);
 }
 
-.wx-side-mascot-body::before {
+.wx-stage-mascot-body::before {
   left: 14px;
 }
 
-.wx-side-mascot-body::after {
+.wx-stage-mascot-body::after {
   right: 14px;
 }
 
-.wx-side-mascot .wx-game-pet-emoji {
+.wx-stage-mascot .wx-game-pet-emoji {
   position: absolute;
-  top: 58px;
-  right: 25px;
+  top: 48px;
+  right: 20px;
   z-index: 2;
   width: 38px;
   height: 24px;
@@ -924,7 +956,7 @@
   animation: wx_mascot_wobble 2.8s ease-in-out infinite;
 }
 
-.wx-side-mascot .wx-game-pet-text {
+.wx-stage-mascot .wx-game-pet-text {
   position: absolute;
   right: 0;
   top: 120px;
@@ -949,7 +981,7 @@
   min-height: 0;
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   overflow: hidden;
   background: transparent;
@@ -958,24 +990,24 @@
 }
 
 .wechat-game-layout #gameCanvas {
-  width: min(100%, calc((100dvh - var(--wx-game-safe-offset)) * 420 / 760));
+  width: 100%;
   height: auto;
   max-height: calc(100dvh - var(--wx-game-safe-offset));
 }
 
 .wx-ad-stage {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
-  margin-top: 0;
-  padding-bottom: 0;
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin-top: 2px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
   z-index: 5;
 }
 
 .wx-tv-ad-shell {
   width: 100%;
-  max-width: 456px;
+  max-width: none;
   margin: 0 auto;
   padding: 0;
   border-radius: 0;
@@ -1039,8 +1071,9 @@
     --wx-banner-height: 84px;
     --wx-game-topbar-height: 104px;
     --wx-game-bottom-gap: 3px;
-    --wx-game-safe-offset: calc(var(--wx-banner-height) + var(--wx-game-topbar-height) + var(--wx-game-bottom-gap) + 12px);
+    --wx-game-safe-offset: calc(var(--wx-banner-height) + 10px);
     padding: 6px 6px 8px;
+  }
 
   .wx-home-info-grid,
   .wx-menu-buttons,
@@ -1052,7 +1085,7 @@
   .wechat-screen#gameScreen:not(.hidden) {
     min-height: calc(100vh - 12px);
     min-height: calc(100dvh - 12px);
-    padding-bottom: calc(var(--wx-banner-height) + env(safe-area-inset-bottom, 0px) + 4px);
+    padding-bottom: 0;
   }
 
   .wx-mode-copy,
@@ -1062,56 +1095,65 @@
   }
 
   .wx-game-topbar {
-    grid-template-columns: 48px 92px 38px 86px minmax(92px, 1fr);
-    gap: 5px;
+    left: 52px;
+    right: 4px;
+    top: 4px;
+    grid-template-columns: 72px 28px 56px minmax(0, 1fr);
+    gap: 4px;
   }
 
   .wx-top-panel,
   .wx-return-btn {
-    min-height: 80px;
+    min-height: 44px;
   }
 
   .wx-step-current,
   .wx-step-best {
-    font-size: 21px;
-  }
-
-  .wx-next-orb {
-    width: 38px;
-    height: 38px;
-  }
-
-  .wx-message-screen {
-    min-height: 64px;
-    padding: 6px 7px;
-  }
-
-  .wx-message-line {
-    font-size: 10px;
-  }
-
-  .wx-game-main {
-    grid-template-columns: 34px minmax(0, 1fr) 82px;
-    gap: 6px;
-  }
-
-  .wx-side-coin .coin-display {
     font-size: 16px;
   }
 
-  .wx-side-mascot-body {
-    width: 64px;
-    height: 64px;
-    top: 38px;
+  .wx-next-orb {
+    width: 24px;
+    height: 24px;
   }
 
-  .wx-side-mascot .wx-game-pet-emoji {
-    top: 58px;
-    right: 21px;
+  .wx-message-screen {
+    min-height: 34px;
+    padding: 4px 5px;
+  }
+
+  .wx-message-line {
+    font-size: 8px;
+  }
+
+  .wx-side-coin .coin-display {
+    font-size: 10px;
+  }
+
+  .wx-stage-mascot {
+    right: 18px;
+    top: 36px;
+    width: 84px;
+    height: 104px;
+  }
+
+  .wx-board-stage {
+    height: calc(100dvh - var(--wx-game-safe-offset) - 18px);
+  }
+
+  .wx-stage-mascot-body {
+    width: 70px;
+    height: 70px;
+    top: 24px;
+  }
+
+  .wx-stage-mascot .wx-game-pet-emoji {
+    top: 44px;
+    right: 16px;
     font-size: 19px;
   }
 
-  .wx-side-mascot .wx-game-pet-text {
+  .wx-stage-mascot .wx-game-pet-text {
     top: 114px;
     width: 82px;
     font-size: 10px;
