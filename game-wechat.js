@@ -29,6 +29,7 @@
   const gamePetChip = document.getElementById("gamePetChip");
   const gamePetEmoji = document.getElementById("gamePetEmoji");
   const gamePetText = document.getElementById("gamePetText");
+  const gameOfflineHint = document.getElementById("gameOfflineHint");
   const gameEnergySummary = document.getElementById("gameEnergySummary");
   const gameMoodSummary = document.getElementById("gameMoodSummary");
   const gameCleanSummary = document.getElementById("gameCleanSummary");
@@ -45,6 +46,7 @@
   const menuExitBtn = document.getElementById("menuExitBtn");
   const rankBackBtn = document.getElementById("rankBackBtn");
   const rankRefreshBtn = document.getElementById("rankRefreshBtn");
+  const rankOfflineTip = document.getElementById("rankOfflineTip");
   const friendLeaderboardList = document.getElementById("friendLeaderboardList");
   const myRankValue = document.getElementById("myRankValue");
   const rankSyncState = document.getElementById("rankSyncState");
@@ -71,6 +73,7 @@
   const rewardModalTitle = document.getElementById("rewardModalTitle");
   const rewardModalCopy = document.getElementById("rewardModalCopy");
   const rewardCloseBtn = document.getElementById("rewardCloseBtn");
+  const petActionButtons = Array.from(document.querySelectorAll("[data-pet-action]"));
   const dangerMeter = document.getElementById("dangerMeter");
   const dangerText = document.getElementById("dangerText");
   const dangerFill = document.getElementById("dangerFill");
@@ -547,7 +550,6 @@
     if (moodValue >= 8) {
       return {
         extraWeight: 0.25,
-        mergeCoins: 1,
         emoji: "😄",
         text: "开心，跳跃中",
         vibe: "暖色光效已激活"
@@ -556,7 +558,6 @@
     if (moodValue >= 5) {
       return {
         extraWeight: 0.05,
-        mergeCoins: 0,
         emoji: "🙂",
         text: "平静",
         vibe: "大球概率轻微提升"
@@ -565,7 +566,6 @@
     if (moodValue >= 3) {
       return {
         extraWeight: 0,
-        mergeCoins: 0,
         emoji: "😐",
         text: "低沉",
         vibe: "没有额外加成"
@@ -573,7 +573,6 @@
     }
     return {
       extraWeight: 0,
-      mergeCoins: 0,
       emoji: "🥺",
       text: "低落",
       vibe: "画面会偏灰冷"
@@ -588,9 +587,9 @@
       return { ratio: 0.75, emoji: "🫧", text: "正常", effect: "风险线维持基准高度" };
     }
     if (cleanValue >= 3) {
-      return { ratio: 0.7, emoji: "🧹", text: "微脏", effect: "边缘会有淡淡灰尘" };
+      return { ratio: 0.71, emoji: "🧹", text: "微脏", effect: "边缘会有淡淡灰尘，但红线只会小幅下压" };
     }
-    return { ratio: 0.65, emoji: "🪣", text: "脏乱", effect: "污渍明显，容错空间更紧" };
+    return { ratio: 0.675, emoji: "🪣", text: "脏乱", effect: "污渍明显，但红线最多只比基准少 10% 空间" };
   }
 
   function getDangerLineY() {
@@ -1132,6 +1131,31 @@
     }
   }
 
+  function syncOfflinePlayableUI() {
+    const online = getShellOnline();
+    if (gameOfflineHint) {
+      gameOfflineHint.classList.toggle("hidden", online);
+    }
+    if (rankOfflineTip) {
+      rankOfflineTip.classList.toggle("hidden", online);
+    }
+    if (rankRefreshBtn) {
+      rankRefreshBtn.disabled = !online;
+      rankRefreshBtn.textContent = online ? "刷新好友榜" : "离线不可刷新";
+    }
+    petActionButtons.forEach((button) => {
+      if (!(button instanceof HTMLButtonElement)) return;
+      const action = button.dataset.petAction || "";
+      const slot = button.dataset.petSlot || "";
+      if (action === "watch") {
+        button.disabled = !online;
+        if (slot === "energy") button.textContent = online ? "看视频 +2" : "离线不可用";
+        if (slot === "mood") button.textContent = online ? "看视频 +1" : "离线不可用";
+        if (slot === "clean") button.textContent = online ? "看视频 +2" : "离线不可用";
+      }
+    });
+  }
+
   function syncShellEntryMessage() {
     const now = Date.now();
     const lastVisit = Number(localStorage.getItem(WECHAT_LAST_VISIT_KEY) || 0);
@@ -1155,6 +1179,7 @@
       shellWelcomeTip.textContent = notice;
     }
     updateShellNotice(notice);
+    syncOfflinePlayableUI();
     if (rank > 0) {
       localStorage.setItem(WECHAT_LAST_RANK_KEY, String(rank));
     }
@@ -1217,7 +1242,7 @@
     if (petMoodValue) petMoodValue.textContent = `${Math.round(pet.mood.value * 10) / 10}/10`;
     if (petMoodStatus) {
       const moodProfile = getMoodGameplayProfile(pet.mood.value);
-      petMoodStatus.textContent = `当前${moodProfile.text}，4号以上大球权重 +${Math.round(moodProfile.extraWeight * 100)}%，合成额外金币 ${moodProfile.mergeCoins > 0 ? `+${moodProfile.mergeCoins}` : "无"}，补点 ${getCurrentBuyCost("mood")} 金币。`;
+      petMoodStatus.textContent = `当前${moodProfile.text}，4号以上大球权重 +${Math.round(moodProfile.extraWeight * 100)}%，只影响大球出现概率，补点 ${getCurrentBuyCost("mood")} 金币。`;
     }
 
     if (petCleanFill) petCleanFill.style.width = `${(pet.clean.value / PET_MAX_VALUE) * 100}%`;
@@ -1242,7 +1267,7 @@
     if (gamePetText) gamePetText.textContent = displayState.text;
     if (petGardenTip) {
       const cleanProfile = getCleanRiskProfile(pet.clean.value);
-      petGardenTip.textContent = `体力控制发射节奏，快乐决定大球和额外金币，清洁会把风险线压到 ${Math.round(cleanProfile.ratio * 100)}% 高度。`;
+      petGardenTip.textContent = `体力控制发射节奏，快乐只影响大球概率，清洁会把风险线压到 ${Math.round(cleanProfile.ratio * 100)}% 高度。`;
     }
     const energyRule = getEnergyLaunchRule(pet.energy.value);
     const moodProfile = getMoodGameplayProfile(pet.mood.value);
@@ -1254,7 +1279,7 @@
     );
     setLiveStatusSummary(
       gameMoodSummary,
-      `快乐 ${Math.round(pet.mood.value * 10) / 10}/10：4号以上概率 +${Math.round(moodProfile.extraWeight * 100)}%，合成金币 ${moodProfile.mergeCoins > 0 ? `+${moodProfile.mergeCoins}` : "无"}`,
+      `快乐 ${Math.round(pet.mood.value * 10) / 10}/10：4号以上概率 +${Math.round(moodProfile.extraWeight * 100)}%，只影响大球出现概率`,
       pet.mood.value <= 2 ? "danger" : pet.mood.value <= 4 ? "warning" : "normal"
     );
     setLiveStatusSummary(
@@ -1268,6 +1293,11 @@
     state.pet = getPetSnapshot();
     const pet = state.pet;
     const now = Date.now();
+
+    if (action === "watch" && !getShellOnline()) {
+      openRewardModal("gift", "当前离线游玩中，激励视频暂不可用。联网后可以继续通过看视频恢复数值。");
+      return;
+    }
 
     if (action === "watch") {
       let bonusCoins = 0;
@@ -5086,16 +5116,6 @@
         state.score += LEVELS[newLevel].score;
         state.mergeCount += 1;
         state.pet = getPetSnapshot();
-        const moodProfile = getMoodGameplayProfile(state.pet.mood.value);
-        const mergeCoinBonus = moodProfile.mergeCoins + (state.pet.clean.value >= 8 ? 1 : 0);
-        if (mergeCoinBonus > 0) {
-          awardRunCoins(mergeCoinBonus);
-          spawnPopup(merged.x, merged.y - 30, `金币 +${mergeCoinBonus}`, "#fde68a", "merge");
-          if (moodProfile.mergeCoins > 0) {
-            spawnSparks(merged.x, merged.y - 18, "#facc15", 12, 220, 0.72, "merge");
-            playTone({ frequency: 880, duration: 0.08, type: "triangle", gain: 0.03 });
-          }
-        }
         completeOnboardingStep("first_merge");
         if (state.firstMergeAt <= 0) {
           state.firstMergeAt = getRunSeconds();
@@ -6316,10 +6336,15 @@
     showShellScreen("pet");
   });
   rankRefreshBtn?.addEventListener("click", () => {
+    if (!getShellOnline()) {
+      syncShellEntryMessage();
+      updateShellNotice("当前离线中，排行榜先显示本地缓存；联网后再刷新好友数据。");
+      return;
+    }
     renderFriendRankScreen(true);
     syncShellEntryMessage();
   });
-  document.querySelectorAll("[data-pet-action]").forEach((button) => {
+  petActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (!(button instanceof HTMLElement)) return;
       applyPetAction(button.dataset.petSlot || "", button.dataset.petAction || "");
