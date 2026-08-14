@@ -12,11 +12,12 @@
   const scorePill = document.querySelector(".score-pill");
   const coinFxLayer = document.getElementById("coinFxLayer");
   const bestValue = document.getElementById("bestValue");
+  const currentStepValue = document.getElementById("currentStepValue");
   let minStepValue = document.getElementById("minStepValue");
-  const timerValue = document.getElementById("timerValue");
   const nextBlob = document.getElementById("nextBlob");
   const nextName = document.getElementById("nextName");
   const nextHint = document.getElementById("nextHint");
+  const timerValue = document.getElementById("timerValue");
   const coachStage = document.getElementById("coachStage");
   const coachTitle = document.getElementById("coachTitle");
   const coachTip = document.getElementById("coachTip");
@@ -26,10 +27,14 @@
   const objectiveValue = document.getElementById("objectiveValue");
   const objectiveTip = document.getElementById("objectiveTip");
   const statusBanner = document.getElementById("statusBanner");
+  const npcBanner = document.getElementById("npcBanner");
   const gamePetChip = document.getElementById("gamePetChip");
   const gamePetEmoji = document.getElementById("gamePetEmoji");
   const gamePetText = document.getElementById("gamePetText");
   const gameOfflineHint = document.getElementById("gameOfflineHint");
+  const topEnergyFill = document.getElementById("topEnergyFill");
+  const topMoodFill = document.getElementById("topMoodFill");
+  const topCleanFill = document.getElementById("topCleanFill");
   const gameEnergySummary = document.getElementById("gameEnergySummary");
   const gameMoodSummary = document.getElementById("gameMoodSummary");
   const gameCleanSummary = document.getElementById("gameCleanSummary");
@@ -74,6 +79,7 @@
   const rewardModalCopy = document.getElementById("rewardModalCopy");
   const rewardCloseBtn = document.getElementById("rewardCloseBtn");
   const petActionButtons = Array.from(document.querySelectorAll("[data-pet-action]"));
+  const gameHelpZones = Array.from(document.querySelectorAll("[data-game-help]"));
   const dangerMeter = document.getElementById("dangerMeter");
   const dangerText = document.getElementById("dangerText");
   const dangerFill = document.getElementById("dangerFill");
@@ -135,6 +141,18 @@
   const audioToggle = document.getElementById("audioToggle");
   const shakeToggle = document.getElementById("shakeToggle");
   const volumeRange = document.getElementById("volumeRange");
+  const NPC_CHAT_LINES = [
+    "小精灵说：先把底部铺稳，再慢慢往中间堆高。",
+    "小精灵说：红线之上要留空，空间比贪大球更重要。",
+    "小精灵说：体力、快乐、清洁会一起影响这一局的手感。",
+    "小精灵说：看到下一步球型时，先想好要把它送去哪里。",
+    "小精灵说：步数越少越漂亮，历史最低步数会一直盯着你。"
+  ];
+  let transientBoardHint = "";
+  let transientBoardHintUntil = 0;
+  let npcChatIndex = 0;
+  let boardStatusText = "";
+  let menuPauseArmed = false;
   const clearLeaderboardBtn = document.getElementById("clearLeaderboardBtn");
   const resetProgressBtn = document.getElementById("resetProgressBtn");
   const resetAllDataBtn = document.getElementById("resetAllDataBtn");
@@ -1081,6 +1099,9 @@
       shellNotice.classList.toggle("hidden", screen === "game");
     }
     state.shellScreen = screen;
+    if (screen === "game") {
+      renderGameMessageBoard();
+    }
   }
 
   function pauseForShellNavigation() {
@@ -1129,6 +1150,42 @@
     if (shellNotice) {
       shellNotice.textContent = text;
     }
+  }
+
+  function animateBoardLine(node, text) {
+    if (!node || node.textContent === text) return;
+    node.textContent = text;
+    node.classList.remove("is-entering");
+    void node.offsetWidth;
+    node.classList.add("is-entering");
+  }
+
+  function getNpcBoardLine() {
+    const dynamic = [];
+    if (state?.pet) {
+      const petState = getPetDisplayState(state.pet);
+      dynamic.push(`小精灵说：${petState.text}`);
+    }
+    if (state?.nextLevel >= 0 && LEVELS[state.nextLevel]) {
+      dynamic.push(`小精灵说：下一步是${state.nextLevel + 1}号${LEVELS[state.nextLevel].name}。`);
+    }
+    const pool = dynamic.length ? dynamic.concat(NPC_CHAT_LINES) : NPC_CHAT_LINES;
+    return pool[npcChatIndex % pool.length];
+  }
+
+  function renderGameMessageBoard() {
+    const primary = boardStatusText || getReadyStatus();
+    const secondary = Date.now() < transientBoardHintUntil && transientBoardHint
+      ? transientBoardHint
+      : getNpcBoardLine();
+    animateBoardLine(statusBanner, primary);
+    animateBoardLine(npcBanner, secondary && secondary !== primary ? secondary : "");
+  }
+
+  function showGameAreaHint(text, duration = 2400) {
+    transientBoardHint = text;
+    transientBoardHintUntil = Date.now() + duration;
+    renderGameMessageBoard();
   }
 
   function syncOfflinePlayableUI() {
@@ -1272,6 +1329,9 @@
     const energyRule = getEnergyLaunchRule(pet.energy.value);
     const moodProfile = getMoodGameplayProfile(pet.mood.value);
     const cleanProfile = getCleanRiskProfile(pet.clean.value);
+    if (topEnergyFill) topEnergyFill.style.height = `${clamp(pet.energy.value / PET_MAX_VALUE, 0, 1) * 100}%`;
+    if (topMoodFill) topMoodFill.style.height = `${clamp(pet.mood.value / PET_MAX_VALUE, 0, 1) * 100}%`;
+    if (topCleanFill) topCleanFill.style.height = `${clamp(pet.clean.value / PET_MAX_VALUE, 0, 1) * 100}%`;
     setLiveStatusSummary(
       gameEnergySummary,
       `体力 ${Math.round(pet.energy.value * 10) / 10}/10：${energyRule.text}`,
@@ -1287,6 +1347,7 @@
       `清洁 ${Math.round(pet.clean.value * 10) / 10}/10：风险线 ${Math.round(cleanProfile.ratio * 100)}%，${cleanProfile.effect}`,
       pet.clean.value <= 2 ? "danger" : pet.clean.value <= 4 ? "warning" : "normal"
     );
+    renderGameMessageBoard();
   }
 
   function applyPetAction(slot, action) {
@@ -3920,6 +3981,9 @@
     if (!panel || panel.classList.contains("hidden")) return;
     panel.classList.add("hidden");
     state.panelsOpen = Math.max(0, state.panelsOpen - 1);
+    if (panel === pausePanel) {
+      menuPauseArmed = false;
+    }
     if (!state.gameOver && state.started && state.panelsOpen === 0) {
       state.paused = false;
       setStatus(getPlayStatus());
@@ -4613,21 +4677,31 @@
   function updateHud() {
     updateCoinDisplays();
     const minSteps = readKingMinSteps();
-    bestValue.textContent = `${state.dropCount}/${minSteps > 0 ? minSteps : "-"}`;
+    if (currentStepValue) {
+      currentStepValue.textContent = String(state.dropCount);
+    }
+    if (minStepValue) {
+      minStepValue.textContent = minSteps > 0 ? String(minSteps) : "-";
+    }
+    if (bestValue) {
+      bestValue.textContent = `${state.dropCount}/${minSteps > 0 ? minSteps : "-"}`;
+    }
     if (timerValue) {
       timerValue.textContent = "大王";
     }
 
     const level = LEVELS[state.nextLevel];
-    nextName.textContent = level.name;
+    nextName.textContent = `${state.nextLevel + 1}号 ${level.name}`;
     if (nextHint) {
       nextHint.textContent = level.hint;
     }
     nextBlob.style.background = `radial-gradient(circle at 28% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0) 24%), ${level.color}`;
+    renderGameMessageBoard();
   }
 
   function setStatus(text) {
-    statusBanner.textContent = text;
+    boardStatusText = text;
+    renderGameMessageBoard();
   }
 
   function resetGame(options = {}) {
@@ -6309,9 +6383,24 @@
   rankBackBtn?.addEventListener("click", () => showShellScreen("menu"));
   petBackBtn?.addEventListener("click", () => showShellScreen("menu"));
   gameMenuBtn?.addEventListener("click", () => {
-    pauseForShellNavigation();
-    showShellScreen("menu");
-    setStatus("已回到主界面，随时可以再开一局。");
+    if (!state.started || state.gameOver) {
+      pauseForShellNavigation();
+      showShellScreen("menu");
+      setStatus("已回到主界面，随时可以再开一局。");
+      return;
+    }
+    if (!state.paused && state.panelsOpen === 0) {
+      openPanel(pausePanel);
+      menuPauseArmed = true;
+      setStatus("已暂停，再点一次左上返回会回到主界面。");
+      return;
+    }
+    if (state.paused || menuPauseArmed) {
+      pauseForShellNavigation();
+      menuPauseArmed = false;
+      showShellScreen("menu");
+      setStatus("已回到主界面，随时可以再开一局。");
+    }
   });
   gameHomeBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
@@ -6335,6 +6424,15 @@
     renderPetSystem();
     showShellScreen("pet");
   });
+  gameHelpZones.forEach((node) => {
+    node.addEventListener("pointerdown", () => {
+      if (!(node instanceof HTMLElement)) return;
+      const hint = node.dataset.gameHelp || "";
+      if (hint) {
+        showGameAreaHint(hint);
+      }
+    });
+  });
   rankRefreshBtn?.addEventListener("click", () => {
     if (!getShellOnline()) {
       syncShellEntryMessage();
@@ -6350,6 +6448,12 @@
       applyPetAction(button.dataset.petSlot || "", button.dataset.petAction || "");
     });
   });
+  window.setInterval(() => {
+    npcChatIndex = (npcChatIndex + 1) % NPC_CHAT_LINES.length;
+    if (Date.now() >= transientBoardHintUntil && state.shellScreen === "game") {
+      renderGameMessageBoard();
+    }
+  }, 5200);
   rewardCloseBtn?.addEventListener("click", () => closePanel(rewardModal));
   clearLeaderboardBtn?.addEventListener("click", () => {
     if (!window.confirm("确认清空本地排行榜吗？这不会影响长期进度。")) return;

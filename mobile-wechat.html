@@ -62,6 +62,7 @@
           </div>
           <button id="rankRefreshBtn" class="ghost-btn" type="button">刷新好友榜</button>
         </div>
+        <p id="rankOfflineTip" class="wx-mode-copy hidden">当前离线中，排行榜使用本地缓存展示；联网后再刷新好友数据。</p>
         <ol id="friendLeaderboardList" class="leaderboard-list wx-friend-list"></ol>
       </div>
     </section>
@@ -136,45 +137,70 @@
     <section id="gameScreen" class="wechat-screen hidden">
       <section class="game-layout mobile-only-layout wechat-game-layout">
         <div class="game-panel">
-          <div class="wx-game-topbar">
-            <div class="wx-hud-left">
-              <div class="overlay-pill score-pill compact-pill">
-                <span class="overlay-label">金币</span>
+          <div class="wx-game-stage">
+            <div class="wx-game-topbar">
+              <button id="gameMenuBtn" class="wx-return-btn" type="button" aria-label="点击一次暂停，暂停后再点返回主界面" data-game-help="点一次会暂停当前游戏；暂停后再点一次会返回主界面。">
+                返回
+              </button>
+              <div class="wx-step-panel wx-top-panel" data-game-help="前面显示当前步数，后面红色数字显示历史最低步数。">
+                <span class="wx-panel-label">步数</span>
+                <div class="wx-step-values">
+                  <strong id="currentStepValue" class="wx-step-current">0</strong>
+                  <span class="wx-step-separator">/</span>
+                  <strong id="minStepValue" class="wx-step-best">-</strong>
+                </div>
+                <strong id="bestValue" class="wx-hidden-meta">0/-</strong>
+              </div>
+              <div class="wx-resource-panel wx-top-panel" data-game-help="橙色是体力，紫色是快乐，青色是清洁；高度越高代表当前数值越高。">
+                <span class="wx-panel-label">状态</span>
+                <div class="wx-resource-bars" aria-label="体力快乐清洁数值柱">
+                  <div class="wx-resource-bar is-energy"><i id="topEnergyFill"></i></div>
+                  <div class="wx-resource-bar is-mood"><i id="topMoodFill"></i></div>
+                  <div class="wx-resource-bar is-clean"><i id="topCleanFill"></i></div>
+                </div>
+              </div>
+              <div class="wx-next-center wx-top-panel" data-game-help="这里显示下一步要下落的球和编号。">
+                <span class="wx-panel-label">下一步</span>
+                <div class="wx-next-preview">
+                  <div id="nextBlob" class="next-blob wx-next-orb"></div>
+                  <div class="wx-next-meta">
+                    <span class="wx-next-label">NEXT</span>
+                    <strong id="nextName">1号 孢子</strong>
+                    <span id="nextHint" class="wx-hidden-meta">先铺底，别急着追高阶</span>
+                  </div>
+                </div>
+              </div>
+              <div class="wx-message-panel wx-top-panel" data-game-help="这里会优先显示当前状态提示；碰触功能区时会显示说明；空闲时显示 NPC 对话。">
+                <div class="wx-message-screen">
+                  <p id="statusBanner" class="wx-message-line is-primary">手机模式：点击直接下落，也可以下滑投放</p>
+                  <p id="npcBanner" class="wx-message-line">小精灵说：先把底部铺稳，再往上冲。</p>
+                </div>
+              </div>
+            </div>
+            <div id="gameOfflineHint" class="wx-inline-mode-note hidden">当前离线游玩：核心玩法可继续，广告恢复与好友同步暂不可用。</div>
+            <div class="wx-game-main">
+              <aside class="wx-side-coin score-pill" data-game-help="这里显示当前金币数量。">
+                <span class="wx-side-coin-icon">◎</span>
                 <strong id="scoreValue" class="coin-display">0</strong>
                 <span id="coinFxLayer" class="coin-fx-layer" aria-hidden="true"></span>
+              </aside>
+              <div class="wx-board-column">
+                <div class="canvas-wrap wx-board-shell">
+                  <canvas id="gameCanvas" width="420" height="760" aria-label="我要当大王微信小游戏壳子画布"></canvas>
+                  <section id="dangerMeter" class="danger-meter overlay-danger-meter compact-danger-meter" data-state="safe" aria-live="polite">
+                    <div class="danger-bar compact-danger-bar">
+                      <div id="dangerFill" class="danger-fill"></div>
+                    </div>
+                  </section>
+                </div>
               </div>
-              <div class="overlay-pill best-pill compact-pill">
-                <span class="overlay-label">步数</span>
-                <strong id="bestValue">0/-</strong>
-              </div>
+              <button id="gamePetChip" class="wx-side-mascot" type="button" aria-label="查看当前精灵状态" data-game-help="右侧是当前精灵展示位，后续会根据状态播放不同动画。">
+                <span class="wx-side-mascot-antennas" aria-hidden="true"></span>
+                <span class="wx-side-mascot-body" aria-hidden="true"></span>
+                <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
+                <span id="gamePetText" class="wx-hidden-meta">当前精灵状态</span>
+              </button>
             </div>
-            <div class="wx-next-center">
-              <div id="nextBlob" class="next-blob wx-next-orb"></div>
-              <span class="wx-next-label">NEXT</span>
-              <strong id="nextName" class="wx-hidden-meta">孢子</strong>
-            </div>
-            <div class="wx-top-controls">
-              <button id="gameMenuBtn" class="overlay-control-btn ghost-btn" type="button" aria-label="返回主菜单">返回</button>
-              <button id="pauseBtn" class="overlay-control-btn ghost-btn" type="button" aria-label="暂停游戏">暂停</button>
-            </div>
-          </div>
-          <button id="gamePetChip" class="wx-game-pet-chip" type="button" aria-label="查看宠物状态并快速恢复">
-            <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
-            <span id="gamePetText" class="wx-game-pet-text">点我查看宠物状态</span>
-          </button>
-          <section class="wx-live-status-panel" aria-label="局内三值影响说明">
-            <div id="gameEnergySummary" class="wx-live-status-item">体力 5/10：发射节奏正常</div>
-            <div id="gameMoodSummary" class="wx-live-status-item">快乐 5/10：大球概率轻微提升</div>
-            <div id="gameCleanSummary" class="wx-live-status-item">清洁 5/10：风险线基准高度 75%</div>
-          </section>
-          <div class="canvas-wrap wx-board-shell">
-            <canvas id="gameCanvas" width="420" height="760" aria-label="我要当大王微信小游戏壳子画布"></canvas>
-            <div id="statusBanner" class="status-banner">手机模式：点击直接下落，也可以下滑投放</div>
-            <section id="dangerMeter" class="danger-meter overlay-danger-meter compact-danger-meter" data-state="safe" aria-live="polite">
-              <div class="danger-bar compact-danger-bar">
-                <div id="dangerFill" class="danger-fill"></div>
-              </div>
-            </section>
           </div>
         </div>
       </section>
