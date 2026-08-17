@@ -431,6 +431,7 @@
     selectedBackupGroupFilter: "all",
     archivedBackupKeyword: "",
     shellScreen: "menu",
+    petReturnScreen: "menu",
     cachedFriendLeaderboard: [],
     coins: 0,
     pet: null,
@@ -439,7 +440,10 @@
     lastDroppedBlobId: null,
     coinDisplayValue: readGold(),
     coinFrenzyCleanupTimer: 0,
-    coinFxAnimatingUntil: 0
+    coinFxAnimatingUntil: 0,
+    startDangerFlashActive: false,
+    startDangerFlashPhase: 0,
+    startDangerFlashTimer: 0
   };
 
   const settings = readSettings();
@@ -1113,6 +1117,39 @@
     closePanel(rewardModal);
     if (gamePanel) {
       gamePanel.style.transform = "";
+    }
+  }
+
+  function openPetPark(returnScreen = "menu") {
+    state.petReturnScreen = returnScreen;
+    pauseForShellNavigation();
+    state.pet = getPetSnapshot();
+    renderPetSystem();
+    if (petBackBtn) {
+      petBackBtn.textContent = returnScreen === "game" ? "返回游戏" : "返回主界面";
+    }
+    showShellScreen("pet");
+  }
+
+  function returnFromPetPark() {
+    const returnScreen = state.petReturnScreen === "game" ? "game" : "menu";
+    if (returnScreen === "game") {
+      showShellScreen("game");
+      if (state.started && !state.gameOver) {
+        menuPauseArmed = false;
+        if (pausePanel?.classList.contains("hidden")) {
+          openPanel(pausePanel);
+        } else {
+          state.paused = true;
+          updatePauseButton();
+        }
+        setStatus("已从宠物页返回，点中间按钮继续当前进度。");
+      } else {
+        setStatus("已返回游戏界面。");
+      }
+    } else {
+      showShellScreen("menu");
+      setStatus("已回到主界面。");
     }
   }
 
@@ -4623,14 +4660,12 @@
       .join("");
   }
 
-  function startRun() {
-    if (state.gameOver) return;
-    state.started = true;
+  function finishStartRunAfterDangerFlash() {
+    state.startDangerFlashActive = false;
+    state.startDangerFlashPhase = 0;
+    state.startDangerFlashTimer = 0;
     state.paused = false;
     state.runStartTime = performance.now();
-    closePanel(helpPanel);
-    closePanel(startPanel);
-    closePanel(pausePanel);
     updatePauseButton();
     updateDangerUI();
     updateObjectiveUI();
@@ -4642,9 +4677,26 @@
         : "第一手尽量别直接压中心高点，先把底部接触面铺出来。"
     );
     setStatus(getPlayStatus());
-    ensureAudio();
     bgmStep = 0;
     syncBgm();
+  }
+
+  function startRun() {
+    if (state.gameOver) return;
+    state.started = true;
+    state.paused = true;
+    state.runStartTime = 0;
+    state.startDangerFlashActive = true;
+    state.startDangerFlashPhase = 0;
+    state.startDangerFlashTimer = 0.16;
+    closePanel(helpPanel);
+    closePanel(startPanel);
+    closePanel(pausePanel);
+    updatePauseButton();
+    updateDangerUI();
+    updateObjectiveUI();
+    setStatus("红线校准中，闪 3 次后开始。");
+    ensureAudio();
   }
 
   function getBlobMass(blob) {
@@ -4736,6 +4788,9 @@
     state.successRun = false;
     state.lastDroppedBlobId = null;
     state.runStartTime = 0;
+    state.startDangerFlashActive = false;
+    state.startDangerFlashPhase = 0;
+    state.startDangerFlashTimer = 0;
     state.cameraPunch = 0;
     state.time = 0;
     state.accumulator = 0;
@@ -5477,11 +5532,17 @@
     ctx.save();
     const dangerY = getDangerLineY();
     const warningY = getWarningLineY();
-    ctx.strokeStyle = `rgba(251,113,133,${0.26 + Math.min(0.62, state.warningLevel * 0.95)})`;
-    ctx.lineWidth = isMobileMode ? 4 : 3;
+    const startFlashVisible = state.startDangerFlashActive && state.startDangerFlashPhase % 2 === 0;
+    const dangerAlpha = startFlashVisible
+      ? 0.96
+      : 0.26 + Math.min(0.62, state.warningLevel * 0.95);
+    ctx.strokeStyle = `rgba(251,113,133,${dangerAlpha})`;
+    ctx.lineWidth = startFlashVisible ? (isMobileMode ? 6 : 5) : (isMobileMode ? 4 : 3);
     if (isMobileMode) {
-      ctx.shadowColor = `rgba(251,113,133,${0.32 + Math.min(0.4, state.warningLevel * 0.5)})`;
-      ctx.shadowBlur = 8 + state.warningLevel * 12;
+      ctx.shadowColor = startFlashVisible
+        ? "rgba(251,113,133,0.92)"
+        : `rgba(251,113,133,${0.32 + Math.min(0.4, state.warningLevel * 0.5)})`;
+      ctx.shadowBlur = startFlashVisible ? 18 : 8 + state.warningLevel * 12;
     }
     ctx.setLineDash([8, 8]);
     ctx.beginPath();
@@ -6135,6 +6196,17 @@
     }
     const delta = Math.min((ts - state.lastTs) / 1000, 0.033);
     state.lastTs = ts;
+    if (state.startDangerFlashActive && !state.gameOver) {
+      state.startDangerFlashTimer -= delta;
+      if (state.startDangerFlashTimer <= 0) {
+        state.startDangerFlashPhase += 1;
+        if (state.startDangerFlashPhase >= 6) {
+          finishStartRunAfterDangerFlash();
+        } else {
+          state.startDangerFlashTimer += 0.16;
+        }
+      }
+    }
     if (state.paused && !state.gameOver) {
       render();
       requestAnimationFrame(frame);
@@ -6368,10 +6440,7 @@
     showShellScreen("rank");
   });
   menuPetBtn?.addEventListener("click", () => {
-    pauseForShellNavigation();
-    state.pet = getPetSnapshot();
-    renderPetSystem();
-    showShellScreen("pet");
+    openPetPark("menu");
   });
   menuExitBtn?.addEventListener("click", () => {
     if (window.history.length > 1) {
@@ -6381,7 +6450,7 @@
     }
   });
   rankBackBtn?.addEventListener("click", () => showShellScreen("menu"));
-  petBackBtn?.addEventListener("click", () => showShellScreen("menu"));
+  petBackBtn?.addEventListener("click", () => returnFromPetPark());
   gameMenuBtn?.addEventListener("click", () => {
     if (!state.started || state.gameOver) {
       pauseForShellNavigation();
@@ -6413,16 +6482,10 @@
     showShellScreen("rank");
   });
   gamePetBtn?.addEventListener("click", () => {
-    pauseForShellNavigation();
-    state.pet = getPetSnapshot();
-    renderPetSystem();
-    showShellScreen("pet");
+    openPetPark("game");
   });
   gamePetChip?.addEventListener("click", () => {
-    pauseForShellNavigation();
-    state.pet = getPetSnapshot();
-    renderPetSystem();
-    showShellScreen("pet");
+    openPetPark("game");
   });
   gameHelpZones.forEach((node) => {
     node.addEventListener("pointerdown", () => {

@@ -620,10 +620,10 @@
 .wx-game-topbar {
   position: absolute;
   left: 56px;
-  right: 4px;
+  right: 0;
   top: 4px;
   display: grid;
-  grid-template-columns: 76px 30px 60px minmax(0, 1fr);
+  grid-template-columns: 56px 26px 48px minmax(0, 1fr);
   gap: 4px;
   min-height: 52px;
   align-items: stretch;
@@ -672,7 +672,7 @@
 }
 
 .wx-step-current {
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   color: #ffffff;
   font-weight: 800;
@@ -685,7 +685,7 @@
 }
 
 .wx-step-best {
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   color: #ff5f5f;
   font-weight: 900;
@@ -740,8 +740,8 @@
 
 .wx-next-center {
   justify-content: center;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-left: 3px;
+  padding-right: 3px;
 }
 
 .wx-next-preview {
@@ -787,30 +787,33 @@
 
 .wx-message-panel {
   min-width: 0;
+  justify-content: stretch;
 }
 
 .wx-message-screen {
   flex: 1 1 auto;
-  min-height: 36px;
-  padding: 4px 6px;
+  min-height: 40px;
+  padding: 4px 8px;
   border-radius: 7px;
   background: linear-gradient(180deg, rgba(5, 10, 24, 0.95) 0%, rgba(10, 18, 38, 0.98) 100%);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
+  text-align: right;
 }
 
 .wx-message-line {
   margin: 0;
-  font-size: 9px;
-  line-height: 1.2;
+  font-size: 10px;
+  line-height: 1.15;
   color: rgba(226, 232, 240, 0.88);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   transform: translateX(0);
+  direction: rtl;
 }
 
 .wx-message-line.is-primary {
@@ -868,10 +871,10 @@
 .wx-stage-mascot {
   position: relative;
   position: absolute;
-  right: 28px;
-  top: 38px;
-  width: 92px;
-  height: 112px;
+  right: 6px;
+  top: 54px;
+  width: 78px;
+  height: 96px;
   border: none;
   background: transparent;
   padding: 0;
@@ -908,8 +911,8 @@
   position: absolute;
   top: 24px;
   right: 0;
-  width: 78px;
-  height: 78px;
+  width: 66px;
+  height: 66px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,0.82), rgba(255,255,255,0) 24%),
@@ -943,8 +946,8 @@
 
 .wx-stage-mascot .wx-game-pet-emoji {
   position: absolute;
-  top: 48px;
-  right: 20px;
+  top: 44px;
+  right: 13px;
   z-index: 2;
   width: 38px;
   height: 24px;
@@ -959,8 +962,8 @@
 .wx-stage-mascot .wx-game-pet-text {
   position: absolute;
   right: 0;
-  top: 120px;
-  width: 92px;
+  top: 108px;
+  width: 78px;
   text-align: center;
   font-size: 11px;
   line-height: 1.25;
@@ -1025,6 +1028,16 @@
   place-items: center;
   text-align: center;
   padding: 8px 12px;
+}
+
+.wx-ad-placeholder {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .wx-ad-placeholder span {
@@ -1096,9 +1109,9 @@
 
   .wx-game-topbar {
     left: 52px;
-    right: 4px;
+    right: 0;
     top: 4px;
-    grid-template-columns: 72px 28px 56px minmax(0, 1fr);
+    grid-template-columns: 52px 24px 46px minmax(0, 1fr);
     gap: 4px;
   }
 
@@ -1109,7 +1122,7 @@
 
   .wx-step-current,
   .wx-step-best {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .wx-next-orb {
@@ -1118,12 +1131,12 @@
   }
 
   .wx-message-screen {
-    min-height: 34px;
-    padding: 4px 5px;
+    min-height: 38px;
+    padding: 4px 7px;
   }
 
   .wx-message-line {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .wx-side-coin .coin-display {
@@ -1131,10 +1144,10 @@
   }
 
   .wx-stage-mascot {
-    right: 18px;
-    top: 36px;
-    width: 84px;
-    height: 104px;
+    right: 4px;
+    top: 52px;
+    width: 68px;
+    height: 90px;
   }
 
   .wx-board-stage {
@@ -1142,21 +1155,21 @@
   }
 
   .wx-stage-mascot-body {
-    width: 70px;
-    height: 70px;
+    width: 58px;
+    height: 58px;
     top: 24px;
   }
 
   .wx-stage-mascot .wx-game-pet-emoji {
-    top: 44px;
-    right: 16px;
-    font-size: 19px;
+    top: 40px;
+    right: 9px;
+    font-size: 18px;
   }
 
   .wx-stage-mascot .wx-game-pet-text {
-    top: 114px;
-    width: 82px;
-    font-size: 10px;
+    top: 100px;
+    width: 68px;
+    font-size: 9px;
   }
 
   .wechat-game-layout .status-banner {
