@@ -603,44 +603,56 @@
   pointer-events: none;
 }
 
+.wx-stage-overlay::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 108px;
+  background: linear-gradient(180deg, rgba(53, 60, 151, 0.98) 0%, rgba(48, 56, 144, 0.98) 100%);
+  border-bottom: 1px solid rgba(160, 196, 255, 0.18);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
 .wx-stage-overlay > * {
   pointer-events: auto;
 }
 
 .wx-left-stack {
   position: absolute;
-  left: 4px;
-  top: 4px;
-  width: 46px;
+  left: 6px;
+  top: 8px;
+  width: 38px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .wx-game-topbar {
   position: absolute;
-  left: 56px;
-  right: 0;
-  top: 4px;
+  left: 52px;
+  right: 8px;
+  top: 8px;
   display: grid;
-  grid-template-columns: 56px 26px 48px minmax(0, 1fr);
-  gap: 4px;
-  min-height: 52px;
+  grid-template-columns: 42px 18px 34px minmax(0, 1fr);
+  gap: 3px;
+  min-height: 46px;
   align-items: stretch;
 }
 
 .wx-top-panel,
 .wx-return-btn {
-  min-height: 46px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.12);
+  min-height: 42px;
+  border-radius: 7px;
+  border: 1px solid rgba(196, 220, 255, 0.12);
   background:
-    linear-gradient(180deg, rgba(21, 36, 88, 0.92) 0%, rgba(17, 28, 74, 0.96) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    linear-gradient(180deg, rgba(24, 31, 108, 0.96) 0%, rgba(17, 24, 90, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(7, 13, 49, 0.16);
 }
 
 .wx-top-panel {
-  padding: 5px 6px 4px;
+  padding: 4px 5px 3px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -649,71 +661,71 @@
 
 .wx-panel-label {
   display: block;
-  margin-bottom: 3px;
-  font-size: 8px;
+  margin-bottom: 2px;
+  font-size: 7px;
   line-height: 1;
-  color: rgba(219, 234, 254, 0.82);
-  letter-spacing: 0.03em;
+  color: rgba(224, 236, 255, 0.84);
+  letter-spacing: 0.01em;
 }
 
 .wx-return-btn {
-  padding: 0 4px;
+  padding: 0 2px;
   color: #eef2ff;
-  min-height: 28px;
-  font-size: 12px;
+  min-height: 24px;
+  font-size: 10px;
   font-weight: 700;
 }
 
 .wx-step-values {
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 1px;
   margin-top: 0;
 }
 
 .wx-step-current {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   color: #ffffff;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .wx-step-separator {
   color: rgba(255,255,255,0.62);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
 }
 
 .wx-step-best {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
-  color: #ff5f5f;
+  color: #ff2f44;
   font-weight: 900;
 }
 
 .wx-resource-panel {
   align-items: center;
   justify-content: center;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-left: 3px;
+  padding-right: 3px;
 }
 
 .wx-resource-bars {
   display: flex;
   align-items: end;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   flex: none;
   width: 100%;
-  min-height: 34px;
+  min-height: 31px;
 }
 
 .wx-resource-bar {
   position: relative;
-  width: 6px;
-  height: 34px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
+  width: 5px;
+  height: 30px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.16);
   overflow: hidden;
 }
 
@@ -740,21 +752,21 @@
 
 .wx-next-center {
   justify-content: center;
-  padding-left: 3px;
-  padding-right: 3px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .wx-next-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   margin-top: 0;
 }
 
 .wx-next-orb {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }
 
 .wx-next-meta {
@@ -764,15 +776,15 @@
 
 .wx-next-label {
   display: block;
-  font-size: 8px;
+  font-size: 7px;
   line-height: 1;
   color: rgba(255,255,255,0.82);
 }
 
 .wx-next-meta strong {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
+  margin-top: 1px;
+  font-size: 8px;
   line-height: 1.2;
   color: #ffffff;
 }
@@ -788,32 +800,38 @@
 .wx-message-panel {
   min-width: 0;
   justify-content: stretch;
+  overflow: hidden;
 }
 
 .wx-message-screen {
   flex: 1 1 auto;
-  min-height: 40px;
-  padding: 4px 8px;
-  border-radius: 7px;
-  background: linear-gradient(180deg, rgba(5, 10, 24, 0.95) 0%, rgba(10, 18, 38, 0.98) 100%);
+  min-height: 42px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(6, 10, 35, 0.98) 0%, rgba(9, 14, 42, 1) 100%);
+  border: 1px solid rgba(11, 17, 50, 0.92);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  text-align: right;
+  gap: 0;
+  text-align: center;
 }
 
 .wx-message-line {
   margin: 0;
+  width: 100%;
   font-size: 10px;
-  line-height: 1.15;
-  color: rgba(226, 232, 240, 0.88);
+  line-height: 1.12;
+  color: rgba(236, 242, 255, 0.96);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
   transform: translateX(0);
-  direction: rtl;
+  direction: ltr;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .wx-message-line.is-primary {
@@ -846,8 +864,8 @@
   min-height: 18px;
   padding: 1px 3px 2px;
   border-radius: 0;
-  background: rgba(18, 32, 84, 0.92);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(18, 22, 83, 0.96);
+  border: 1px solid rgba(196, 220, 255, 0.08);
   overflow: visible;
 }
 
@@ -871,10 +889,10 @@
 .wx-stage-mascot {
   position: relative;
   position: absolute;
-  right: 6px;
+  right: 24px;
   top: 54px;
-  width: 78px;
-  height: 96px;
+  width: 86px;
+  height: 108px;
   border: none;
   background: transparent;
   padding: 0;
@@ -909,10 +927,10 @@
 
 .wx-stage-mascot-body {
   position: absolute;
-  top: 24px;
+  top: 26px;
   right: 0;
-  width: 66px;
-  height: 66px;
+  width: 74px;
+  height: 74px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,0.82), rgba(255,255,255,0) 24%),
@@ -946,8 +964,8 @@
 
 .wx-stage-mascot .wx-game-pet-emoji {
   position: absolute;
-  top: 44px;
-  right: 13px;
+  top: 50px;
+  right: 17px;
   z-index: 2;
   width: 38px;
   height: 24px;
@@ -962,8 +980,8 @@
 .wx-stage-mascot .wx-game-pet-text {
   position: absolute;
   right: 0;
-  top: 108px;
-  width: 78px;
+  top: 116px;
+  width: 86px;
   text-align: center;
   font-size: 11px;
   line-height: 1.25;
@@ -1108,35 +1126,35 @@
   }
 
   .wx-game-topbar {
-    left: 52px;
-    right: 0;
-    top: 4px;
-    grid-template-columns: 52px 24px 46px minmax(0, 1fr);
-    gap: 4px;
+    left: 48px;
+    right: 6px;
+    top: 8px;
+    grid-template-columns: 38px 18px 32px minmax(0, 1fr);
+    gap: 3px;
   }
 
   .wx-top-panel,
   .wx-return-btn {
-    min-height: 44px;
+    min-height: 40px;
   }
 
   .wx-step-current,
   .wx-step-best {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .wx-next-orb {
-    width: 24px;
-    height: 24px;
+    width: 19px;
+    height: 19px;
   }
 
   .wx-message-screen {
-    min-height: 38px;
-    padding: 4px 7px;
+    min-height: 40px;
+    padding: 4px 9px 4px 7px;
   }
 
   .wx-message-line {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .wx-side-coin .coin-display {
@@ -1144,10 +1162,10 @@
   }
 
   .wx-stage-mascot {
-    right: 4px;
-    top: 52px;
-    width: 68px;
-    height: 90px;
+    right: 18px;
+    top: 58px;
+    width: 74px;
+    height: 94px;
   }
 
   .wx-board-stage {
@@ -1155,20 +1173,20 @@
   }
 
   .wx-stage-mascot-body {
-    width: 58px;
-    height: 58px;
-    top: 24px;
+    width: 62px;
+    height: 62px;
+    top: 22px;
   }
 
   .wx-stage-mascot .wx-game-pet-emoji {
-    top: 40px;
-    right: 9px;
+    top: 42px;
+    right: 11px;
     font-size: 18px;
   }
 
   .wx-stage-mascot .wx-game-pet-text {
-    top: 100px;
-    width: 68px;
+    top: 102px;
+    width: 74px;
     font-size: 9px;
   }
 
