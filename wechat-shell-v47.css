@@ -799,16 +799,22 @@
 }
 
 .wx-message-panel {
+  position: absolute;
+  top: 56px;
+  right: 18px;
+  width: min(320px, calc(100vw - 128px));
+  max-width: calc(100% - 126px);
   min-width: 0;
   justify-content: stretch;
   overflow: hidden;
-  justify-self: stretch;
+  justify-self: auto;
+  z-index: 6;
 }
 
 .wx-message-screen {
   flex: 1 1 auto;
-  min-height: 50px;
-  padding: 5px 12px 5px 10px;
+  min-height: 35px;
+  padding: 4px 14px 4px 10px;
   border-radius: 4px;
   background: linear-gradient(180deg, rgba(6, 10, 35, 0.98) 0%, rgba(9, 14, 42, 1) 100%);
   border: 1px solid rgba(11, 17, 50, 0.92);
@@ -823,8 +829,8 @@
 .wx-message-line {
   margin: 0;
   width: 100%;
-  font-size: 11px;
-  line-height: 1.16;
+  font-size: 10px;
+  line-height: 1.1;
   color: rgba(236, 242, 255, 0.96);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1158,9 +1164,16 @@
     font-size: 9px;
   }
 
+  .wx-message-panel {
+    top: 58px;
+    right: 12px;
+    width: min(304px, calc(100vw - 118px));
+    max-width: calc(100% - 114px);
+  }
+
   .wx-message-screen {
-    min-height: 48px;
-    padding: 5px 12px 5px 8px;
+    min-height: 34px;
+    padding: 4px 12px 4px 8px;
   }
 
   .wx-message-line {
