@@ -448,18 +448,8 @@
 
   const settings = readSettings();
   let audioCtx = null;
-  let bgmIntervalId = null;
-  let bgmStep = 0;
-  const BGM_SEQUENCE = [
-    { bass: 110.0, pulse: 220.0, stab: 659.25, accent: true },
-    { bass: 110.0, pulse: 220.0, stab: 0, accent: false },
-    { bass: 123.47, pulse: 246.94, stab: 739.99, accent: true },
-    { bass: 123.47, pulse: 246.94, stab: 659.25, accent: false },
-    { bass: 98.0, pulse: 196.0, stab: 587.33, accent: true },
-    { bass: 98.0, pulse: 196.0, stab: 0, accent: false },
-    { bass: 110.0, pulse: 220.0, stab: 659.25, accent: true },
-    { bass: 110.0, pulse: 220.0, stab: 493.88, accent: false }
-  ];
+  let bgmAudio = null;
+  const BGM_TRACK_PATH = "./assets/bgm-paper-boat.mp3";
 
   function readSettings() {
     try {
@@ -3893,23 +3883,22 @@
     oscillator.stop(now + duration);
   }
 
-  function stopBgm() {
-    if (bgmIntervalId) {
-      clearInterval(bgmIntervalId);
-      bgmIntervalId = null;
+  function ensureBgmAudio() {
+    if (bgmAudio) {
+      bgmAudio.volume = Math.max(0, Math.min(1, settings.volume));
+      return bgmAudio;
     }
+    const audio = new Audio(BGM_TRACK_PATH);
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.volume = Math.max(0, Math.min(1, settings.volume));
+    bgmAudio = audio;
+    return bgmAudio;
   }
 
-  function playBgmStep() {
-    const ctxx = ensureAudio();
-    if (!ctxx || !settings.audioEnabled || !state.started || state.paused || state.gameOver) return;
-    const note = BGM_SEQUENCE[bgmStep % BGM_SEQUENCE.length];
-    bgmStep += 1;
-    playTone({ frequency: note.bass, duration: 0.24, type: "sawtooth", gain: note.accent ? 0.014 : 0.011 });
-    playTone({ frequency: note.pulse, duration: 0.12, type: "triangle", gain: note.accent ? 0.012 : 0.009 });
-    if (note.stab) {
-      playTone({ frequency: note.stab, duration: note.accent ? 0.15 : 0.11, type: "square", gain: note.accent ? 0.0075 : 0.0055 });
-      playTone({ frequency: note.stab * 0.5, duration: 0.12, type: "sine", gain: 0.0038 });
+  function stopBgm() {
+    if (bgmAudio) {
+      bgmAudio.pause();
     }
   }
 
@@ -3918,10 +3907,11 @@
       stopBgm();
       return;
     }
-    ensureAudio();
-    if (bgmIntervalId) return;
-    playBgmStep();
-    bgmIntervalId = window.setInterval(playBgmStep, 260);
+    const audio = ensureBgmAudio();
+    if (!audio) return;
+    audio.volume = Math.max(0, Math.min(1, settings.volume));
+    if (!audio.paused) return;
+    audio.play().catch(() => {});
   }
 
   function formatDuration(seconds) {
@@ -4677,7 +4667,9 @@
         : "第一手尽量别直接压中心高点，先把底部接触面铺出来。"
     );
     setStatus(getPlayStatus());
-    bgmStep = 0;
+    if (bgmAudio) {
+      bgmAudio.currentTime = 0;
+    }
     syncBgm();
   }
 
