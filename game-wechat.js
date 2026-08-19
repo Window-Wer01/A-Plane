@@ -3896,6 +3896,24 @@
     return bgmAudio;
   }
 
+  function primeBgmPlayback() {
+    if (!settings.audioEnabled) return;
+    const audio = ensureBgmAudio();
+    if (!audio) return;
+    const restoreVolume = Math.max(0, Math.min(1, settings.volume));
+    const previousTime = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    audio.volume = 0;
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.currentTime = previousTime;
+        audio.volume = restoreVolume;
+      })
+      .catch(() => {
+        audio.volume = restoreVolume;
+      });
+  }
+
   function stopBgm() {
     if (bgmAudio) {
       bgmAudio.pause();
@@ -4675,6 +4693,7 @@
 
   function startRun() {
     if (state.gameOver) return;
+    primeBgmPlayback();
     state.started = true;
     state.paused = true;
     state.runStartTime = 0;
