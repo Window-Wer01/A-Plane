@@ -449,6 +449,7 @@
   const settings = readSettings();
   let audioCtx = null;
   let bgmAudio = null;
+  let bgmUnlockBound = false;
   const BGM_TRACK_PATH = "./assets/bgm-paper-boat.mp3";
 
   function readSettings() {
@@ -593,15 +594,15 @@
 
   function getCleanRiskProfile(cleanValue) {
     if (cleanValue >= 8) {
-      return { ratio: 0.85, emoji: "✨", text: "干净闪亮", effect: "画面明亮，无污渍" };
+      return { ratio: 0.84, emoji: "✨", text: "干净闪亮", effect: "画面明亮，无污渍" };
     }
     if (cleanValue >= 5) {
-      return { ratio: 0.75, emoji: "🫧", text: "正常", effect: "风险线维持基准高度" };
+      return { ratio: 0.82, emoji: "🫧", text: "正常", effect: "风险线维持基准高度" };
     }
     if (cleanValue >= 3) {
-      return { ratio: 0.71, emoji: "🧹", text: "微脏", effect: "边缘会有淡淡灰尘，但红线只会小幅下压" };
+      return { ratio: 0.79, emoji: "🧹", text: "微脏", effect: "边缘会有淡淡灰尘，但红线只会小幅下压" };
     }
-    return { ratio: 0.675, emoji: "🪣", text: "脏乱", effect: "污渍明显，但红线最多只比基准少 10% 空间" };
+    return { ratio: 0.756, emoji: "🪣", text: "脏乱", effect: "污渍明显，但红线最低只会降到原设计高度的九成" };
   }
 
   function getDangerLineY() {
@@ -3891,7 +3892,11 @@
     const audio = new Audio(BGM_TRACK_PATH);
     audio.loop = true;
     audio.preload = "auto";
+    audio.playsInline = true;
+    audio.setAttribute("playsinline", "");
+    audio.setAttribute("webkit-playsinline", "");
     audio.volume = Math.max(0, Math.min(1, settings.volume));
+    audio.load();
     bgmAudio = audio;
     return bgmAudio;
   }
@@ -3902,16 +3907,33 @@
     if (!audio) return;
     const restoreVolume = Math.max(0, Math.min(1, settings.volume));
     const previousTime = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
-    audio.volume = 0;
+    audio.muted = true;
     audio.play()
       .then(() => {
         audio.pause();
         audio.currentTime = previousTime;
+        audio.muted = false;
         audio.volume = restoreVolume;
       })
       .catch(() => {
+        audio.muted = false;
         audio.volume = restoreVolume;
       });
+  }
+
+  function bindBgmUnlockGesture() {
+    if (bgmUnlockBound) return;
+    bgmUnlockBound = true;
+    const handler = () => {
+      primeBgmPlayback();
+      window.removeEventListener("pointerdown", handler, true);
+      window.removeEventListener("touchstart", handler, true);
+      window.removeEventListener("click", handler, true);
+      bgmUnlockBound = false;
+    };
+    window.addEventListener("pointerdown", handler, true);
+    window.addEventListener("touchstart", handler, true);
+    window.addEventListener("click", handler, true);
   }
 
   function stopBgm() {
@@ -3929,7 +3951,9 @@
     if (!audio) return;
     audio.volume = Math.max(0, Math.min(1, settings.volume));
     if (!audio.paused) return;
-    audio.play().catch(() => {});
+    audio.play().catch(() => {
+      bindBgmUnlockGesture();
+    });
   }
 
   function formatDuration(seconds) {
@@ -4699,14 +4723,14 @@
     state.runStartTime = 0;
     state.startDangerFlashActive = true;
     state.startDangerFlashPhase = 0;
-    state.startDangerFlashTimer = 0.16;
+    state.startDangerFlashTimer = 0.5;
     closePanel(helpPanel);
     closePanel(startPanel);
     closePanel(pausePanel);
     updatePauseButton();
     updateDangerUI();
     updateObjectiveUI();
-    setStatus("红线校准中，闪 3 次后开始。");
+    setStatus("红线校准中，每秒闪一次，3 次后开始。");
     ensureAudio();
   }
 
@@ -6214,7 +6238,7 @@
         if (state.startDangerFlashPhase >= 6) {
           finishStartRunAfterDangerFlash();
         } else {
-          state.startDangerFlashTimer += 0.16;
+          state.startDangerFlashTimer += 0.5;
         }
       }
     }
