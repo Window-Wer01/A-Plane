@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <title>我要当大王 - 微信小游戏壳子 V48</title>
+  <title>我要当大王 - 无网络可玩版 V48</title>
   <link rel="stylesheet" href="./styles.css?v=48" />
   <link rel="stylesheet" href="./wechat-shell-v48.css?v=48" />
 </head>
 <body class="mobile-play-page wechat-mini-body">
   <main class="app-shell mobile-play-shell wechat-mini-shell">
-    <section id="shellNotice" class="wx-shell-notice">你的宠物一直在等你来！</section>
+    <section id="shellNotice" class="wx-shell-notice">这是无网络可玩版，断网也能直接打开继续玩。</section>
 
     <section id="menuScreen" class="wechat-screen wx-home-screen">
       <div class="wx-home-card">
@@ -17,7 +17,7 @@
           <div>
             <p class="eyebrow">微信小游戏规格版</p>
             <h1>我要当大王</h1>
-            <p class="wx-home-copy">先做可跑的小游戏壳子：主界面、好友榜、宠物乐园、广告电视位和离线可玩提示都先接起来。</p>
+            <p class="wx-home-copy">本地离线版可直接打开游玩；恢复网络后再进入在线入口时，会继续刷新好友榜和用户信息。</p>
           </div>
           <div class="wx-home-mascot">👑</div>
         </div>
@@ -450,18 +450,9 @@
 
   <script>
     window.__BLOB_MOBILE_MODE__ = true;
-    window.__BLOB_GAME_VERSION__ = "v48";
-    window.__BLOB_USER_SYNC_URL__ = window.__BLOB_USER_SYNC_URL__ || "";
+    window.__BLOB_GAME_VERSION__ = "v48-offline";
+    window.__BLOB_USER_SYNC_URL__ = "";
   </script>
-  <script>
-    if ("serviceWorker" in navigator && /^https?:$/i.test(window.location.protocol)) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js?v=48", { scope: "./" })
-          .then((registration) => registration.update().catch(() => {}))
-          .catch(() => {});
-      });
-    }
-  </script>
-  <script src="./game-wechat-v48.js?v=48"></script>
+  <script src="./game-wechat-v48.js?v=48-offline"></script>
 </body>
 </html>

@@ -8,6 +8,10 @@
   通用版入口，适合电脑浏览器验证
 - `mobile.html`
   手机验证版入口，适合触控下滑投放测试
+- `mobile-wechat.html`
+  在线入口，首次联网打开后会缓存离线资源，之后断网也能继续回访
+- `mobile-wechat-offline-v48.html`
+  本地离线入口，直接打开文件即可游玩，不依赖网络
 - `styles.css`
   样式文件
 - `game.js`
