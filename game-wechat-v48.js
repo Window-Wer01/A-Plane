@@ -7058,12 +7058,16 @@
 
   restartBtn?.addEventListener("click", () => {
     if (state.started || state.gameOver) {
+      activateBgmFromGesture({ restart: true, keepPlaying: true });
       quickRestartRun();
       return;
     }
     resetGame();
   });
-  resultRestartBtn?.addEventListener("click", quickRestartRun);
+  resultRestartBtn?.addEventListener("click", () => {
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
+    quickRestartRun();
+  });
   startGameBtn?.addEventListener("click", () => {
     activateBgmFromGesture({ restart: true, keepPlaying: true });
     startRun();
@@ -7090,7 +7094,10 @@
     activateBgmFromGesture({ keepPlaying: false });
     setStatus("背景音乐已打开，开始游戏时会立即播放");
   });
-  pauseRestartBtn?.addEventListener("click", quickRestartRun);
+  pauseRestartBtn?.addEventListener("click", () => {
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
+    quickRestartRun();
+  });
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
     setStatus("先瞄一下说明啦，看完搁继续");
@@ -7123,6 +7130,7 @@
   });
   settingsCloseBtn?.addEventListener("click", () => closePanel(settingsPanel));
   menuStartBtn?.addEventListener("click", () => {
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
     pauseForShellNavigation();
     showShellScreen("game");
     quickRestartRun();

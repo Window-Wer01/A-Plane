@@ -208,15 +208,9 @@
         </div>
       </section>
 
-      <section class="wx-ad-stage">
-        <div class="wx-tv-ad-shell">
-          <div class="wx-tv-screen">
-            <div class="wx-ad-placeholder">
-              <span>Banner 广告预留区</span>
-              <strong>标准 Banner 占位，后续替换为微信小游戏 Banner</strong>
-            </div>
-          </div>
-        </div>
+      <section class="wx-tool-stage">
+        <div id="gameToolGrid" class="wx-tool-grid"></div>
+        <div id="gameToolTimer" class="wx-tool-timer hidden"></div>
       </section>
     </section>
 
@@ -245,69 +239,34 @@
             <strong id="resultScore">0</strong>
           </div>
           <div class="mini-stat">
-            <span>本局步数</span>
+            <span>本局奖励</span>
             <strong id="resultBest">0</strong>
           </div>
           <div class="mini-stat">
-            <span>目标</span>
+            <span>翻倍后奖励</span>
             <strong id="resultDuration">大王</strong>
           </div>
           <div class="mini-stat">
-            <span>本局奖励</span>
+            <span>已入账</span>
             <strong id="resultCoins">0</strong>
           </div>
-          <div class="mini-stat">
-            <span>当前库存</span>
-            <strong id="resultGoldTotal">0</strong>
-          </div>
-          <div class="mini-stat">
-            <span>合并次数</span>
-            <strong id="resultMerges">0</strong>
-          </div>
-          <div class="mini-stat">
-            <span>最高等级</span>
-            <strong id="resultTier">1</strong>
-          </div>
         </div>
+        <p id="resultReviewTip" class="panel-copy">看视频后可以把这次结算奖励翻倍。</p>
         <div class="panel-actions">
+          <button id="resultDoubleRewardBtn" class="ghost-btn" type="button">看视频奖励翻倍</button>
           <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
+          <button id="resultExitBtn" class="ghost-btn" type="button">退出</button>
         </div>
-        <section class="result-review">
-          <div class="panel-head compact">
-            <div>
-              <p class="eyebrow">本局复盘</p>
-              <h2 id="resultReviewTitle">这局还可以再稳一点</h2>
-            </div>
-          </div>
-          <p id="resultReviewTip" class="panel-copy">复盘会根据这局的堆叠、危险度和合并进度给出简单建议。</p>
-          <div id="resultReviewTags" class="result-tags"></div>
-        </section>
-
-        <section class="result-review">
-          <div class="panel-head compact">
-            <div>
-              <p class="eyebrow">任务回看</p>
-              <h2 id="resultObjectiveTitle">这局主要卡在这里</h2>
-            </div>
-          </div>
-          <div class="objective-snapshot compact-snapshot">
-            <div class="objective-head">
-              <span id="resultObjectiveStage" class="objective-stage">阶段任务</span>
-              <strong id="resultObjectiveValue">0%</strong>
-            </div>
-            <p id="resultObjectiveTip" class="objective-tip">这里会回看这局结束前最关键的任务阶段。</p>
-          </div>
-        </section>
-
-        <section class="result-review">
-          <div class="panel-head compact">
-            <div>
-              <p class="eyebrow">本局里程碑</p>
-              <h2>这局你解锁了</h2>
-            </div>
-          </div>
-          <div id="resultMilestones" class="milestone-list"></div>
-        </section>
+        <div id="resultGoldTotal" class="wx-hidden-meta">0</div>
+        <div id="resultMerges" class="wx-hidden-meta">0</div>
+        <div id="resultTier" class="wx-hidden-meta">1</div>
+        <div id="resultReviewTitle" class="wx-hidden-meta"></div>
+        <div id="resultReviewTags" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveStage" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveTitle" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveValue" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveTip" class="wx-hidden-meta"></div>
+        <div id="resultMilestones" class="wx-hidden-meta"></div>
       </div>
     </section>
 
