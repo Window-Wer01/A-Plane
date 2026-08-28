@@ -456,6 +456,7 @@
   let audioCtx = null;
   let bgmAudio = null;
   let bgmUnlockBound = false;
+  let bgmGestureUnlocked = false;
   let userInfoSyncTimer = 0;
   let userInfoSyncInFlight = null;
   const BGM_TRACK_PATH = "./assets/bgm-paper-boat.mp3";
@@ -4110,10 +4111,46 @@
         audio.currentTime = previousTime;
         audio.muted = false;
         audio.volume = restoreVolume;
+        bgmGestureUnlocked = true;
       })
       .catch(() => {
         audio.muted = false;
         audio.volume = restoreVolume;
+      });
+  }
+
+  function activateBgmFromGesture({ restart = false, keepPlaying = false } = {}) {
+    if (!settings.audioEnabled) return Promise.resolve(false);
+    const audio = ensureBgmAudio();
+    if (!audio) return Promise.resolve(false);
+    audio.muted = false;
+    audio.volume = Math.max(0, Math.min(1, settings.volume));
+    if (restart) {
+      try {
+        audio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+    return audio.play()
+      .then(() => {
+        bgmGestureUnlocked = true;
+        if (!keepPlaying) {
+          audio.pause();
+          if (restart) {
+            try {
+              audio.currentTime = 0;
+            } catch {
+              // ignore
+            }
+          }
+        }
+        return true;
+      })
+      .catch(() => {
+        primeBgmPlayback();
+        bindBgmUnlockGesture();
+        return false;
       });
   }
 
@@ -4147,9 +4184,15 @@
     if (!audio) return;
     audio.volume = Math.max(0, Math.min(1, settings.volume));
     if (!audio.paused) return;
-    audio.play().catch(() => {
-      bindBgmUnlockGesture();
-    });
+    audio.play()
+      .then(() => {
+        bgmGestureUnlocked = true;
+      })
+      .catch(() => {
+        if (!bgmGestureUnlocked) {
+          bindBgmUnlockGesture();
+        }
+      });
   }
 
   function formatDuration(seconds) {
@@ -4913,7 +4956,7 @@
 
   function startRun() {
     if (state.gameOver) return;
-    primeBgmPlayback();
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
     state.started = true;
     state.paused = true;
     state.runStartTime = 0;
@@ -6462,6 +6505,9 @@
 
   function beginPointerInteraction(clientX, clientY, pointerId) {
     ensureAudio();
+    if (settings.audioEnabled && state.started && !state.paused && !state.gameOver && bgmAudio?.paused) {
+      activateBgmFromGesture({ keepPlaying: true });
+    }
     if (!state.started || (state.paused && !state.gameOver)) return false;
     state.idleSinceDrop = 0;
     state.pointerActive = true;
@@ -6623,8 +6669,12 @@
     resetGame();
   });
   resultRestartBtn?.addEventListener("click", quickRestartRun);
-  startGameBtn?.addEventListener("click", startRun);
+  startGameBtn?.addEventListener("click", () => {
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
+    startRun();
+  });
   resumeGameBtn?.addEventListener("click", () => {
+    activateBgmFromGesture({ keepPlaying: true });
     closePanel(pausePanel);
     setStatus(getPlayStatus());
   });
