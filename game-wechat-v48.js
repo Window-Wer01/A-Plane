@@ -78,6 +78,8 @@
   const rewardModalTitle = document.getElementById("rewardModalTitle");
   const rewardModalCopy = document.getElementById("rewardModalCopy");
   const rewardCloseBtn = document.getElementById("rewardCloseBtn");
+  const gameToolGrid = document.getElementById("gameToolGrid");
+  const gameToolTimer = document.getElementById("gameToolTimer");
   const petActionButtons = Array.from(document.querySelectorAll("[data-pet-action]"));
   const gameHelpZones = Array.from(document.querySelectorAll("[data-game-help]"));
   const dangerMeter = document.getElementById("dangerMeter");
@@ -113,7 +115,9 @@
   const resultObjectiveValue = document.getElementById("resultObjectiveValue");
   const resultObjectiveTip = document.getElementById("resultObjectiveTip");
   const resultMilestones = document.getElementById("resultMilestones");
+  const resultDoubleRewardBtn = document.getElementById("resultDoubleRewardBtn");
   const resultRestartBtn = document.getElementById("resultRestartBtn");
+  const resultExitBtn = document.getElementById("resultExitBtn");
   const leaderboardPanel = document.getElementById("leaderboardPanel");
   const leaderboardList = document.getElementById("leaderboardList");
   const leaderboardCloseBtn = document.getElementById("leaderboardCloseBtn");
@@ -245,6 +249,8 @@
   const WECHAT_PET_STATE_KEY = "blob-merge-prototype-wechat-pet-state";
   const WECHAT_DAILY_STATE_KEY = "blob-merge-prototype-wechat-daily-state";
   const WECHAT_BALANCE_PROFILE_KEY = "blob-merge-prototype-wechat-balance-profile";
+  const WECHAT_TOOL_INVENTORY_KEY = "blob-merge-prototype-wechat-tool-inventory";
+  const WECHAT_TOOL_VIDEO_STATE_KEY = "blob-merge-prototype-wechat-tool-video-state";
   const WECHAT_USER_INFO_KEY = "blob-merge-prototype-wechat-user-info";
   const WECHAT_PENDING_USER_INFO_KEY = "blob-merge-prototype-wechat-pending-user-info";
   const WECHAT_USER_DEVICE_ID_KEY = "blob-merge-prototype-wechat-user-device-id";
@@ -443,6 +449,9 @@
     coins: 0,
     pet: null,
     rewardCoinsEarned: 0,
+    settlementRewardBase: 0,
+    settlementRewardDoubled: 0,
+    rewardDoubleClaimed: false,
     successRun: false,
     lastDroppedBlobId: null,
     coinDisplayValue: readGold(),
@@ -450,7 +459,14 @@
     coinFxAnimatingUntil: 0,
     startDangerFlashActive: false,
     startDangerFlashPhase: 0,
-    startDangerFlashTimer: 0
+    startDangerFlashTimer: 0,
+    toolInventory: null,
+    toolRunUsage: null,
+    capsuleTimer: 0,
+    rageTimer: 0,
+    rageRecoverTimer: 0,
+    rageBlobId: null,
+    splitBombArmed: false
   };
 
   const settings = readSettings();
@@ -550,6 +566,31 @@
     { label: "金币包", type: "coins", coins: 10 },
     { label: "糖果徽章", type: "gift" }
   ];
+  const TOOL_KEYS = ["capsule", "remove", "rage", "split"];
+  const TOOL_RUN_LIMIT = 3;
+  const TOOL_VIDEO_GUARANTEE = 3;
+  const TOOL_CONFIG = {
+    capsule: {
+      label: "神秘胶囊",
+      short: "胶囊",
+      description: "红线抬高 5%，持续 30 秒"
+    },
+    remove: {
+      label: "移除道具",
+      short: "移除",
+      description: "随机去掉 1 个 1-3 级生物"
+    },
+    rage: {
+      label: "发脾气",
+      short: "脾气",
+      description: "随机放大 1 个 4-6 级生物 5 秒"
+    },
+    split: {
+      label: "分裂弹",
+      short: "分裂",
+      description: "下一球命中后把首个目标分裂成两个 1 级"
+    }
+  };
 
   function getEnergyLaunchRule(energyValue) {
     if (energyValue >= 8) {
@@ -620,13 +661,17 @@
   function getDangerLineY() {
     const pet = state.pet || getPetSnapshot();
     const profile = getCleanRiskProfile(pet.clean.value);
-    return PIT.y + PIT.height * (1 - profile.ratio);
+    const extraRatio = state.capsuleTimer > 0 ? 0.05 : 0;
+    const ratio = clamp(profile.ratio + extraRatio, 0.2, 0.95);
+    return PIT.y + PIT.height * (1 - ratio);
   }
 
   function getWarningLineY() {
     const pet = state.pet || getPetSnapshot();
     const profile = getCleanRiskProfile(pet.clean.value);
-    const warningRatio = Math.max(0.5, profile.ratio - 0.15);
+    const extraRatio = state.capsuleTimer > 0 ? 0.05 : 0;
+    const boostedRatio = clamp(profile.ratio + extraRatio, 0.2, 0.95);
+    const warningRatio = Math.max(0.5, boostedRatio - 0.15);
     return PIT.y + PIT.height * (1 - warningRatio);
   }
 
@@ -781,6 +826,78 @@
     } catch {
       // 忽略本地存储失败
     }
+  }
+
+  function createDefaultToolInventory() {
+    return {
+      capsule: 3,
+      remove: 3,
+      rage: 3,
+      split: 3
+    };
+  }
+
+  function createDefaultToolRunUsage() {
+    return {
+      capsule: 0,
+      remove: 0,
+      rage: 0,
+      split: 0
+    };
+  }
+
+  function normalizeToolInventory(source) {
+    const base = createDefaultToolInventory();
+    const input = source && typeof source === "object" ? source : {};
+    for (const key of TOOL_KEYS) {
+      base[key] = Math.max(0, Math.floor(Number(input[key] ?? base[key])));
+    }
+    return base;
+  }
+
+  function readToolInventory() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WECHAT_TOOL_INVENTORY_KEY) || "null");
+      return normalizeToolInventory(saved);
+    } catch {
+      return createDefaultToolInventory();
+    }
+  }
+
+  function writeToolInventory(inventory) {
+    try {
+      localStorage.setItem(WECHAT_TOOL_INVENTORY_KEY, JSON.stringify(normalizeToolInventory(inventory)));
+      scheduleUserInfoSync("tool-inventory-updated");
+    } catch {
+      // ignore
+    }
+  }
+
+  function readToolVideoState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WECHAT_TOOL_VIDEO_STATE_KEY) || "null");
+      return {
+        watchCount: Math.max(0, Math.floor(Number(saved?.watchCount || 0)))
+      };
+    } catch {
+      return { watchCount: 0 };
+    }
+  }
+
+  function writeToolVideoState(videoState) {
+    try {
+      localStorage.setItem(WECHAT_TOOL_VIDEO_STATE_KEY, JSON.stringify({
+        watchCount: Math.max(0, Math.floor(Number(videoState?.watchCount || 0)))
+      }));
+    } catch {
+      // ignore
+    }
+  }
+
+  function ensureToolInventory() {
+    const inventory = readToolInventory();
+    writeToolInventory(inventory);
+    return inventory;
   }
 
   function readJsonStorage(key, fallbackValue) {
@@ -1208,7 +1325,12 @@
   }
 
   function computeRunCoinReward(outcome = "fail", dropCount = 0) {
-    if (outcome !== "success") return 0;
+    if (outcome !== "success") {
+      if (dropCount >= 120) return 6;
+      if (dropCount >= 80) return 4;
+      if (dropCount >= 40) return 2;
+      return 1;
+    }
     if (dropCount <= 110) return 15;
     if (dropCount <= 130) return 10;
     if (dropCount <= 150) return 6;
@@ -4474,6 +4596,104 @@
     }
   }
 
+  function getToolInventory() {
+    if (!state.toolInventory) {
+      state.toolInventory = ensureToolInventory();
+    }
+    return state.toolInventory;
+  }
+
+  function getToolRunUsage() {
+    if (!state.toolRunUsage) {
+      state.toolRunUsage = createDefaultToolRunUsage();
+    }
+    return state.toolRunUsage;
+  }
+
+  function getToolStock(key) {
+    return Math.max(0, Math.floor(Number(getToolInventory()[key] || 0)));
+  }
+
+  function getToolRunRemain(key) {
+    return Math.max(0, TOOL_RUN_LIMIT - Math.floor(Number(getToolRunUsage()[key] || 0)));
+  }
+
+  function consumeToolStock(key) {
+    const inventory = getToolInventory();
+    const usage = getToolRunUsage();
+    if (!TOOL_CONFIG[key]) return false;
+    if ((inventory[key] || 0) <= 0) return false;
+    if ((usage[key] || 0) >= TOOL_RUN_LIMIT) return false;
+    inventory[key] = Math.max(0, Math.floor(inventory[key]) - 1);
+    usage[key] = Math.min(TOOL_RUN_LIMIT, Math.floor(usage[key] || 0) + 1);
+    writeToolInventory(inventory);
+    return true;
+  }
+
+  function grantToolStock(key, amount = 1) {
+    if (!TOOL_CONFIG[key]) return;
+    const inventory = getToolInventory();
+    inventory[key] = Math.max(0, Math.floor(Number(inventory[key] || 0)) + Math.max(0, Math.floor(amount)));
+    writeToolInventory(inventory);
+  }
+
+  function awardRandomToolByVideo() {
+    const videoState = readToolVideoState();
+    videoState.watchCount += 1;
+    const guaranteed = videoState.watchCount % TOOL_VIDEO_GUARANTEE === 0;
+    const shouldAward = guaranteed || Math.random() < 0.4;
+    writeToolVideoState(videoState);
+    if (!shouldAward) {
+      return { awarded: false, guaranteed, watchCount: videoState.watchCount };
+    }
+    const key = TOOL_KEYS[Math.floor(Math.random() * TOOL_KEYS.length)];
+    grantToolStock(key, 1);
+    return { awarded: true, key, guaranteed, watchCount: videoState.watchCount };
+  }
+
+  function getToolTimerMessage() {
+    if (state.capsuleTimer > 0) {
+      return `神秘胶囊生效中，红线抬高 5%，剩余 ${Math.ceil(state.capsuleTimer)} 秒`;
+    }
+    if (state.rageTimer > 0 || state.rageRecoverTimer > 0) {
+      const remain = state.rageTimer > 0 ? state.rageTimer : state.rageRecoverTimer;
+      return `发脾气生效中，巨化挤压剩余 ${Math.ceil(remain)} 秒`;
+    }
+    if (state.splitBombArmed) {
+      return "分裂弹待命中：下一颗下落球会变成分裂弹";
+    }
+    return "";
+  }
+
+  function renderToolHud() {
+    if (!gameToolGrid) return;
+    const inventory = getToolInventory();
+    const usage = getToolRunUsage();
+    gameToolGrid.innerHTML = TOOL_KEYS.map((key) => {
+      const config = TOOL_CONFIG[key];
+      const stock = Math.max(0, Math.floor(Number(inventory[key] || 0)));
+      const used = Math.max(0, Math.floor(Number(usage[key] || 0)));
+      const remain = Math.max(0, TOOL_RUN_LIMIT - used);
+      const disabled = stock <= 0 || remain <= 0 || !state.started || state.paused || state.gameOver;
+      const active =
+        (key === "capsule" && state.capsuleTimer > 0) ||
+        (key === "rage" && (state.rageTimer > 0 || state.rageRecoverTimer > 0)) ||
+        (key === "split" && state.splitBombArmed);
+      return `
+        <button class="wx-tool-card ${stock <= 0 ? "is-empty" : ""} ${active ? "is-active" : ""}" type="button" data-tool-key="${key}" ${disabled ? "disabled" : ""}>
+          <div class="wx-tool-name">${escapeHtml(config.label)}</div>
+          <div class="wx-tool-stock">库存 ${stock} · 本局剩 ${remain}/${TOOL_RUN_LIMIT}</div>
+          <div class="wx-tool-meta">${escapeHtml(config.description)}</div>
+        </button>
+      `;
+    }).join("");
+    if (gameToolTimer) {
+      const message = getToolTimerMessage();
+      gameToolTimer.textContent = message;
+      gameToolTimer.classList.toggle("hidden", !message);
+    }
+  }
+
   function updatePauseButton() {
     if (!pauseBtn) return;
     pauseBtn.disabled = !state.started || state.gameOver;
@@ -5029,6 +5249,7 @@
       nextHint.textContent = level.hint;
     }
     nextBlob.style.background = `radial-gradient(circle at 28% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0) 24%), ${level.color}`;
+    renderToolHud();
     renderGameMessageBoard();
   }
 
@@ -5066,12 +5287,22 @@
     state.maxLevelReached = 0;
     state.recordBeaten = false;
     state.rewardCoinsEarned = 0;
+    state.settlementRewardBase = 0;
+    state.settlementRewardDoubled = 0;
+    state.rewardDoubleClaimed = false;
     state.successRun = false;
     state.lastDroppedBlobId = null;
     state.runStartTime = 0;
     state.startDangerFlashActive = false;
     state.startDangerFlashPhase = 0;
     state.startDangerFlashTimer = 0;
+    state.toolInventory = ensureToolInventory();
+    state.toolRunUsage = createDefaultToolRunUsage();
+    state.capsuleTimer = 0;
+    state.rageTimer = 0;
+    state.rageRecoverTimer = 0;
+    state.rageBlobId = null;
+    state.splitBombArmed = false;
     state.cameraPunch = 0;
     state.time = 0;
     state.accumulator = 0;
@@ -5140,7 +5371,10 @@
       expression: "idle",
       expressionTimer: 0,
       smileSeed: Math.random() * Math.PI * 2,
-      creatureVariant: getCreatureVariantForLevel(level)
+      creatureVariant: getCreatureVariantForLevel(level),
+      baseR: LEVELS[level].radius,
+      specialType: null,
+      specialArmed: false
     };
   }
 
@@ -5209,6 +5443,117 @@
     }
   }
 
+  function findEligibleBlob(levelMin, levelMax) {
+    const matches = state.blobs.filter((blob) => {
+      const displayLevel = blob.level + 1;
+      return displayLevel >= levelMin && displayLevel <= levelMax;
+    });
+    if (!matches.length) return null;
+    return matches[Math.floor(Math.random() * matches.length)];
+  }
+
+  function useCapsuleTool() {
+    state.capsuleTimer = Math.max(state.capsuleTimer, 30);
+    setStatus("神秘胶囊发动，红线暂时抬高 5%");
+    updateDangerUI();
+    updateHud();
+  }
+
+  function useRemoveTool() {
+    const target = findEligibleBlob(1, 3);
+    if (!target) {
+      setStatus("场上暂时没有 1-3 级目标可以移除");
+      return false;
+    }
+    state.blobs = state.blobs.filter((blob) => blob.id !== target.id);
+    if (state.lastDroppedBlobId === target.id) {
+      state.lastDroppedBlobId = null;
+    }
+    setStatus(`移除道具已清掉 1 个 ${LEVELS[target.level].name}`);
+    updateHud();
+    return true;
+  }
+
+  function restoreRageBlob(blob) {
+    if (!blob) return;
+    blob.r = blob.baseR || LEVELS[blob.level].radius;
+  }
+
+  function useRageTool() {
+    const target = findEligibleBlob(4, 6);
+    if (!target) {
+      setStatus("场上暂时没有 4-6 级目标可以发脾气");
+      return false;
+    }
+    if (state.rageBlobId) {
+      const prev = state.blobs.find((blob) => blob.id === state.rageBlobId);
+      restoreRageBlob(prev);
+    }
+    target.r = (target.baseR || LEVELS[target.level].radius) * 1.5;
+    target.vx *= 0.85;
+    target.vy *= 0.85;
+    state.rageBlobId = target.id;
+    state.rageTimer = 5;
+    state.rageRecoverTimer = 0;
+    setBlobExpression(target, "angry_left", 0.7);
+    setStatus(`发脾气发动，${LEVELS[target.level].name} 会挤压周围 5 秒`);
+    updateHud();
+    return true;
+  }
+
+  function useSplitTool() {
+    state.splitBombArmed = true;
+    setStatus("分裂弹待命，下一颗下落生物将变成分裂弹");
+    updateHud();
+    return true;
+  }
+
+  function activateTool(key) {
+    if (!state.started || state.paused || state.gameOver) return;
+    if (!TOOL_CONFIG[key]) return;
+    if (getToolStock(key) <= 0) {
+      setStatus(`${TOOL_CONFIG[key].label}库存不足`);
+      return;
+    }
+    if (getToolRunRemain(key) <= 0) {
+      setStatus(`${TOOL_CONFIG[key].label}本局已用满 3 次`);
+      return;
+    }
+    let ok = false;
+    if (key === "capsule") ok = true;
+    if (key === "remove") ok = Boolean(findEligibleBlob(1, 3));
+    if (key === "rage") ok = Boolean(findEligibleBlob(4, 6));
+    if (key === "split") ok = !state.splitBombArmed;
+    if (!ok) {
+      setStatus(`${TOOL_CONFIG[key].label}当前没有可用目标`);
+      return;
+    }
+    if (!consumeToolStock(key)) {
+      setStatus(`${TOOL_CONFIG[key].label}当前无法使用`);
+      return;
+    }
+    if (key === "capsule") useCapsuleTool();
+    if (key === "remove") useRemoveTool();
+    if (key === "rage") useRageTool();
+    if (key === "split") useSplitTool();
+    renderToolHud();
+  }
+
+  function applySplitBombHit(splitBlob, targetBlob) {
+    if (!splitBlob || !targetBlob) return false;
+    const spawnOffset = Math.max(18, LEVELS[0].radius * 1.15);
+    const leftBlob = createBlob(0, clamp(targetBlob.x - spawnOffset, PIT.x + 20, PIT.x + PIT.width - 20), Math.max(PIT.y + 30, targetBlob.y - 8), -64, -110);
+    const rightBlob = createBlob(0, clamp(targetBlob.x + spawnOffset, PIT.x + 20, PIT.x + PIT.width - 20), Math.max(PIT.y + 30, targetBlob.y - 8), 64, -110);
+    state.blobs = state.blobs.filter((blob) => blob.id !== splitBlob.id && blob.id !== targetBlob.id);
+    state.blobs.push(leftBlob, rightBlob);
+    if (state.lastDroppedBlobId === splitBlob.id || state.lastDroppedBlobId === targetBlob.id) {
+      state.lastDroppedBlobId = null;
+    }
+    setStatus("分裂弹命中，目标已裂成两个 1 级生物");
+    updateHud();
+    return true;
+  }
+
   function canDropByEnergy() {
     state.pet = getPetSnapshot();
     const energyValue = state.pet.energy.value;
@@ -5231,6 +5576,11 @@
     const initialVy = -130 + power * 520;
     const initialVx = (Math.random() - 0.5) * 6;
     const blob = createBlob(state.nextLevel, x, SPAWN_Y, initialVx, initialVy);
+    if (state.splitBombArmed) {
+      blob.specialType = "splitBomb";
+      blob.specialArmed = true;
+      state.splitBombArmed = false;
+    }
     state.blobs.push(blob);
     state.lastDroppedBlobId = blob.id;
     state.idleSinceDrop = 0;
@@ -5304,40 +5654,29 @@
       writeDailyState(dailyState);
     }
     const settlementCoins = baseRewardCoins + firstRunBonus;
+    state.settlementRewardBase = settlementCoins;
+    state.settlementRewardDoubled = settlementCoins * 2;
+    state.rewardDoubleClaimed = false;
     if (settlementCoins > 0) {
       awardRunCoins(settlementCoins);
     }
     pushLeaderboardEntry();
     updateProgress(durationSeconds);
     renderProgressSummary();
-    if (resultTitle) resultTitle.textContent = outcome === "success" ? "挑战成功" : "这次离大王还有多远";
+    if (resultTitle) resultTitle.textContent = outcome === "success" ? "挑战成功" : "本局失败";
     if (resultScore) resultScore.textContent = formatRunTimer(getRunSeconds());
-    if (resultBest) resultBest.textContent = String(state.dropCount);
-    if (resultTier) resultTier.textContent = String(getCurrentTopTier());
-    if (resultDuration) {
-      resultDuration.textContent = outcome === "success" ? "已完成" : "大王";
-      if (outcome === "success") {
-        if (resultReviewTitle) resultReviewTitle.textContent = "10级生物已合成，步数统计已停止";
-        if (resultReviewTip) {
-          const dailyText = firstRunBonus > 0 ? "，含每日首局 +3" : "";
-          resultReviewTip.textContent = `步数 ${state.dropCount} 手，结算基础奖励 ${baseRewardCoins} 金币${dailyText}。快乐值和清洁加成带来的局内金币也已一起计入本局奖励。`;
-        }
-        if (resultReviewTags) {
-          resultReviewTags.innerHTML = `<span class="result-tag">挑战成功</span><span class="result-tag">步数 ${state.dropCount}</span><span class="result-tag">结算 ${settlementCoins}</span>`;
-        }
-      } else {
-        renderResultReview(durationSeconds);
-      }
-    }
-    renderResultObjectiveSnapshot(state.lastObjectiveSnapshot);
-    if (resultCoins) resultCoins.textContent = state.rewardCoinsEarned > 0 ? `+${state.rewardCoinsEarned}` : "0";
+    if (resultBest) resultBest.textContent = `${settlementCoins}`;
+    if (resultDuration) resultDuration.textContent = `${state.settlementRewardDoubled}`;
+    if (resultCoins) resultCoins.textContent = state.rewardCoinsEarned > 0 ? `${state.rewardCoinsEarned}` : "0";
     if (resultGoldTotal) resultGoldTotal.textContent = String(state.coins);
     if (resultMerges) resultMerges.textContent = String(state.mergeCount);
     if (resultDangerPeak) {
       resultDangerPeak.textContent = `${Math.round(clamp(state.peakWarningLevel, 0, 1) * 100)}%`;
     }
-    renderMilestones();
-    renderOnboardingChecklist();
+    if (resultReviewTip) {
+      const dailyText = firstRunBonus > 0 ? "，含首局奖励 +3" : "";
+      resultReviewTip.textContent = `本局用时 ${formatRunTimer(durationSeconds)}，结算奖励 ${settlementCoins}${dailyText}。点击“看视频奖励翻倍”后，可额外再拿 ${settlementCoins}。`;
+    }
     updateHud();
     updateDangerUI();
     updateCoachUI();
@@ -5354,6 +5693,7 @@
     state.tutorialTimer = Math.max(0, state.tutorialTimer - dt);
     state.maxBlobsOnBoard = Math.max(state.maxBlobsOnBoard, state.blobs.length);
     state.idleSinceDrop += dt;
+    state.capsuleTimer = Math.max(0, state.capsuleTimer - dt);
     if (state.started && state.time % 0.5 < dt) {
       state.pet = getPetSnapshot();
       renderPetSystem();
@@ -5401,6 +5741,41 @@
       }
     }
 
+    if (state.rageBlobId) {
+      const rageBlob = state.blobs.find((blob) => blob.id === state.rageBlobId);
+      if (!rageBlob) {
+        state.rageBlobId = null;
+        state.rageTimer = 0;
+        state.rageRecoverTimer = 0;
+      } else if (state.rageTimer > 0) {
+        state.rageTimer = Math.max(0, state.rageTimer - dt);
+        for (const blob of state.blobs) {
+          if (blob.id === rageBlob.id) continue;
+          const dx = blob.x - rageBlob.x;
+          const dy = blob.y - rageBlob.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+          const pushRange = rageBlob.r + blob.r + 54;
+          if (dist > pushRange) continue;
+          const force = (1 - dist / pushRange) * 220;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          blob.vx += nx * force * dt;
+          blob.vy += ny * force * dt * 0.65;
+        }
+        if (state.rageTimer <= 0) {
+          state.rageRecoverTimer = 0.28;
+        }
+      } else if (state.rageRecoverTimer > 0) {
+        state.rageRecoverTimer = Math.max(0, state.rageRecoverTimer - dt);
+        const recoverRatio = 1 - state.rageRecoverTimer / 0.28;
+        rageBlob.r = (rageBlob.baseR || LEVELS[rageBlob.level].radius) * (1.5 - 0.5 * recoverRatio);
+        if (state.rageRecoverTimer <= 0) {
+          restoreRageBlob(rageBlob);
+          state.rageBlobId = null;
+        }
+      }
+    }
+
     const merges = [];
 
     for (let i = 0; i < state.blobs.length; i++) {
@@ -5419,6 +5794,18 @@
         const nx = dx / dist;
         const ny = dy / dist;
         const overlap = minDist - dist;
+        if (a.specialType === "splitBomb" && a.specialArmed) {
+          if (applySplitBombHit(a, b)) {
+            renderToolHud();
+            return;
+          }
+        }
+        if (b.specialType === "splitBomb" && b.specialArmed) {
+          if (applySplitBombHit(b, a)) {
+            renderToolHud();
+            return;
+          }
+        }
         const massA = getBlobMass(a);
         const massB = getBlobMass(b);
         const invMassA = 1 / massA;
@@ -5718,6 +6105,7 @@
     updateCoachUI();
     updateObjectiveUI();
     updateObjectiveRewards();
+    renderToolHud();
 
     for (const popup of state.popups) {
       popup.life -= dt;
@@ -6823,6 +7211,47 @@
     }
   }, 5200);
   rewardCloseBtn?.addEventListener("click", () => closePanel(rewardModal));
+  gameToolGrid?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const card = target.closest("[data-tool-key]");
+    if (!(card instanceof HTMLElement)) return;
+    activateTool(card.dataset.toolKey || "");
+  });
+  resultDoubleRewardBtn?.addEventListener("click", () => {
+    if (!getShellOnline()) {
+      openRewardModal("energy", "当前离线中，翻倍奖励暂不可用。联网后可以通过看视频翻倍。");
+      return;
+    }
+    if (state.rewardDoubleClaimed) {
+      setStatus("这局翻倍奖励已经领过了");
+      return;
+    }
+    const extra = Math.max(0, state.settlementRewardDoubled - state.settlementRewardBase);
+    if (extra > 0) {
+      awardRunCoins(extra);
+      state.rewardDoubleClaimed = true;
+      if (resultCoins) resultCoins.textContent = state.rewardCoinsEarned > 0 ? `${state.rewardCoinsEarned}` : "0";
+      if (resultReviewTip) {
+        resultReviewTip.textContent = `本局用时 ${formatRunTimer(Math.max(1, getRunSeconds()))}，翻倍奖励已领取，本局最终获得 ${state.settlementRewardDoubled}。`;
+      }
+      const toolResult = awardRandomToolByVideo();
+      if (toolResult.awarded) {
+        openRewardModal("energy", `奖励已翻倍，额外获得 ${extra}。同时看视频拿到 1 个${TOOL_CONFIG[toolResult.key].label}。`);
+      } else {
+        openRewardModal("energy", toolResult.guaranteed ? "奖励已翻倍，本次保底已触发但未发放成功。" : `奖励已翻倍，额外获得 ${extra}。本次视频未掉落道具，累计看满 ${TOOL_VIDEO_GUARANTEE} 次必得 1 个。`);
+      }
+      updateHud();
+      return;
+    }
+    openRewardModal("energy", "这局没有可翻倍的额外奖励。");
+  });
+  resultExitBtn?.addEventListener("click", () => {
+    pauseForShellNavigation();
+    showShellScreen("menu");
+    closePanel(resultPanel);
+    setStatus("已退出到主界面。");
+  });
   clearLeaderboardBtn?.addEventListener("click", () => {
     if (!window.confirm("确认清空本地排行榜吗？这不会影响长期进度。")) return;
     resetLeaderboardData();

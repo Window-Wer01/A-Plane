@@ -1047,59 +1047,74 @@
   max-height: calc(100dvh - var(--wx-game-safe-offset));
 }
 
-.wx-ad-stage {
+.wx-tool-stage {
   position: relative;
-  left: auto;
-  right: auto;
-  bottom: auto;
-  margin-top: 2px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+  margin-top: 4px;
+  padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 4px);
   z-index: 5;
 }
 
-.wx-tv-ad-shell {
-  width: 100%;
-  max-width: none;
-  margin: 0 auto;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.wx-tv-screen {
-  min-height: calc(var(--wx-banner-height) - 4px);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
-  border: 1px dashed rgba(58, 97, 196, 0.42);
+.wx-tool-grid {
   display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 8px 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.wx-ad-placeholder {
-  width: 100%;
-  min-height: 100%;
+.wx-tool-card {
+  min-height: 82px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 220, 255, 0.16);
+  background: linear-gradient(180deg, rgba(24, 31, 108, 0.96) 0%, rgba(17, 24, 90, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(7, 13, 49, 0.16);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  color: #eef2ff;
 }
 
-.wx-ad-placeholder span {
-  display: block;
-  color: rgba(59, 80, 125, 0.82);
+.wx-tool-card:disabled {
+  opacity: 0.62;
+}
+
+.wx-tool-card.is-empty {
+  background: linear-gradient(180deg, rgba(49, 56, 96, 0.94) 0%, rgba(30, 35, 66, 0.98) 100%);
+}
+
+.wx-tool-card.is-active {
+  border-color: rgba(250, 204, 21, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(250, 204, 21, 0.18), 0 4px 10px rgba(7, 13, 49, 0.22);
+}
+
+.wx-tool-name {
   font-size: 11px;
-  margin-bottom: 6px;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
-.wx-ad-placeholder strong {
-  display: block;
-  font-size: 14px;
-  color: #26417d;
+.wx-tool-stock {
+  font-size: 10px;
+  color: rgba(224, 236, 255, 0.82);
+}
+
+.wx-tool-meta {
+  font-size: 9px;
+  line-height: 1.25;
+  color: rgba(224, 236, 255, 0.78);
+}
+
+.wx-tool-timer {
+  margin-top: 6px;
+  min-height: 30px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(196, 220, 255, 0.16);
+  background: rgba(18, 24, 72, 0.92);
+  color: #eef2ff;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .wx-reward-card {
@@ -1224,7 +1239,26 @@
   }
 
   .wx-board-stage {
-    height: calc(100dvh - var(--wx-game-safe-offset) - 18px);
+    height: calc(100dvh - var(--wx-game-safe-offset) - 120px);
+  }
+
+  .wx-tool-grid {
+    gap: 5px;
+  }
+
+  .wx-tool-card {
+    min-height: 78px;
+    padding: 7px 5px;
+  }
+
+  .wx-tool-name {
+    font-size: 10px;
+  }
+
+  .wx-tool-stock,
+  .wx-tool-meta,
+  .wx-tool-timer {
+    font-size: 9px;
   }
 
   .wx-stage-mascot-body {
