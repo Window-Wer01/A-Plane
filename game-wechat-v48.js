@@ -138,6 +138,7 @@
   const helpCloseBtn = document.getElementById("helpCloseBtn");
   const settingsPanel = document.getElementById("settingsPanel");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+  const gameAudioBtn = document.getElementById("gameAudioBtn");
   const audioToggle = document.getElementById("audioToggle");
   const shakeToggle = document.getElementById("shakeToggle");
   const volumeRange = document.getElementById("volumeRange");
@@ -4465,6 +4466,12 @@
     if (shakeToggle) shakeToggle.checked = settings.shakeEnabled;
     if (volumeRange) volumeRange.value = String(Math.round(settings.volume * 100));
     if (backupCleanupPolicy) backupCleanupPolicy.value = settings.backupCleanupPolicy;
+    if (gameAudioBtn) {
+      gameAudioBtn.textContent = settings.audioEnabled ? "音乐开" : "音乐关";
+      gameAudioBtn.classList.toggle("is-off", !settings.audioEnabled);
+      gameAudioBtn.setAttribute("aria-pressed", settings.audioEnabled ? "true" : "false");
+      gameAudioBtn.setAttribute("title", settings.audioEnabled ? "点击关闭背景音乐" : "点击打开背景音乐");
+    }
   }
 
   function updatePauseButton() {
@@ -6678,6 +6685,23 @@
     closePanel(pausePanel);
     setStatus(getPlayStatus());
   });
+  gameAudioBtn?.addEventListener("click", () => {
+    settings.audioEnabled = !settings.audioEnabled;
+    saveSettings();
+    syncSettingsUI();
+    if (!settings.audioEnabled) {
+      stopBgm();
+      setStatus("背景音乐已关闭");
+      return;
+    }
+    if (state.started && !state.paused && !state.gameOver) {
+      activateBgmFromGesture({ keepPlaying: true });
+      setStatus("背景音乐已打开");
+      return;
+    }
+    activateBgmFromGesture({ keepPlaying: false });
+    setStatus("背景音乐已打开，开始游戏时会立即播放");
+  });
   pauseRestartBtn?.addEventListener("click", quickRestartRun);
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
@@ -7956,6 +7980,7 @@
   audioToggle?.addEventListener("change", () => {
     settings.audioEnabled = audioToggle.checked;
     saveSettings();
+    syncSettingsUI();
     syncBgm();
   });
   shakeToggle?.addEventListener("change", () => {
