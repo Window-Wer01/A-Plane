@@ -7058,17 +7058,26 @@
 
   restartBtn?.addEventListener("click", () => {
     if (state.started || state.gameOver) {
-      activateBgmFromGesture({ restart: true, keepPlaying: true });
       quickRestartRun();
+      settings.audioEnabled = true;
+      saveSettings();
+      syncSettingsUI();
+      activateBgmFromGesture({ restart: true, keepPlaying: true });
       return;
     }
     resetGame();
   });
   resultRestartBtn?.addEventListener("click", () => {
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
     quickRestartRun();
+    settings.audioEnabled = true;
+    saveSettings();
+    syncSettingsUI();
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   startGameBtn?.addEventListener("click", () => {
+    settings.audioEnabled = true;
+    saveSettings();
+    syncSettingsUI();
     activateBgmFromGesture({ restart: true, keepPlaying: true });
     startRun();
   });
@@ -7095,8 +7104,11 @@
     setStatus("背景音乐已打开，开始游戏时会立即播放");
   });
   pauseRestartBtn?.addEventListener("click", () => {
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
     quickRestartRun();
+    settings.audioEnabled = true;
+    saveSettings();
+    syncSettingsUI();
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
@@ -7130,10 +7142,13 @@
   });
   settingsCloseBtn?.addEventListener("click", () => closePanel(settingsPanel));
   menuStartBtn?.addEventListener("click", () => {
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
     pauseForShellNavigation();
     showShellScreen("game");
     quickRestartRun();
+    settings.audioEnabled = true;
+    saveSettings();
+    syncSettingsUI();
+    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   menuRankBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
@@ -7211,6 +7226,11 @@
       if (!(button instanceof HTMLElement)) return;
       applyPetAction(button.dataset.petSlot || "", button.dataset.petAction || "");
     });
+  });
+  canvas?.addEventListener("pointerdown", () => {
+    if (!state.started || state.paused || state.gameOver) return;
+    if (!settings.audioEnabled) return;
+    activateBgmFromGesture({ keepPlaying: true });
   });
   window.setInterval(() => {
     npcChatIndex = (npcChatIndex + 1) % NPC_CHAT_LINES.length;

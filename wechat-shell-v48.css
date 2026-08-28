@@ -298,7 +298,7 @@
   display: block;
   min-height: calc(100vh - 16px);
   min-height: calc(100dvh - 16px);
-  padding-bottom: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
 }
 
 .wechat-game-layout {
@@ -1048,7 +1048,8 @@
 }
 
 .wx-tool-stage {
-  position: relative;
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 58px);
   margin-top: 4px;
   padding: 0;
   z-index: 5;
@@ -1121,10 +1122,12 @@
 }
 
 .wx-ad-stage {
-  position: relative;
+  position: sticky;
+  bottom: 0;
   margin-top: 6px;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
-  z-index: 5;
+  z-index: 6;
+  background: linear-gradient(180deg, rgba(29, 53, 117, 0) 0%, rgba(29, 53, 117, 0.88) 36%, rgba(29, 53, 117, 0.96) 100%);
 }
 
 .wx-tv-ad-shell {
@@ -1293,7 +1296,7 @@
   }
 
   .wx-board-stage {
-    height: calc(100dvh - var(--wx-game-safe-offset) - 170px);
+    height: calc(100dvh - var(--wx-game-safe-offset) - 230px);
   }
 
   .wx-tool-grid {
