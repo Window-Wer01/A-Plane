@@ -39,6 +39,7 @@
   const gameMoodSummary = document.getElementById("gameMoodSummary");
   const gameCleanSummary = document.getElementById("gameCleanSummary");
   const shellNotice = document.getElementById("shellNotice");
+  const menuBuildNotice = document.getElementById("menuBuildNotice");
   const shellNetworkState = document.getElementById("shellNetworkState");
   const shellWelcomeTip = document.getElementById("shellWelcomeTip");
   const menuScreen = document.getElementById("menuScreen");
@@ -967,7 +968,7 @@
     return {
       id: getUserDeviceId(),
       nickname: "我",
-      version: typeof window !== "undefined" && window.__BLOB_GAME_VERSION__ ? String(window.__BLOB_GAME_VERSION__) : "v48",
+      version: typeof window !== "undefined" && window.__BLOB_GAME_VERSION__ ? String(window.__BLOB_GAME_VERSION__) : "v49",
       reason,
       updatedAt: Date.now(),
       online: getShellOnline(),
@@ -1492,6 +1493,18 @@
     }
   }
 
+  function updateMenuBuildNotice() {
+    if (menuBuildNotice) {
+      menuBuildNotice.textContent = getBuildNoticeText();
+    }
+  }
+
+  function getBuildNoticeText() {
+    const version = typeof window !== "undefined" && window.__BLOB_GAME_VERSION__ ? String(window.__BLOB_GAME_VERSION__) : "v49";
+    const buildLabel = typeof window !== "undefined" && window.__BLOB_BUILD_LABEL__ ? String(window.__BLOB_BUILD_LABEL__) : "";
+    return buildLabel ? `当前版本 ${version} · 更新时间 ${buildLabel}` : `当前版本 ${version}`;
+  }
+
   function animateBoardLine(node, text) {
     if (!node || node.textContent === text) return;
     node.textContent = text;
@@ -1581,6 +1594,7 @@
     if (shellWelcomeTip) {
       shellWelcomeTip.textContent = notice;
     }
+    updateMenuBuildNotice();
     updateShellNotice(notice);
     syncOfflinePlayableUI();
     if (rank > 0) {

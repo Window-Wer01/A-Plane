@@ -65,6 +65,17 @@
   line-height: 1.6;
 }
 
+.wx-menu-build-notice {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .wx-home-mascot {
   display: grid;
   place-items: center;
