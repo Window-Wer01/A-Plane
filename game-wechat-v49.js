@@ -830,10 +830,10 @@
 
   function createDefaultToolInventory() {
     return {
-      capsule: 3,
-      remove: 3,
-      rage: 3,
-      split: 3
+      capsule: 5,
+      remove: 5,
+      rage: 5,
+      split: 5
     };
   }
 
@@ -4298,6 +4298,19 @@
     }
   }
 
+  function forceStartBgmPlayback(options = {}) {
+    settings.audioEnabled = true;
+    saveSettings();
+    syncSettingsUI();
+    activateBgmFromGesture({ restart: true, keepPlaying: true, ...options });
+    window.setTimeout(() => {
+      syncBgm();
+    }, 120);
+    window.setTimeout(() => {
+      syncBgm();
+    }, 480);
+  }
+
   function syncBgm() {
     if (!settings.audioEnabled || !state.started || state.paused || state.gameOver) {
       stopBgm();
@@ -7058,27 +7071,18 @@
 
   restartBtn?.addEventListener("click", () => {
     if (state.started || state.gameOver) {
+      forceStartBgmPlayback();
       quickRestartRun();
-      settings.audioEnabled = true;
-      saveSettings();
-      syncSettingsUI();
-      activateBgmFromGesture({ restart: true, keepPlaying: true });
       return;
     }
     resetGame();
   });
   resultRestartBtn?.addEventListener("click", () => {
+    forceStartBgmPlayback();
     quickRestartRun();
-    settings.audioEnabled = true;
-    saveSettings();
-    syncSettingsUI();
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   startGameBtn?.addEventListener("click", () => {
-    settings.audioEnabled = true;
-    saveSettings();
-    syncSettingsUI();
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
+    forceStartBgmPlayback();
     startRun();
   });
   resumeGameBtn?.addEventListener("click", () => {
@@ -7104,11 +7108,8 @@
     setStatus("背景音乐已打开，开始游戏时会立即播放");
   });
   pauseRestartBtn?.addEventListener("click", () => {
+    forceStartBgmPlayback();
     quickRestartRun();
-    settings.audioEnabled = true;
-    saveSettings();
-    syncSettingsUI();
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   helpBtn?.addEventListener("click", () => {
     openPanel(helpPanel);
@@ -7142,13 +7143,10 @@
   });
   settingsCloseBtn?.addEventListener("click", () => closePanel(settingsPanel));
   menuStartBtn?.addEventListener("click", () => {
+    forceStartBgmPlayback();
     pauseForShellNavigation();
     showShellScreen("game");
     quickRestartRun();
-    settings.audioEnabled = true;
-    saveSettings();
-    syncSettingsUI();
-    activateBgmFromGesture({ restart: true, keepPlaying: true });
   });
   menuRankBtn?.addEventListener("click", () => {
     pauseForShellNavigation();
@@ -7231,6 +7229,11 @@
     if (!state.started || state.paused || state.gameOver) return;
     if (!settings.audioEnabled) return;
     activateBgmFromGesture({ keepPlaying: true });
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    if (!settings.audioEnabled) return;
+    syncBgm();
   });
   window.setInterval(() => {
     npcChatIndex = (npcChatIndex + 1) % NPC_CHAT_LINES.length;
