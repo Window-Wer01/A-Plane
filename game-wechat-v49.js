@@ -579,12 +579,12 @@
     remove: {
       label: "移除道具",
       short: "移除",
-      description: "随机去掉 1 个 1-3 级生物"
+      description: "清掉 1 种 1-3 级生物的全部同类"
     },
     rage: {
       label: "发脾气",
       short: "脾气",
-      description: "随机放大 1 个 4-6 级生物 5 秒"
+      description: "下半区体积前 2 类里任选 1 类放大 5 秒"
     },
     split: {
       label: "分裂弹",
@@ -5323,7 +5323,8 @@
     state.startDangerFlashActive = false;
     state.startDangerFlashPhase = 0;
     state.startDangerFlashTimer = 0;
-    state.toolInventory = ensureToolInventory();
+    state.toolInventory = createDefaultToolInventory();
+    writeToolInventory(state.toolInventory);
     state.toolRunUsage = createDefaultToolRunUsage();
     state.capsuleTimer = 0;
     state.rageTimer = 0;
@@ -5479,6 +5480,66 @@
     return matches[Math.floor(Math.random() * matches.length)];
   }
 
+  function getBottomHalfBounds() {
+    if (!state.blobs.length) {
+      return { top: PIT.y, bottom: PIT.y + PIT.height, splitY: PIT.y + PIT.height / 2 };
+    }
+    let top = Infinity;
+    let bottom = -Infinity;
+    for (const blob of state.blobs) {
+      top = Math.min(top, blob.y - blob.r);
+      bottom = Math.max(bottom, blob.y + blob.r);
+    }
+    if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) {
+      top = PIT.y;
+      bottom = PIT.y + PIT.height;
+    }
+    return {
+      top,
+      bottom,
+      splitY: top + (bottom - top) * 0.5
+    };
+  }
+
+  function getRemoveToolTargetLevel() {
+    const levelPool = Array.from(new Set(
+      state.blobs
+        .map((blob) => blob.level)
+        .filter((level) => level >= 0 && level <= 2)
+    ));
+    if (!levelPool.length) return null;
+    return levelPool[Math.floor(Math.random() * levelPool.length)];
+  }
+
+  function getRageToolTarget() {
+    const { splitY } = getBottomHalfBounds();
+    const lowerHalfBlobs = state.blobs.filter((blob) => {
+      const displayLevel = blob.level + 1;
+      return displayLevel >= 4 && displayLevel <= 6 && blob.y >= splitY;
+    });
+    if (!lowerHalfBlobs.length) return null;
+    const grouped = new Map();
+    for (const blob of lowerHalfBlobs) {
+      const area = Math.PI * blob.r * blob.r;
+      const current = grouped.get(blob.level) || { level: blob.level, totalArea: 0, blobs: [] };
+      current.totalArea += area;
+      current.blobs.push(blob);
+      grouped.set(blob.level, current);
+    }
+    const topGroups = Array.from(grouped.values())
+      .sort((a, b) => b.totalArea - a.totalArea)
+      .slice(0, 2);
+    if (!topGroups.length) return null;
+    const chosenGroup = topGroups[Math.floor(Math.random() * topGroups.length)];
+    const chosenBlob = chosenGroup.blobs[Math.floor(Math.random() * chosenGroup.blobs.length)];
+    if (!chosenBlob) return null;
+    return {
+      target: chosenBlob,
+      splitY,
+      candidateLevels: topGroups.map((group) => group.level)
+    };
+  }
+
   function useCapsuleTool() {
     state.capsuleTimer = Math.max(state.capsuleTimer, 30);
     setStatus("神秘胶囊发动，红线暂时抬高 5%");
@@ -5487,16 +5548,26 @@
   }
 
   function useRemoveTool() {
-    const target = findEligibleBlob(1, 3);
-    if (!target) {
+    const targetLevel = getRemoveToolTargetLevel();
+    if (targetLevel == null) {
       setStatus("场上暂时没有 1-3 级目标可以移除");
       return false;
     }
-    state.blobs = state.blobs.filter((blob) => blob.id !== target.id);
-    if (state.lastDroppedBlobId === target.id) {
+    const removedIds = new Set(
+      state.blobs
+        .filter((blob) => blob.level === targetLevel)
+        .map((blob) => blob.id)
+    );
+    const removedCount = removedIds.size;
+    if (!removedCount) {
+      setStatus("场上暂时没有 1-3 级目标可以移除");
+      return false;
+    }
+    state.blobs = state.blobs.filter((blob) => !removedIds.has(blob.id));
+    if (removedIds.has(state.lastDroppedBlobId)) {
       state.lastDroppedBlobId = null;
     }
-    setStatus(`移除道具已清掉 1 个 ${LEVELS[target.level].name}`);
+    setStatus(`移除道具已清掉 ${LEVELS[targetLevel].name} 全部 ${removedCount} 个`);
     updateHud();
     return true;
   }
@@ -5507,7 +5578,8 @@
   }
 
   function useRageTool() {
-    const target = findEligibleBlob(4, 6);
+    const ragePick = getRageToolTarget();
+    const target = ragePick?.target || null;
     if (!target) {
       setStatus("场上暂时没有 4-6 级目标可以发脾气");
       return false;
@@ -5523,7 +5595,7 @@
     state.rageTimer = 5;
     state.rageRecoverTimer = 0;
     setBlobExpression(target, "angry_left", 0.7);
-    setStatus(`发脾气发动，${LEVELS[target.level].name} 会挤压周围 5 秒`);
+    setStatus(`发脾气发动，已从下半区体积前 2 类里选中 ${LEVELS[target.level].name}，挤压周围 5 秒`);
     updateHud();
     return true;
   }
@@ -5548,8 +5620,8 @@
     }
     let ok = false;
     if (key === "capsule") ok = true;
-    if (key === "remove") ok = Boolean(findEligibleBlob(1, 3));
-    if (key === "rage") ok = Boolean(findEligibleBlob(4, 6));
+    if (key === "remove") ok = getRemoveToolTargetLevel() != null;
+    if (key === "rage") ok = Boolean(getRageToolTarget()?.target);
     if (key === "split") ok = !state.splitBombArmed;
     if (!ok) {
       setStatus(`${TOOL_CONFIG[key].label}当前没有可用目标`);

@@ -1060,7 +1060,7 @@
 
 .wx-tool-stage {
   position: sticky;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
   margin-top: 2px;
   padding: 0;
   z-index: 7;

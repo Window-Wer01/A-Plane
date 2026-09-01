@@ -1,4 +1,4 @@
-const CACHE_NAME = "blob-merge-prototype-v48-offline-cache";
+const CACHE_NAME = "blob-merge-prototype-v49-offline-cache";
 const OFFLINE_FALLBACK = "./mobile-wechat-offline.html";
 const PRECACHE_URLS = [
   "./",
@@ -7,10 +7,13 @@ const PRECACHE_URLS = [
   "./mobile-wechat.html",
   "./mobile-wechat-offline.html",
   "./mobile-wechat-v48.html",
+  "./mobile-wechat-v49.html",
   "./mobile-wechat-offline-v48.html",
   "./styles.css",
   "./wechat-shell-v48.css",
+  "./wechat-shell-v49.css",
   "./game-wechat-v48.js",
+  "./game-wechat-v49.js",
   "./assets/bgm-paper-boat.mp3",
   "./assets/bubble-creature.png",
   "./assets/guide-creature.png",
