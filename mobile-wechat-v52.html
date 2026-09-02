@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>我要当大王 - 微信小游戏壳子 V52</title>
+  <link rel="stylesheet" href="./styles.css?v=52" />
+  <link rel="stylesheet" href="./wechat-shell-v52.css?v=52" />
+</head>
+<body class="mobile-play-page wechat-mini-body">
+  <main class="app-shell mobile-play-shell wechat-mini-shell">
+    <section id="shellNotice" class="wx-shell-notice">你的宠物一直在等你来！</section>
+
+    <section id="menuScreen" class="wechat-screen wx-home-screen">
+      <div class="wx-home-card">
+        <div class="wx-home-hero">
+          <div>
+            <p class="eyebrow">微信小游戏规格版</p>
+            <h1>我要当大王</h1>
+            <p class="wx-home-copy">先做可跑的小游戏壳子：主界面、好友榜、宠物乐园、广告电视位和离线可玩提示都先接起来。</p>
+          </div>
+          <div class="wx-home-mascot">👑</div>
+        </div>
+        <p id="menuBuildNotice" class="wx-menu-build-notice">当前版本 v52 · 更新时间 2026-09-02 09:59:42</p>
+        <div class="wx-menu-buttons">
+          <button id="menuStartBtn" class="primary-btn wx-menu-btn" type="button">开始游戏</button>
+          <button id="menuRankBtn" class="ghost-btn wx-menu-btn" type="button">排行榜</button>
+          <button id="menuPetBtn" class="ghost-btn wx-menu-btn" type="button">宠物乐园</button>
+          <button id="menuExitBtn" class="ghost-btn wx-menu-btn" type="button">退出</button>
+        </div>
+        <div class="wx-home-info-grid">
+          <article class="wx-info-tile">
+            <span class="wx-info-label">当前状态</span>
+            <strong id="shellNetworkState">离线也可游玩</strong>
+            <p id="shellWelcomeTip">有网络时会刷新好友排行榜，并告诉你有没有往上爬。</p>
+          </article>
+          <article class="wx-info-tile">
+            <span class="wx-info-label">今日目标</span>
+            <strong>合成大王</strong>
+            <p>先把大王玩法保留，再外接小游戏规范用的页面壳子。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="friendRankScreen" class="wechat-screen wx-panel-screen hidden">
+      <div class="wx-panel-card">
+        <div class="wx-panel-head">
+          <div>
+            <p class="eyebrow">好友排行榜</p>
+            <h2>好友前十</h2>
+          </div>
+          <button id="rankBackBtn" class="ghost-btn" type="button">返回主界面</button>
+        </div>
+        <div class="wx-rank-summary">
+          <div class="mini-stat">
+            <span>我的名次</span>
+            <strong id="myRankValue">第 - 名</strong>
+          </div>
+          <div class="mini-stat">
+            <span>刷新状态</span>
+            <strong id="rankSyncState">等待同步</strong>
+          </div>
+          <button id="rankRefreshBtn" class="ghost-btn" type="button">刷新好友榜</button>
+        </div>
+        <p id="rankOfflineTip" class="wx-mode-copy hidden">当前离线中，排行榜使用本地缓存展示；联网后再刷新好友数据。</p>
+        <ol id="friendLeaderboardList" class="leaderboard-list wx-friend-list"></ol>
+      </div>
+    </section>
+
+    <section id="petParkScreen" class="wechat-screen wx-panel-screen hidden">
+      <div class="wx-panel-card">
+        <div class="wx-panel-head">
+          <div>
+            <p class="eyebrow">宠物乐园</p>
+            <h2>电视机乐园</h2>
+          </div>
+          <div class="mini-stat wx-pet-coin-stat">
+            <span>金币</span>
+            <strong id="petCoinValue">0</strong>
+          </div>
+          <button id="petBackBtn" class="ghost-btn" type="button">返回主界面</button>
+        </div>
+        <p id="petGardenTip" class="panel-copy wx-pet-tip">三项数值默认从 5 开始，局内体验会跟着体力、快乐和清洁实时变化。</p>
+        <div class="wx-pet-stage">
+          <div class="wx-tv-grid">
+            <article class="wx-tv-card" data-pet-slot="energy">
+              <span class="wx-tv-label">电视 A · 体力</span>
+              <strong>体力电视</strong>
+              <p id="petEnergyStatus" class="wx-tv-copy">体力改为控制发射节奏，不再影响下落速度。</p>
+              <div class="wx-tv-meter"><div id="petEnergyFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petEnergyValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="energy">看视频 +2</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="energy">金币买 +1</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="mood">
+              <span class="wx-tv-label">电视 B · 开心度</span>
+              <strong>开心电视</strong>
+              <p id="petMoodStatus" class="wx-tv-copy">快乐越高，4号以上大球越容易出现，还可能多拿金币。</p>
+              <div class="wx-tv-meter"><div id="petMoodFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petMoodValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="mood">看视频 +1</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="mood">金币买 +1</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="gift">
+              <span class="wx-tv-label">电视 C · 礼物</span>
+              <strong>礼物电视</strong>
+              <p id="petGiftStatus" class="wx-tv-copy">点击后有几率刷出礼物或 10 金币。</p>
+              <div class="wx-tv-stats"><span>已收礼物</span><strong id="petGiftValue">0 件</strong></div>
+              <div class="wx-tv-actions single">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="gift" data-pet-slot="gift">试试手气</button>
+              </div>
+            </article>
+            <article class="wx-tv-card" data-pet-slot="clean">
+              <span class="wx-tv-label">电视 D · 清洁度</span>
+              <strong>清洁电视</strong>
+              <p id="petCleanStatus" class="wx-tv-copy">清洁会直接影响风险线高度和局内容错空间。</p>
+              <div class="wx-tv-meter"><div id="petCleanFill" class="wx-tv-meter-fill"></div></div>
+              <div class="wx-tv-stats"><span>当前值</span><strong id="petCleanValue">0/10</strong></div>
+              <div class="wx-tv-actions">
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="watch" data-pet-slot="clean">看视频 +2</button>
+                <button class="ghost-btn wx-tv-action-btn" type="button" data-pet-action="buy" data-pet-slot="clean">金币买 +1</button>
+              </div>
+            </article>
+          </div>
+          <div class="wx-pet-viewer">
+            <div id="petBubble" class="wx-pet-bubble">我一直在等你点电视耶！</div>
+            <div id="petAvatar" class="wx-pet-avatar">🐾</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="wechat-screen hidden">
+      <section class="game-layout mobile-only-layout wechat-game-layout">
+        <div class="game-panel">
+          <div class="wx-game-stage">
+            <div class="wx-board-stage">
+              <div class="wx-stage-overlay">
+                <div class="wx-left-stack">
+                  <button id="gameMenuBtn" class="wx-return-btn" type="button" aria-label="点击一次暂停，暂停后再点返回主界面" data-game-help="点一次会暂停当前游戏；暂停后再点一次会返回主界面。">
+                    返回
+                  </button>
+                  <aside class="wx-side-coin score-pill" data-game-help="这里显示当前金币数量。">
+                    <span class="wx-side-coin-icon">◎</span>
+                    <strong id="scoreValue" class="coin-display">0</strong>
+                    <span id="coinFxLayer" class="coin-fx-layer" aria-hidden="true"></span>
+                  </aside>
+                </div>
+                <div class="wx-game-topbar">
+                  <div class="wx-step-panel wx-top-panel" data-game-help="前面显示当前步数，后面红色数字显示历史最低步数。">
+                    <span class="wx-panel-label">步数</span>
+                    <div class="wx-step-values">
+                      <strong id="currentStepValue" class="wx-step-current">0</strong>
+                      <span class="wx-step-separator">/</span>
+                      <strong id="minStepValue" class="wx-step-best">-</strong>
+                    </div>
+                    <strong id="bestValue" class="wx-hidden-meta">0/-</strong>
+                  </div>
+                  <div class="wx-resource-panel wx-top-panel" data-game-help="橙色是体力，紫色是快乐，青色是清洁；高度越高代表当前数值越高。">
+                    <div class="wx-resource-bars" aria-label="体力快乐清洁数值柱">
+                      <div class="wx-resource-bar is-energy"><i id="topEnergyFill"></i></div>
+                      <div class="wx-resource-bar is-mood"><i id="topMoodFill"></i></div>
+                      <div class="wx-resource-bar is-clean"><i id="topCleanFill"></i></div>
+                    </div>
+                  </div>
+                  <div class="wx-next-center wx-top-panel" data-game-help="这里显示下一步要下落的球和编号。">
+                    <div class="wx-next-preview">
+                      <div id="nextBlob" class="next-blob wx-next-orb"></div>
+                      <div class="wx-next-meta">
+                        <span class="wx-next-label">NEXT</span>
+                        <strong id="nextName">1号 孢子</strong>
+                        <span id="nextHint" class="wx-hidden-meta">先铺底，别急着追高阶</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="wx-message-panel wx-top-panel" data-game-help="这里会优先显示当前状态提示；碰触功能区时会显示说明；空闲时显示 NPC 对话。">
+                    <div class="wx-message-screen">
+                      <p id="statusBanner" class="wx-message-line is-primary">手机模式：点击直接下落，也可以下滑投放</p>
+                      <p id="npcBanner" class="wx-message-line">小精灵说：先把底部铺稳，再往上冲。</p>
+                    </div>
+                  </div>
+                </div>
+                <button id="gameAudioBtn" class="wx-audio-btn" type="button" aria-label="切换背景音乐" aria-pressed="true" data-game-help="这里可以直接打开或关闭背景音乐。">
+                  音乐开
+                </button>
+                <button id="gamePetChip" class="wx-stage-mascot" type="button" aria-label="查看当前精灵状态" data-game-help="右上方是当前精灵展示位，后续会根据状态播放不同动画。">
+                  <span class="wx-stage-mascot-antennas" aria-hidden="true"></span>
+                  <span class="wx-stage-mascot-body" aria-hidden="true"></span>
+                  <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
+                  <span id="gamePetText" class="wx-hidden-meta">当前精灵状态</span>
+                </button>
+              </div>
+              <div class="canvas-wrap wx-board-shell">
+                <canvas id="gameCanvas" width="420" height="760" aria-label="我要当大王微信小游戏壳子画布"></canvas>
+                <section id="dangerMeter" class="danger-meter overlay-danger-meter compact-danger-meter" data-state="safe" aria-live="polite">
+                  <div class="danger-bar compact-danger-bar">
+                    <div id="dangerFill" class="danger-fill"></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <div id="gameOfflineHint" class="wx-inline-mode-note hidden">当前离线游玩：核心玩法可继续，广告恢复与好友同步暂不可用。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="wx-tool-stage">
+        <div id="gameToolGrid" class="wx-tool-grid"></div>
+        <div id="gameToolTimer" class="wx-tool-timer hidden"></div>
+      </section>
+      <section class="wx-ad-stage">
+        <div class="wx-tv-ad-shell">
+          <div class="wx-tv-screen">
+            <div class="wx-ad-placeholder">
+              <span>Banner 广告预留区</span>
+              <strong>标准 Banner 占位，后续替换为微信小游戏 Banner</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="pausePanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">已暂停</p>
+        <h2>先停一下，接着再来</h2>
+        <p class="panel-copy">
+          继续后会保持当前堆叠和危险进度，不会重开这一局。
+        </p>
+        <div class="panel-actions">
+          <button id="resumeGameBtn" class="primary-btn" type="button">继续游戏</button>
+          <button id="pauseRestartBtn" class="ghost-btn" type="button">重新开始</button>
+          <button id="pauseHelpBtn" class="ghost-btn" type="button">看说明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <p class="eyebrow">本局卡片</p>
+        <h2 id="resultTitle">这局翻车了</h2>
+        <div class="result-grid">
+          <div class="mini-stat">
+            <span>本局用时</span>
+            <strong id="resultScore">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>本局奖励</span>
+            <strong id="resultBest">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>翻倍后奖励</span>
+            <strong id="resultDuration">大王</strong>
+          </div>
+          <div class="mini-stat">
+            <span>已入账</span>
+            <strong id="resultCoins">0</strong>
+          </div>
+        </div>
+        <p id="resultReviewTip" class="panel-copy">通关后可以分享成功卡片；失败后可以分享复活，回到结束前 10 步。</p>
+        <div id="resultShareBoard" class="result-share-board"></div>
+        <p id="resultShareStatus" class="panel-copy result-share-status">每日首次分享、连续 3 天分享、连续 7 天分享奖励待补充。</p>
+        <div class="panel-actions">
+          <button id="resultDoubleRewardBtn" class="ghost-btn" type="button">分享通关卡片</button>
+          <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
+          <button id="resultExitBtn" class="ghost-btn" type="button">退出</button>
+        </div>
+        <div id="resultGoldTotal" class="wx-hidden-meta">0</div>
+        <div id="resultMerges" class="wx-hidden-meta">0</div>
+        <div id="resultTier" class="wx-hidden-meta">1</div>
+        <div id="resultReviewTitle" class="wx-hidden-meta"></div>
+        <div id="resultReviewTags" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveStage" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveTitle" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveValue" class="wx-hidden-meta"></div>
+        <div id="resultObjectiveTip" class="wx-hidden-meta"></div>
+        <div id="resultMilestones" class="wx-hidden-meta"></div>
+      </div>
+    </section>
+
+    <section id="leaderboardPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">本地排行榜</p>
+            <h2>最近最强 5 局</h2>
+          </div>
+          <button id="leaderboardCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <section class="history-summary">
+          <h2>最近几局概览</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>平均存活</span>
+              <strong id="historyAvgDuration">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均合并</span>
+              <strong id="historyAvgMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>平均危险峰值</span>
+              <strong id="historyAvgDanger">0%</strong>
+            </div>
+            <div class="mini-stat">
+              <span>常见翻车点</span>
+              <strong id="historyCommonFailure">暂无</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期进度</h2>
+          <div class="history-grid">
+            <div class="mini-stat">
+              <span>累计局数</span>
+              <strong id="progressTotalRuns">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计总分</span>
+              <strong id="progressTotalScore">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>累计合并</span>
+              <strong id="progressTotalMerges">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>历史最高等级</span>
+              <strong id="progressBestTier">1</strong>
+            </div>
+            <div class="mini-stat">
+              <span>最长存活</span>
+              <strong id="progressLongestRun">0s</strong>
+            </div>
+            <div class="mini-stat">
+              <span>已解锁里程碑</span>
+              <strong id="progressMilestones">0</strong>
+            </div>
+          </div>
+        </section>
+        <section class="history-summary">
+          <h2>长期成就总览</h2>
+          <div id="progressAchievementList" class="achievement-list"></div>
+        </section>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
+
+    <section id="helpPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">新手说明</p>
+            <h2>手机模式怎么玩</h2>
+          </div>
+          <button id="helpCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="panel-section">
+          <p class="panel-copy">这一版重点先验证手势和单人闭环，不要求极限分数，先感受投放和整理节奏。</p>
+          <ul class="panel-list">
+            <li>先左右拖动瞄准，再向下滑动释放</li>
+            <li>滑得轻会更柔和，滑得快会更有冲击力</li>
+            <li>危险条发黄表示接近顶部，发红表示已经开始倒计时</li>
+            <li>暂停、设置和本地榜都不会清掉当前局面</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="settingsPanel" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">设置</p>
+            <h2>手机试玩选项</h2>
+          </div>
+          <button id="settingsCloseBtn" class="ghost-btn" type="button">关闭</button>
+        </div>
+        <div class="settings-list">
+          <label class="setting-row">
+            <span>音效</span>
+            <input id="audioToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row">
+            <span>危险晃动</span>
+            <input id="shakeToggle" type="checkbox" checked />
+          </label>
+          <label class="setting-row range-row">
+            <span>音量</span>
+            <input id="volumeRange" type="range" min="0" max="100" value="65" />
+          </label>
+        </div>
+        <section class="panel-subsection">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">试玩管理</p>
+              <h2>只保留最必要操作</h2>
+            </div>
+          </div>
+          <div class="management-actions">
+            <button id="clearLeaderboardBtn" class="ghost-btn" type="button">清空排行榜</button>
+            <button id="resetProgressBtn" class="ghost-btn" type="button">重置长期进度</button>
+            <button id="resetAllDataBtn" class="ghost-btn danger-btn" type="button">全部重置</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+    <section id="rewardModal" class="floating-panel hidden" aria-live="polite">
+      <div class="panel-card wx-reward-card">
+        <p class="eyebrow">激励广告占位</p>
+        <h2 id="rewardModalTitle">零食频道</h2>
+        <p id="rewardModalCopy" class="panel-copy">这里未来会接微信小游戏的激励广告回调，目前先做内容入口占位。</p>
+        <div class="panel-actions">
+          <button id="rewardCloseBtn" class="primary-btn" type="button">知道了</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.__BLOB_MOBILE_MODE__ = true;
+    window.__BLOB_GAME_VERSION__ = "v52";
+    window.__BLOB_BUILD_LABEL__ = "2026-09-02 09:59:42";
+    window.__BLOB_USER_SYNC_URL__ = window.__BLOB_USER_SYNC_URL__ || "";
+  </script>
+  <script>
+    if ("serviceWorker" in navigator && /^https?:$/i.test(window.location.protocol)) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw-v52.js?v=52", { scope: "./" })
+          .then((registration) => registration.update().catch(() => {}))
+          .catch(() => {});
+      });
+    }
+  </script>
+  <script src="./game-wechat-v52.js?v=52"></script>
+</body>
+</html>
