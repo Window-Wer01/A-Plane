@@ -1,36 +1,35 @@
-## 啵啵星团（手机可试玩版）
+## 微信小游戏标准骨架
 
-这是一个纯静态网页小游戏（HTML/CSS/JS），适合用 **GitHub Pages** 托管后用手机直接打开测试。
+这个目录已经是新的主迁移目录，不再和旧的网页 `v47-v52` 试玩页混在一起。
 
-### 本地运行
+### 目录说明
 
-直接双击打开 `index.html` 或 `mobile.html` 也能跑（部分浏览器可能限制本地文件访问）。更推荐本地起一个静态服务器：
+- `game.js`：微信小游戏入口
+- `game.json`：小游戏配置
+- `project.config.json`：微信开发者工具项目配置
+- `mobile-wechat-standard.html`：迁移后的正式手机页
+- `mobile-wechat-offline-standard.html`：迁移后的正式离线页
+- `js/game-wechat-standard.js`：迁移后的完整网页逻辑
+- `wechat-shell-standard.css`：迁移后的完整手机壳样式
+- `preview.html`：PC 和手机都能直接验收的手机窗口预览页
+- `js/blob-merge-core.js` / `js/wx-runtime.js`：小游戏标准骨架与后续共享核心入口
 
-1. 在该目录打开终端
-2. 运行：`python -m http.server 8080`
-3. 访问：
-   - PC：`http://127.0.0.1:8080/index.html`
-   - 手机：`http://127.0.0.1:8080/mobile.html`
+### 当前架构
 
-### GitHub Pages（手机测试推荐）
+这次先把结构和正式内容一起迁过来：
 
-1. 把这个文件夹作为一个 GitHub 仓库的根目录推到 GitHub（下面我可以帮你做）
-2. 到 GitHub 仓库：`Settings` → `Pages`
-3. `Build and deployment` 里选择：
-   - Source：`Deploy from a branch`
-   - Branch：`main`（或你的默认分支） / `(root)`
-4. 保存后等 1~2 分钟，GitHub 会给一个访问地址
+1. 微信小游戏部分单独处理
+2. 完整手机页已经迁进这个目录
+3. 网页预览和 PC 验收继续保留
+4. 三端共用资源目录，后续再继续收拢玩法核心
 
-手机打开地址：
-- `https://<你的用户名>.github.io/<仓库名>/mobile.html`
+### 当前可测试入口
 
-PC 打开地址：
-- `https://<你的用户名>.github.io/<仓库名>/index.html`
+- 微信开发者工具：导入这个目录 `wx-minigame-standard`
+- PC 手机窗口验收：打开 `preview.html`
+- 正式手机页：打开 `mobile-wechat-standard.html`
 
-### 文件说明
+### 说明
 
-- `mobile.html`：手机试玩页（首屏更聚焦画布）
-- `index.html`：桌面页
-- `game.js`：核心逻辑
-- `styles.css`：样式
-
+这版已经不是纯骨架，而是“标准目录 + 正式迁移页 + 验收预览壳”。
+后续继续在这里处理小游戏接口替换、资源压缩和共用核心收拢。
