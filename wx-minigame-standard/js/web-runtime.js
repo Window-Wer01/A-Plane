@@ -5,7 +5,7 @@
 
     function ensureAudio() {
       if (audio) return audio;
-      audio = new Audio("./assets/bgm-loop.wav");
+      audio = new Audio("./assets/bgm-paper-boat.mp3");
       audio.loop = true;
       audio.preload = "auto";
       audio.volume = 0.42;

@@ -2,13 +2,17 @@
   "appid": "touristappid",
   "compileType": "game",
   "libVersion": "3.6.0",
-  "projectname": "blob-merge-wx-standard",
+  "projectname": "blob-merge-wx-formal",
+  "simulatorType": "wechat",
   "setting": {
     "es6": true,
     "minified": false,
     "urlCheck": false,
     "coverView": true,
     "postcss": false
+  },
+  "packOptions": {
+    "ignore": []
   },
   "condition": {}
 }

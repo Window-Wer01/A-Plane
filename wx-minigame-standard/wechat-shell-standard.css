@@ -9,10 +9,10 @@
   --wx-banner-height: 92px;
   --wx-game-topbar-height: 112px;
   --wx-game-bottom-gap: 4px;
-  --wx-banner-lift: 108px;
-  --wx-tool-extra-lift: 108px;
-  --wx-stage-compress: 110px;
-  --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px + var(--wx-stage-compress));
+  --wx-banner-lift: 0px;
+  --wx-tool-extra-lift: 0px;
+  --wx-stage-compress: 0px;
+  --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   position: relative;
   overflow: hidden;
   min-height: 100vh;
@@ -606,7 +606,7 @@
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(100dvh - var(--wx-game-safe-offset) - 28px);
+  height: calc(100dvh - var(--wx-game-safe-offset) - var(--wx-banner-height) - 24px);
   border-radius: 0;
 }
 
@@ -836,16 +836,7 @@
 }
 
 .wx-message-panel {
-  position: absolute;
-  top: 56px;
-  right: 18px;
-  width: min(320px, calc(100vw - 128px));
-  max-width: calc(100% - 126px);
-  min-width: 0;
-  justify-content: stretch;
-  overflow: hidden;
-  justify-self: auto;
-  z-index: 6;
+  display: none !important;
 }
 
 .wx-message-screen {
@@ -1057,16 +1048,16 @@
 
 .wechat-game-layout #gameCanvas {
   width: 100%;
-  height: auto;
-  max-height: calc(100dvh - var(--wx-game-safe-offset));
+  height: 100%;
+  max-height: none;
 }
 
 .wx-tool-stage {
-  position: sticky;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 168px + var(--wx-tool-extra-lift));
-  margin-top: -2px;
+  position: relative;
+  bottom: auto;
+  margin-top: 6px;
   padding: 0;
-  z-index: 7;
+  z-index: 4;
 }
 
 .wx-tool-grid {
@@ -1316,22 +1307,6 @@
     font-size: 9px;
   }
 
-  .wx-message-panel {
-    top: 58px;
-    right: 12px;
-    width: min(304px, calc(100vw - 118px));
-    max-width: calc(100% - 114px);
-  }
-
-  .wx-message-screen {
-    min-height: 34px;
-    padding: 4px 12px 4px 8px;
-  }
-
-  .wx-message-line {
-    font-size: 10px;
-  }
-
   .wx-side-coin .coin-display {
     font-size: 10px;
   }
@@ -1344,7 +1319,7 @@
   }
 
   .wx-board-stage {
-    height: calc(100dvh - var(--wx-game-safe-offset) - 274px);
+    height: calc(100dvh - var(--wx-game-safe-offset) - var(--wx-banner-height) - 18px);
   }
 
   .wx-tool-grid {

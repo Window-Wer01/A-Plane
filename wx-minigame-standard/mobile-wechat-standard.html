@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <title>我要当大王 - 微信小游戏迁移版</title>
-  <link rel="stylesheet" href="./styles.css?v=standard" />
-  <link rel="stylesheet" href="./wechat-shell-standard.css?v=standard" />
+  <link rel="stylesheet" href="./styles.css?v=20260904-1240" />
+  <link rel="stylesheet" href="./wechat-shell-standard.css?v=20260904-1240" />
 </head>
 <body class="mobile-play-page wechat-mini-body">
   <main class="app-shell mobile-play-shell wechat-mini-shell">
@@ -21,7 +21,7 @@
           </div>
           <div class="wx-home-mascot">👑</div>
         </div>
-        <p id="menuBuildNotice" class="wx-menu-build-notice">当前版本 standard-web · 更新时间 2026-09-03 12:18:00</p>
+        <p id="menuBuildNotice" class="wx-menu-build-notice">当前版本 standard-web · 更新时间 2026-09-04 12:40:00</p>
         <div class="wx-menu-buttons">
           <button id="menuStartBtn" class="primary-btn wx-menu-btn" type="button">开始游戏</button>
           <button id="menuRankBtn" class="ghost-btn wx-menu-btn" type="button">排行榜</button>
@@ -176,12 +176,6 @@
                         <strong id="nextName">1号 孢子</strong>
                         <span id="nextHint" class="wx-hidden-meta">先铺底，别急着追高阶</span>
                       </div>
-                    </div>
-                  </div>
-                  <div class="wx-message-panel wx-top-panel" data-game-help="这里会优先显示当前状态提示；碰触功能区时会显示说明；空闲时显示 NPC 对话。">
-                    <div class="wx-message-screen">
-                      <p id="statusBanner" class="wx-message-line is-primary">手机模式：点击直接下落，也可以下滑投放</p>
-                      <p id="npcBanner" class="wx-message-line">小精灵说：先把底部铺稳，再往上冲。</p>
                     </div>
                   </div>
                 </div>
@@ -426,19 +420,25 @@
   <script>
     window.__BLOB_MOBILE_MODE__ = true;
     window.__BLOB_GAME_VERSION__ = "standard-web";
-    window.__BLOB_BUILD_LABEL__ = "2026-09-03 11:10:00";
+    window.__BLOB_BUILD_LABEL__ = "2026-09-04 12:40:00";
     window.__BLOB_USER_SYNC_URL__ = window.__BLOB_USER_SYNC_URL__ || "";
   </script>
   <script>
     if ("serviceWorker" in navigator && /^https?:$/i.test(window.location.protocol)) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw-standard.js?v=standard", { scope: "./" })
+        navigator.serviceWorker.register("./sw-standard.js?v=20260904-1240", { scope: "./" })
           .then((registration) => registration.update().catch(() => {}))
           .catch(() => {});
       });
     }
   </script>
-  <script src="./js/blob-merge-core.js?v=standard"></script>
-  <script src="./js/game-wechat-standard.js?v=standard"></script>
+  <script src="./js/services/runtime-config.js?v=20260904-1240"></script>
+  <script src="./js/services/login-service.js?v=20260904-1240"></script>
+  <script src="./js/services/ad-service.js?v=20260904-1240"></script>
+  <script src="./js/services/share-service.js?v=20260904-1240"></script>
+  <script src="./js/services/rank-service.js?v=20260904-1240"></script>
+  <script src="./js/services/update-service.js?v=20260904-1240"></script>
+  <script src="./js/blob-merge-core.js?v=20260904-1240"></script>
+  <script src="./js/game-wechat-standard.js?v=20260904-1240"></script>
 </body>
 </html>

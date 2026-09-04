@@ -57,6 +57,7 @@
   class BlobMergeCore {
     constructor(options = {}) {
       this.platform = options.platform || {};
+      this.blobSprite = this.loadBlobSprite();
       this.canvas = null;
       this.ctx = null;
       this.viewport = { width: DESIGN_WIDTH, height: DESIGN_HEIGHT, dpr: 1 };
@@ -87,6 +88,18 @@
       };
       this.idSeed = 1;
       this.resetRun();
+    }
+
+    loadBlobSprite() {
+      try {
+        if (typeof Image === "undefined") return null;
+        const sprite = new Image();
+        sprite.decoding = "async";
+        sprite.src = "./assets/bubble-creature.png";
+        return sprite;
+      } catch {
+        return null;
+      }
     }
 
     attachRenderer(canvas, ctx) {
@@ -505,6 +518,7 @@
 
     drawBlobs(ctx) {
       const blobs = this.state.blobs.slice().sort((a, b) => a.radius - b.radius);
+      const spriteReady = this.blobSprite && this.blobSprite.complete && this.blobSprite.naturalWidth > 0;
       for (let i = 0; i < blobs.length; i += 1) {
         const blob = blobs[i];
         ctx.save();
@@ -518,6 +532,18 @@
         ctx.beginPath();
         ctx.arc(-blob.radius * 0.28, -blob.radius * 0.34, blob.radius * 0.34, 0, Math.PI * 2);
         ctx.fill();
+
+        if (spriteReady) {
+          const spriteSize = blob.radius * 2.34;
+          const spriteY = -blob.radius * 1.2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius * 0.98, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.globalAlpha = 0.92;
+          ctx.drawImage(this.blobSprite, -spriteSize / 2, spriteY, spriteSize, spriteSize);
+          ctx.restore();
+        }
 
         const blink = Math.sin(blob.age * 3 + blob.blinkSeed) > 0.92;
         ctx.strokeStyle = "#0f172a";
