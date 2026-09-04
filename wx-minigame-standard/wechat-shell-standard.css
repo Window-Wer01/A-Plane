@@ -9,16 +9,15 @@
   --wx-banner-height: 92px;
   --wx-game-topbar-height: 112px;
   --wx-game-bottom-gap: 4px;
-  --wx-banner-lift: 228px;
-  --wx-tool-extra-lift: 144px;
-  --wx-stage-compress: 136px;
-  --wx-board-bottom-cut: 44px;
+  --wx-banner-lift: 108px;
+  --wx-tool-extra-lift: 108px;
+  --wx-stage-compress: 110px;
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px + var(--wx-stage-compress));
   position: relative;
   overflow: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 8px 8px 0;
+  padding: 8px 8px 2px;
 }
 
 .wx-shell-notice {
@@ -314,7 +313,6 @@
   min-height: calc(100vh - 16px);
   min-height: calc(100dvh - 16px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-  overflow: hidden;
 }
 
 .wechat-game-layout {
@@ -608,7 +606,7 @@
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(100dvh - var(--wx-game-safe-offset) - var(--wx-board-bottom-cut));
+  height: calc(100dvh - var(--wx-game-safe-offset) - 28px);
   border-radius: 0;
 }
 
@@ -1066,7 +1064,7 @@
 .wx-tool-stage {
   position: sticky;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 168px + var(--wx-tool-extra-lift));
-  margin-top: -16px;
+  margin-top: -2px;
   padding: 0;
   z-index: 7;
 }
@@ -1140,7 +1138,7 @@
 .wx-ad-stage {
   position: sticky;
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--wx-banner-lift));
-  margin-top: -12px;
+  margin-top: -2px;
   padding-bottom: 0;
   z-index: 6;
   background: linear-gradient(180deg, rgba(29, 53, 117, 0) 0%, rgba(29, 53, 117, 0.88) 36%, rgba(29, 53, 117, 0.96) 100%);
@@ -1255,12 +1253,8 @@
     --wx-banner-height: 84px;
     --wx-game-topbar-height: 104px;
     --wx-game-bottom-gap: 3px;
-    --wx-banner-lift: 252px;
-    --wx-tool-extra-lift: 162px;
-    --wx-stage-compress: 150px;
-    --wx-board-bottom-cut: 320px;
-    --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px + var(--wx-stage-compress));
-    padding: 6px 6px 0;
+    --wx-game-safe-offset: calc(var(--wx-banner-height) + 10px);
+    padding: 6px 6px 8px;
   }
 
   .wx-home-info-grid,
@@ -1350,7 +1344,7 @@
   }
 
   .wx-board-stage {
-    height: calc(100dvh - var(--wx-game-safe-offset) - var(--wx-board-bottom-cut));
+    height: calc(100dvh - var(--wx-game-safe-offset) - 274px);
   }
 
   .wx-tool-grid {

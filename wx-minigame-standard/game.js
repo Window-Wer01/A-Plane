@@ -1,3 +1,3 @@
-const { initWxMiniGame } = require("./js/wx-runtime.js");
+const { initWxMiniGameMain } = require("./js/game-wechat-standard.js");
 
-initWxMiniGame();
+initWxMiniGameMain();
