@@ -1,4 +1,4 @@
-const CACHE_NAME = "blob-merge-prototype-standard-offline-cache";
+const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260904-1240";
 const OFFLINE_FALLBACK = "./mobile-wechat-offline-standard.html";
 const PRECACHE_URLS = [
   "./",
@@ -16,13 +16,7 @@ const PRECACHE_URLS = [
   "./js/blob-merge-core.js",
   "./js/game-wechat-standard.js",
   "./assets/bgm-paper-boat.mp3",
-  "./assets/bgm-loop.wav",
-  "./assets/bubble-creature.png",
-  "./assets/guide-creature.png",
-  "./assets/monster-blue.png",
-  "./assets/monster-cast.png",
-  "./assets/monster-green.png",
-  "./assets/monster-yellow.png"
+  "./assets/bubble-creature.png"
 ];
 
 function toCacheKey(input) {
