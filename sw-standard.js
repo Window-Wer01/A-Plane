@@ -7,6 +7,7 @@ const PRECACHE_URLS = [
   "./mobile-wechat-offline-standard.html",
   "./styles.css",
   "./wechat-shell-standard.css",
+  "./js/blob-merge-core.js",
   "./js/game-wechat-standard.js",
   "./assets/bgm-paper-boat.mp3",
   "./assets/bgm-loop.wav",
