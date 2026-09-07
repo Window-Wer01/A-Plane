@@ -332,7 +332,7 @@
       "gameCanvas", "scoreValue", "bestValue", "currentStepValue", "minStepValue",
       "nextBlob", "nextName", "nextHint",
       "gameOfflineHint",
-      "gameMenuBtn", "gameAudioBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
+      "gameMenuBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
       "gameToolGrid", "gameToolTimer", "pausePanel", "resumeGameBtn", "pauseRestartBtn", "pauseHelpBtn", "pauseAudioBtn", "pauseExitBtn",
       "resultPanel", "resultTitle", "resultScore", "resultBest", "resultDuration", "resultCoins",
       "resultDoubleRewardBtn", "resultRestartBtn", "resultExitBtn", "resultShareBoard", "resultShareStatus",
@@ -582,9 +582,7 @@
       safeText(elements.nextHint, nextMeta.hint);
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
-      safeText(elements.gameAudioBtn, settings.audioEnabled ? "音乐开" : "音乐关");
       safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");
-      elements.gameAudioBtn?.classList.toggle("is-off", !settings.audioEnabled);
       if (elements.nextBlob) {
         elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.08) 38%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd"][core.state.nextType] || "#7dd3fc"}`;
       }
@@ -778,8 +776,6 @@
         const result = core.activateTool(key);
         syncUi();
       });
-
-      elements.gameAudioBtn?.addEventListener("click", function () {});
     }
 
     bindCanvasEvents();

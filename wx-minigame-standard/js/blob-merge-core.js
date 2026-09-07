@@ -7,10 +7,10 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const DESIGN_WIDTH = 390;
   const DESIGN_HEIGHT = 844;
-  const PIT = { x: 8, y: 118, width: 374, height: 650 };
+  const PIT = { x: 2, y: 94, width: 386, height: 671 };
   const FLOOR_Y = PIT.y + PIT.height;
   const DANGER_LINE_Y = PIT.y + 60;
-  const SPAWN_Y = 82;
+  const SPAWN_Y = 76;
   const DROP_COOLDOWN = 0.16;
   const GRAVITY = 1320;
   const MERGE_SCORE_FACTOR = 16;
@@ -988,13 +988,13 @@
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.fill();
-          const coverSize = blob.radius * 2.34;
+          const coverSize = blob.radius * 2.58;
           ctx.save();
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.clip();
           ctx.globalAlpha = 1;
-          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.04, coverSize, coverSize);
+          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.09, coverSize, coverSize);
           ctx.restore();
           ctx.restore();
           continue;
