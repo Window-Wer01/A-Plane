@@ -65,12 +65,6 @@
     { label: "7号 大王球", hint: "再稳一次，就能直接收王。" }
   ];
 
-  const TOOL_PRESETS = [
-    { key: "capsule", label: "神秘胶囊", count: 5, desc: "临时抬高安全线" },
-    { key: "clean", label: "移除道具", count: 5, desc: "清掉一种低阶球" },
-    { key: "rage", label: "发脾气", count: 5, desc: "随机放大一个目标" },
-    { key: "split", label: "分裂弹", count: 5, desc: "命中后拆成低阶球" }
-  ];
   const WEB_BGM_SRC = "./assets/bgm-paper-boat.mp3";
   const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
 
@@ -208,6 +202,7 @@
   function createCore(platform) {
     return new BlobMergeCore({
       platform: {
+        domUi: Boolean(platform.domUi),
         startBgm() {
           platform.audio.start();
         },
@@ -229,6 +224,12 @@
           if (root.navigator && root.navigator.vibrate) {
             root.navigator.vibrate(duration);
           }
+        },
+        requestShareRevive() {
+          if (typeof platform.requestShareRevive === "function") {
+            return platform.requestShareRevive();
+          }
+          return { ok: false };
         }
       }
     });
@@ -260,16 +261,21 @@
     raf(frame);
   }
 
-  function initToolGrid(container) {
-    if (!container || container.dataset.ready === "true") return;
-    container.innerHTML = TOOL_PRESETS.map((tool) => (
-      `<button class="wx-tool-btn" type="button" data-tool-key="${tool.key}" aria-label="${tool.label}">
-        <span class="wx-tool-btn__label">${tool.label}</span>
-        <strong class="wx-tool-btn__count">x${tool.count}</strong>
-        <span class="wx-tool-btn__desc">${tool.desc}</span>
+  function renderToolGrid(container, timerNode, core) {
+    if (!container || !core || typeof core.getToolSnapshot !== "function") return;
+    const tools = core.getToolSnapshot();
+    container.innerHTML = tools.map((tool) => (
+      `<button class="wx-tool-card ${tool.stock <= 0 ? "is-empty" : ""} ${tool.active ? "is-active" : ""}" type="button" data-tool-key="${tool.key}" ${tool.disabled ? "disabled" : ""}>
+        <div class="wx-tool-name">${tool.label}</div>
+        <div class="wx-tool-stock">剩余 ${tool.stock}</div>
+        <div class="wx-tool-meta">${tool.desc}</div>
       </button>`
     )).join("");
-    container.dataset.ready = "true";
+    if (timerNode) {
+      const timerText = typeof core.getToolTimerText === "function" ? core.getToolTimerText() : "";
+      timerNode.textContent = timerText;
+      timerNode.classList.toggle("hidden", !timerText);
+    }
   }
 
   function createLogger(config) {
@@ -357,7 +363,30 @@
     const serviceBundle = createServiceBundle({
       storage: runtimeStorage
     });
-    const core = createCore({ storage: runtimeStorage, audio: audio, settings: settings });
+    const core = createCore({
+      storage: runtimeStorage,
+      audio: audio,
+      settings: settings,
+      domUi: true,
+      requestShareRevive: async function () {
+        const shareResult = serviceBundle.share.shareRevive({
+          score: core.state.score,
+          durationMs: core.state.elapsedMs
+        });
+        const reviveResult = core.shareRevive();
+        safeText(
+          elements.resultShareStatus,
+          reviveResult.ok
+            ? `分享状态：${shareResult.mode}；复活成功，剩余 ${reviveResult.remain} 次。`
+            : `分享状态：${shareResult.mode}；当前没有可用复活。`
+        );
+        if (reviveResult.ok) {
+          show(elements.resultPanel, false);
+          syncUi();
+        }
+        return reviveResult;
+      }
+    });
     const ctx = canvas.getContext("2d");
     core.attachRenderer(canvas, ctx);
 
@@ -426,6 +455,7 @@
       show(elements.resultPanel, false);
       show(elements.pausePanel, false);
       core.resetRun();
+      core.armStartCountdown();
       audio.stop();
       requestGameFullscreen(doc);
       setScreen("game");
@@ -500,7 +530,9 @@
       safeText(elements.resultCoins, String(core.state.score + core.state.merges * 3));
       safeText(
         elements.resultShareStatus,
-        `当前分享 ${shareSummary.totalShares} 次，复活分享 ${shareSummary.reviveShares} 次；正式版将切到微信分享与激励广告结算。`
+        core.state.success
+          ? `当前分享 ${shareSummary.totalShares} 次；通关卡片仍走分享链路。`
+          : `当前分享 ${shareSummary.totalShares} 次，复活分享 ${shareSummary.reviveShares} 次；本局还可复活 ${Math.max(0, 3 - (core.revivesUsed || 0))} 次。`
       );
       if (elements.resultShareBoard) {
         elements.resultShareBoard.innerHTML = `
@@ -552,7 +584,7 @@
     }
 
     function syncUi() {
-      initToolGrid(elements.gameToolGrid);
+      renderToolGrid(elements.gameToolGrid, elements.gameToolTimer, core);
       safeText(elements.menuBuildNotice, `当前版本 ${serviceBundle.config.version} · 更新时间 ${serviceBundle.config.buildLabel}`);
       syncRankPanel();
       syncPetPanel();
@@ -639,6 +671,24 @@
         setScreen("menu");
       });
       elements.resultDoubleRewardBtn?.addEventListener("click", async function () {
+        if (!core.state.success) {
+          const shareResult = serviceBundle.share.shareRevive({
+            score: core.state.score,
+            durationMs: core.state.elapsedMs
+          });
+          const reviveResult = core.shareRevive();
+          safeText(
+            elements.resultShareStatus,
+            reviveResult.ok
+              ? `分享状态：${shareResult.mode}；复活成功，剩余 ${reviveResult.remain} 次。`
+              : `分享状态：${shareResult.mode}；当前没有可用复活。`
+          );
+          if (reviveResult.ok) {
+            show(elements.resultPanel, false);
+            syncUi();
+          }
+          return;
+        }
         const shareResult = serviceBundle.share.shareResult({
           score: core.state.score,
           durationMs: core.state.elapsedMs,
@@ -661,6 +711,20 @@
         syncUi();
       });
 
+      elements.gameToolGrid?.addEventListener("click", function (event) {
+        const target = event.target && typeof event.target.closest === "function"
+          ? event.target.closest("[data-tool-key]")
+          : null;
+        if (!target) return;
+        const key = target.getAttribute("data-tool-key");
+        if (!key || typeof core.activateTool !== "function") return;
+        const result = core.activateTool(key);
+        if (result && !result.ok && result.message) {
+          safeText(elements.statusBanner, result.message);
+        }
+        syncUi();
+      });
+
       elements.gameAudioBtn?.addEventListener("click", function () {
         settings.audioEnabled = !settings.audioEnabled;
         persistSettings();
@@ -676,7 +740,7 @@
 
     bindCanvasEvents();
     bindButtons();
-    initToolGrid(elements.gameToolGrid);
+    renderToolGrid(elements.gameToolGrid, elements.gameToolTimer, core);
     serviceBundle.share.init();
     serviceBundle.update.init();
     serviceBundle.ads.init();
@@ -737,7 +801,20 @@
       wxApi: wxApi,
       storage: runtimeStorage
     });
-    const core = createCore({ storage: runtimeStorage, audio: audio, settings: settings, wx: wxApi });
+    const core = createCore({
+      storage: runtimeStorage,
+      audio: audio,
+      settings: settings,
+      wx: wxApi,
+      domUi: false,
+      requestShareRevive: function () {
+        serviceBundle.share.shareRevive({
+          score: core.state.score,
+          durationMs: core.state.elapsedMs
+        });
+        return core.shareRevive();
+      }
+    });
 
     const systemInfo = wxApi.getSystemInfoSync();
     const canvas = (typeof GameGlobal !== "undefined" && GameGlobal.canvas)
@@ -852,6 +929,7 @@
       });
     }
 
+    core.armStartCountdown();
     core.render();
     createLoop(function (dt) {
       core.update(dt);
