@@ -22,7 +22,7 @@
 
     return {
       version: readString(root, "__BLOB_GAME_VERSION__", wxApi ? "standard-minigame" : "standard-web"),
-      buildLabel: readString(root, "__BLOB_BUILD_LABEL__", "2026-09-04 13:35:00"),
+      buildLabel: readString(root, "__BLOB_BUILD_LABEL__", "2026-09-07 wxmini-02"),
       appId: readString(overrides, "appId", wxApi ? "touristappid" : ""),
       apiBaseUrl: apiBase,
       sync: {

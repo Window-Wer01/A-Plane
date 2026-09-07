@@ -330,12 +330,13 @@
       "petMoodStatus", "petMoodFill", "petMoodValue", "petGiftStatus", "petGiftValue",
       "petCleanStatus", "petCleanFill", "petCleanValue", "petBubble", "petAvatar",
       "gameCanvas", "scoreValue", "bestValue", "currentStepValue", "minStepValue",
-      "nextBlob", "nextName", "nextHint", "statusBanner", "npcBanner",
-      "topEnergyFill", "topMoodFill", "topCleanFill", "gameOfflineHint",
-      "gameMenuBtn", "gameAudioBtn", "gamePetChip", "gamePetEmoji", "gamePetText",
-      "gameToolGrid", "gameToolTimer", "pausePanel", "resumeGameBtn", "pauseRestartBtn", "pauseHelpBtn",
+      "nextBlob", "nextName", "nextHint",
+      "gameOfflineHint",
+      "gameMenuBtn", "gameAudioBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
+      "gameToolGrid", "gameToolTimer", "pausePanel", "resumeGameBtn", "pauseRestartBtn", "pauseHelpBtn", "pauseAudioBtn", "pauseExitBtn",
       "resultPanel", "resultTitle", "resultScore", "resultBest", "resultDuration", "resultCoins",
-      "resultDoubleRewardBtn", "resultRestartBtn", "resultExitBtn", "resultShareBoard", "resultShareStatus"
+      "resultDoubleRewardBtn", "resultRestartBtn", "resultExitBtn", "resultShareBoard", "resultShareStatus",
+      "helpPanel", "helpCloseBtn"
     ];
     const elements = {};
     ids.forEach((id) => {
@@ -392,6 +393,8 @@
 
     let currentScreen = "menu";
     let lastGameOverState = false;
+    let pauseGlyphTimer = null;
+    let menuClickTimer = null;
     let session = {
       mode: "web-loading",
       nickName: "网页试玩玩家"
@@ -441,13 +444,39 @@
       if (!core.state.paused) {
         core.togglePause();
       }
+      show(elements.helpPanel, false);
       show(elements.pausePanel, true);
+    }
+
+    function flashPauseGlyph() {
+      if (!elements.pauseGlyph) return;
+      show(elements.pauseGlyph, true);
+      if (pauseGlyphTimer) {
+        clearTimeout(pauseGlyphTimer);
+      }
+      pauseGlyphTimer = setTimeout(function () {
+        show(elements.pauseGlyph, false);
+      }, 1200);
     }
 
     function closePausePanel(resumeGame) {
       show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
       if (resumeGame && core.state.paused && !core.state.gameOver) {
         core.togglePause();
+      }
+    }
+
+    function openHelpPanel() {
+      if (currentScreen !== "game") return;
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, true);
+    }
+
+    function closeHelpPanel() {
+      show(elements.helpPanel, false);
+      if (currentScreen === "game" && core.state.paused && !core.state.gameOver) {
+        show(elements.pausePanel, true);
       }
     }
 
@@ -545,28 +574,20 @@
 
     function syncGameHud() {
       const nextMeta = getTypeMeta(core.state.nextType);
-      safeText(elements.scoreValue, String(core.state.score));
+      safeText(elements.scoreValue, "");
       safeText(elements.bestValue, String(core.bestScore || 0));
       safeText(elements.currentStepValue, String(core.state.drops));
-      safeText(elements.minStepValue, String(core.bestScore || 0));
+      safeText(elements.minStepValue, core.state.success ? String(core.state.drops) : "0");
       safeText(elements.nextName, nextMeta.label);
       safeText(elements.nextHint, nextMeta.hint);
-      safeText(elements.statusBanner, core.state.message);
-      safeText(elements.npcBanner, core.state.paused ? "小精灵说：先暂停，别急着乱点。" : "小精灵说：底部铺稳，越打越轻松。");
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
       safeText(elements.gameAudioBtn, settings.audioEnabled ? "音乐开" : "音乐关");
+      safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");
       elements.gameAudioBtn?.classList.toggle("is-off", !settings.audioEnabled);
       if (elements.nextBlob) {
         elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.08) 38%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd"][core.state.nextType] || "#7dd3fc"}`;
       }
-
-      const energyPercent = clamp(Math.round((core.state.score % 100) / 10) * 10, 10, 100);
-      const moodPercent = clamp(Math.round(core.state.merges * 14), 10, 100);
-      const cleanPercent = clamp(100 - Math.round((core.state.warningTime / 2.6) * 100), 8, 100);
-      if (elements.topEnergyFill) elements.topEnergyFill.style.height = `${energyPercent}%`;
-      if (elements.topMoodFill) elements.topMoodFill.style.height = `${moodPercent}%`;
-      if (elements.topCleanFill) elements.topCleanFill.style.height = `${cleanPercent}%`;
 
       const offline = typeof navigator !== "undefined" && navigator.onLine === false;
       const sessionLabel = session && session.mode ? session.mode : "web-local";
@@ -579,7 +600,7 @@
             ? "正式版已预留用户同步接口，接服务端后即可写入用户信息。"
             : "当前没有配置用户同步接口，仍以本地试玩模式运行。"
       );
-      safeText(elements.shellNotice, `当前版本 ${serviceBundle.config.version} · 构建 ${serviceBundle.config.buildLabel}`);
+      safeText(elements.shellNotice, "");
       show(elements.gameOfflineHint, offline && currentScreen === "game");
     }
 
@@ -651,18 +672,54 @@
       elements.petBackBtn?.addEventListener("click", function () { setScreen("menu"); });
 
       elements.gameMenuBtn?.addEventListener("click", function () {
-        if (core.state.paused) {
-          show(elements.pausePanel, false);
-          setScreen("menu");
+        if (currentScreen !== "game" || core.state.gameOver) return;
+        if (core.state.countdownActive) return;
+        if (!core.state.paused) {
+          core.togglePause();
+          flashPauseGlyph();
+          if (menuClickTimer) clearTimeout(menuClickTimer);
+          menuClickTimer = setTimeout(function () {
+            menuClickTimer = null;
+          }, 380);
+          syncUi();
           return;
         }
-        openPausePanel();
+        if (menuClickTimer) {
+          clearTimeout(menuClickTimer);
+          menuClickTimer = null;
+          openPausePanel();
+          syncUi();
+          return;
+        }
+        flashPauseGlyph();
+        menuClickTimer = setTimeout(function () {
+          menuClickTimer = null;
+        }, 380);
+        syncUi();
       });
 
       elements.resumeGameBtn?.addEventListener("click", function () { closePausePanel(true); });
       elements.pauseRestartBtn?.addEventListener("click", restartRunAndEnterGame);
+      elements.pauseAudioBtn?.addEventListener("click", function () {
+        settings.audioEnabled = !settings.audioEnabled;
+        persistSettings();
+        audio.syncVolume();
+        if (!settings.audioEnabled) {
+          audio.stop();
+        } else if (core.state.started && !core.state.paused && !core.state.gameOver) {
+          audio.start();
+        }
+        syncUi();
+      });
       elements.pauseHelpBtn?.addEventListener("click", function () {
-        safeText(elements.statusBanner, "玩法说明：拖动对准，松手投放，同类会自动合成。");
+        openHelpPanel();
+      });
+      elements.pauseExitBtn?.addEventListener("click", function () {
+        closePausePanel(false);
+        setScreen("menu");
+      });
+      elements.helpCloseBtn?.addEventListener("click", function () {
+        closeHelpPanel();
       });
 
       elements.resultRestartBtn?.addEventListener("click", restartRunAndEnterGame);
@@ -719,23 +776,10 @@
         const key = target.getAttribute("data-tool-key");
         if (!key || typeof core.activateTool !== "function") return;
         const result = core.activateTool(key);
-        if (result && !result.ok && result.message) {
-          safeText(elements.statusBanner, result.message);
-        }
         syncUi();
       });
 
-      elements.gameAudioBtn?.addEventListener("click", function () {
-        settings.audioEnabled = !settings.audioEnabled;
-        persistSettings();
-        audio.syncVolume();
-        if (!settings.audioEnabled) {
-          audio.stop();
-        } else if (core.state.started && !core.state.paused && !core.state.gameOver) {
-          audio.start();
-        }
-        syncUi();
-      });
+      elements.gameAudioBtn?.addEventListener("click", function () {});
     }
 
     bindCanvasEvents();

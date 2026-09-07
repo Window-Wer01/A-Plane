@@ -7,16 +7,16 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const DESIGN_WIDTH = 390;
   const DESIGN_HEIGHT = 844;
-  const PIT = { x: 19, y: 150, width: 352, height: 612 };
+  const PIT = { x: 8, y: 118, width: 374, height: 650 };
   const FLOOR_Y = PIT.y + PIT.height;
   const DANGER_LINE_Y = PIT.y + 60;
-  const SPAWN_Y = 110;
+  const SPAWN_Y = 82;
   const DROP_COOLDOWN = 0.16;
   const GRAVITY = 1320;
   const MERGE_SCORE_FACTOR = 16;
   const MAX_WARNING_TIME = 2.6;
-  const WALL_BOUNCE = 0.22;
-  const FLOOR_BOUNCE = 0.16;
+  const WALL_BOUNCE = 0.06;
+  const FLOOR_BOUNCE = 0.04;
   const MERGE_TOUCH_GAP = -0.8;
   const TOOL_DEFAULT_STOCK = 5;
   const CAPSULE_DURATION = 30;
@@ -130,9 +130,7 @@
           return sprite;
         };
         return {
-          yellow: createSprite("./assets/monster-yellow.png"),
-          blue: createSprite("./assets/monster-blue.png"),
-          green: createSprite("./assets/monster-green.png")
+          bubble: createSprite("./assets/bubble-creature.png")
         };
       } catch {
         return null;
@@ -141,9 +139,7 @@
 
     getMonsterSprite(typeIndex) {
       if (!this.monsterSprites) return null;
-      if (typeIndex >= 6) return this.monsterSprites.green || null;
-      if (typeIndex >= 3) return this.monsterSprites.blue || null;
-      return this.monsterSprites.yellow || null;
+      return this.monsterSprites.bubble || null;
     }
 
     attachRenderer(canvas, ctx) {
@@ -184,7 +180,7 @@
         typeIndex,
         x,
         y,
-        vx,
+        vx: Math.abs(vx) < 4 ? 0 : vx,
         vy,
         radius: type.radius,
         baseRadius: type.radius,
@@ -566,7 +562,7 @@
       if (!this.state.started) return;
       const typeIndex = this.state.nextType;
       const spawnX = clamp(this.state.pointerX, PIT.x + 28, PIT.x + PIT.width - 28);
-      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, randomRange(-30, 30), 0);
+      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, 0, 0);
       if (this.state.splitBombArmed) {
         blob.specialType = "splitBomb";
         blob.specialArmed = true;
@@ -619,8 +615,9 @@
         blob.vy += GRAVITY * dt;
         blob.x += blob.vx * dt;
         blob.y += blob.vy * dt;
-        blob.vx *= 0.998;
+        blob.vx *= 0.96;
         blob.vy *= 0.998;
+        if (Math.abs(blob.vx) < 2.5) blob.vx = 0;
 
         if (blob.x - blob.radius < PIT.x) {
           blob.x = PIT.x + blob.radius;
@@ -633,7 +630,7 @@
         if (blob.y + blob.radius > FLOOR_Y) {
           blob.y = FLOOR_Y - blob.radius;
           blob.vy = -Math.abs(blob.vy) * FLOOR_BOUNCE;
-          if (Math.abs(blob.vy) < 18) blob.vy = 0;
+          if (Math.abs(blob.vy) < 14) blob.vy = 0;
         }
       }
 
@@ -705,11 +702,12 @@
           b.x += nx * overlap * 0.5;
           b.y += ny * overlap * 0.5;
 
-          const push = overlap * 7.5;
-          a.vx -= nx * push;
-          a.vy -= ny * push;
-          b.vx += nx * push;
-          b.vy += ny * push;
+          const pushX = overlap * 3.6;
+          const pushY = overlap * 6.2;
+          a.vx -= nx * pushX;
+          a.vy -= ny * pushY;
+          b.vx += nx * pushX;
+          b.vy += ny * pushY;
         }
       }
     }
@@ -739,8 +737,8 @@
             nextIndex,
             (a.x + b.x) * 0.5,
             (a.y + b.y) * 0.5,
-            (a.vx + b.vx) * 0.18,
-            -180
+            (a.vx + b.vx) * 0.06,
+            -150
           );
           spawned.push(merged);
           this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
@@ -985,6 +983,23 @@
         const spriteReady = sprite && sprite.complete && sprite.naturalWidth > 0;
         ctx.save();
         ctx.translate(blob.x, blob.y);
+        if (spriteReady) {
+          ctx.fillStyle = "#111827";
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+          ctx.fill();
+          const coverSize = blob.radius * 2.34;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.globalAlpha = 1;
+          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.04, coverSize, coverSize);
+          ctx.restore();
+          ctx.restore();
+          continue;
+        }
+
         ctx.fillStyle = blob.color;
         ctx.beginPath();
         ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
@@ -994,20 +1009,6 @@
         ctx.beginPath();
         ctx.arc(-blob.radius * 0.28, -blob.radius * 0.34, blob.radius * 0.34, 0, Math.PI * 2);
         ctx.fill();
-
-        if (spriteReady) {
-          const drawW = blob.radius * 2.26;
-          const drawH = drawW * (sprite.naturalHeight / sprite.naturalWidth);
-          const offsetY = -drawH * 0.54;
-          ctx.save();
-          ctx.globalAlpha = 0.98;
-          ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
-          ctx.shadowBlur = blob.radius * 0.18;
-          ctx.drawImage(sprite, -drawW / 2, offsetY, drawW, drawH);
-          ctx.restore();
-          ctx.restore();
-          continue;
-        }
 
         const blink = Math.sin(blob.age * 3 + blob.blinkSeed) > 0.92;
         ctx.strokeStyle = "#0f172a";
