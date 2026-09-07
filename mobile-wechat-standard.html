@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <title>我要当大王 - 微信小游戏迁移版</title>
-  <link rel="stylesheet" href="./styles.css?v=20260904-1240" />
-  <link rel="stylesheet" href="./wechat-shell-standard.css?v=20260904-1240" />
+  <link rel="stylesheet" href="./styles.css?v=20260907-wxmini-03" />
+  <link rel="stylesheet" href="./wechat-shell-standard.css?v=20260907-wxmini-03" />
 </head>
 <body class="mobile-play-page wechat-mini-body">
   <main class="app-shell mobile-play-shell wechat-mini-shell">
@@ -21,9 +21,9 @@
           </div>
           <div class="wx-home-mascot">👑</div>
         </div>
-        <p id="menuBuildNotice" class="wx-menu-build-notice">当前版本 standard-web · 更新时间 2026-09-04 12:40:00</p>
+        <p id="menuBuildNotice" class="wx-menu-build-notice">当前版本 standard-web · 更新时间 2026-09-07 wxmini-03</p>
         <div class="wx-menu-buttons">
-          <button id="menuStartBtn" class="primary-btn wx-menu-btn" type="button">开始游戏</button>
+          <button id="menuStartBtn" class="primary-btn wx-menu-btn" type="button">直接开始</button>
           <button id="menuRankBtn" class="ghost-btn wx-menu-btn" type="button">排行榜</button>
           <button id="menuPetBtn" class="ghost-btn wx-menu-btn" type="button">宠物乐园</button>
           <button id="menuExitBtn" class="ghost-btn wx-menu-btn" type="button">退出</button>
@@ -141,34 +141,17 @@
           <div class="wx-game-stage">
             <div class="wx-board-stage">
               <div class="wx-stage-overlay">
-                <div class="wx-left-stack">
-                  <button id="gameMenuBtn" class="wx-return-btn" type="button" aria-label="点击一次暂停，暂停后再点返回主界面" data-game-help="点一次会暂停当前游戏；暂停后再点一次会返回主界面。">
-                    返回
-                  </button>
-                  <aside class="wx-side-coin score-pill" data-game-help="这里显示当前金币数量。">
-                    <span class="wx-side-coin-icon">◎</span>
-                    <strong id="scoreValue" class="coin-display">0</strong>
-                    <span id="coinFxLayer" class="coin-fx-layer" aria-hidden="true"></span>
-                  </aside>
-                </div>
                 <div class="wx-game-topbar">
-                  <div class="wx-step-panel wx-top-panel" data-game-help="前面显示当前步数，后面红色数字显示历史最低步数。">
-                    <span class="wx-panel-label">步数</span>
+                  <div class="wx-step-panel wx-top-panel">
+                    <span class="wx-panel-label">步数 / 挑战步数</span>
                     <div class="wx-step-values">
                       <strong id="currentStepValue" class="wx-step-current">0</strong>
                       <span class="wx-step-separator">/</span>
-                      <strong id="minStepValue" class="wx-step-best">-</strong>
+                      <strong id="minStepValue" class="wx-step-best">0</strong>
                     </div>
                     <strong id="bestValue" class="wx-hidden-meta">0/-</strong>
                   </div>
-                  <div class="wx-resource-panel wx-top-panel" data-game-help="橙色是体力，紫色是快乐，青色是清洁；高度越高代表当前数值越高。">
-                    <div class="wx-resource-bars" aria-label="体力快乐清洁数值柱">
-                      <div class="wx-resource-bar is-energy"><i id="topEnergyFill"></i></div>
-                      <div class="wx-resource-bar is-mood"><i id="topMoodFill"></i></div>
-                      <div class="wx-resource-bar is-clean"><i id="topCleanFill"></i></div>
-                    </div>
-                  </div>
-                  <div class="wx-next-center wx-top-panel" data-game-help="这里显示下一步要下落的球和编号。">
+                  <div class="wx-next-center wx-top-panel">
                     <div class="wx-next-preview">
                       <div id="nextBlob" class="next-blob wx-next-orb"></div>
                       <div class="wx-next-meta">
@@ -179,10 +162,13 @@
                     </div>
                   </div>
                 </div>
-                <button id="gameAudioBtn" class="wx-audio-btn" type="button" aria-label="切换背景音乐" aria-pressed="true" data-game-help="这里可以直接打开或关闭背景音乐。">
+                <button id="gameMenuBtn" class="wx-return-btn" type="button" aria-label="点击一次暂停，再点一次打开菜单">
+                  <span class="wx-return-arrow" aria-hidden="true"></span>
+                </button>
+                <button id="gameAudioBtn" class="wx-audio-btn" type="button" aria-label="切换背景音乐" aria-pressed="true">
                   音乐开
                 </button>
-                <button id="gamePetChip" class="wx-stage-mascot" type="button" aria-label="查看当前精灵状态" data-game-help="右上方是当前精灵展示位，后续会根据状态播放不同动画。">
+                <button id="gamePetChip" class="wx-stage-mascot" type="button" aria-label="查看当前精灵状态">
                   <span class="wx-stage-mascot-antennas" aria-hidden="true"></span>
                   <span class="wx-stage-mascot-body" aria-hidden="true"></span>
                   <span id="gamePetEmoji" class="wx-game-pet-emoji">🐾</span>
@@ -219,17 +205,21 @@
       </section>
     </section>
 
+    <div id="pauseGlyph" class="wx-pause-glyph hidden" aria-hidden="true">Ⅱ</div>
+
     <section id="pausePanel" class="floating-panel hidden" aria-live="polite">
       <div class="panel-card">
         <p class="eyebrow">已暂停</p>
-        <h2>先停一下，接着再来</h2>
+        <h2>暂停菜单</h2>
         <p class="panel-copy">
-          继续后会保持当前堆叠和危险进度，不会重开这一局。
+          点击一次箭头会暂停；暂停后再点一次箭头，就会打开这个菜单。
         </p>
         <div class="panel-actions">
-          <button id="resumeGameBtn" class="primary-btn" type="button">继续游戏</button>
-          <button id="pauseRestartBtn" class="ghost-btn" type="button">重新开始</button>
-          <button id="pauseHelpBtn" class="ghost-btn" type="button">看说明</button>
+          <button id="resumeGameBtn" class="primary-btn" type="button">1 继续游戏</button>
+          <button id="pauseRestartBtn" class="ghost-btn" type="button">2 重新开始</button>
+          <button id="pauseAudioBtn" class="ghost-btn" type="button">3 音乐开关</button>
+          <button id="pauseHelpBtn" class="ghost-btn" type="button">4 说明</button>
+          <button id="pauseExitBtn" class="ghost-btn" type="button">5 退出游戏</button>
         </div>
       </div>
     </section>
@@ -260,7 +250,7 @@
         <div id="resultShareBoard" class="result-share-board"></div>
         <p id="resultShareStatus" class="panel-copy result-share-status">每日首次分享、连续 3 天分享、连续 7 天分享奖励待补充。</p>
         <div class="panel-actions">
-          <button id="resultDoubleRewardBtn" class="ghost-btn" type="button">分享通关卡片</button>
+          <button id="resultDoubleRewardBtn" class="ghost-btn" type="button">分享复活 / 分享卡片</button>
           <button id="resultRestartBtn" class="primary-btn" type="button">再来一局</button>
           <button id="resultExitBtn" class="ghost-btn" type="button">退出</button>
         </div>
@@ -420,25 +410,25 @@
   <script>
     window.__BLOB_MOBILE_MODE__ = true;
     window.__BLOB_GAME_VERSION__ = "standard-web";
-    window.__BLOB_BUILD_LABEL__ = "2026-09-04 12:40:00";
+    window.__BLOB_BUILD_LABEL__ = "2026-09-07 wxmini-03";
     window.__BLOB_USER_SYNC_URL__ = window.__BLOB_USER_SYNC_URL__ || "";
   </script>
   <script>
     if ("serviceWorker" in navigator && /^https?:$/i.test(window.location.protocol)) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw-standard.js?v=20260904-1240", { scope: "./" })
+        navigator.serviceWorker.register("./sw-standard.js?v=20260907-wxmini-03", { scope: "./" })
           .then((registration) => registration.update().catch(() => {}))
           .catch(() => {});
       });
     }
   </script>
-  <script src="./js/services/runtime-config.js?v=20260904-1240"></script>
-  <script src="./js/services/login-service.js?v=20260904-1240"></script>
-  <script src="./js/services/ad-service.js?v=20260904-1240"></script>
-  <script src="./js/services/share-service.js?v=20260904-1240"></script>
-  <script src="./js/services/rank-service.js?v=20260904-1240"></script>
-  <script src="./js/services/update-service.js?v=20260904-1240"></script>
-  <script src="./js/blob-merge-core.js?v=20260904-1240"></script>
-  <script src="./js/game-wechat-standard.js?v=20260904-1240"></script>
+  <script src="./js/services/runtime-config.js?v=20260907-wxmini-03"></script>
+  <script src="./js/services/login-service.js?v=20260907-wxmini-03"></script>
+  <script src="./js/services/ad-service.js?v=20260907-wxmini-03"></script>
+  <script src="./js/services/share-service.js?v=20260907-wxmini-03"></script>
+  <script src="./js/services/rank-service.js?v=20260907-wxmini-03"></script>
+  <script src="./js/services/update-service.js?v=20260907-wxmini-03"></script>
+  <script src="./js/blob-merge-core.js?v=20260907-wxmini-03"></script>
+  <script src="./js/game-wechat-standard.js?v=20260907-wxmini-03"></script>
 </body>
 </html>

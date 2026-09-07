@@ -7,16 +7,32 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const DESIGN_WIDTH = 390;
   const DESIGN_HEIGHT = 844;
-  const PIT = { x: 19, y: 150, width: 352, height: 612 };
+  const PIT = { x: 8, y: 118, width: 374, height: 650 };
   const FLOOR_Y = PIT.y + PIT.height;
   const DANGER_LINE_Y = PIT.y + 60;
-  const SPAWN_Y = 110;
+  const SPAWN_Y = 82;
   const DROP_COOLDOWN = 0.16;
   const GRAVITY = 1320;
   const MERGE_SCORE_FACTOR = 16;
   const MAX_WARNING_TIME = 2.6;
-  const WALL_BOUNCE = 0.22;
-  const FLOOR_BOUNCE = 0.16;
+  const WALL_BOUNCE = 0.06;
+  const FLOOR_BOUNCE = 0.04;
+  const MERGE_TOUCH_GAP = -0.8;
+  const TOOL_DEFAULT_STOCK = 5;
+  const CAPSULE_DURATION = 30;
+  const CAPSULE_SAFE_BONUS = 0.05;
+  const RAGE_DURATION = 5;
+  const RAGE_RECOVER_DURATION = 0.28;
+  const RAGE_SCALE = 2.5;
+  const TOOL_META = {
+    capsule: { label: "神秘胶囊", desc: "30 秒内危险线抬高 5%" },
+    clean: { label: "移除道具", desc: "随机清掉一种 1-3 级生物" },
+    rage: { label: "发脾气", desc: "下半区 4-6 级目标扩大并挤压 5 秒" },
+    split: { label: "分裂弹", desc: "下一颗命中后把目标裂成两个 1 级生物" }
+  };
+  const TOOL_KEYS = ["capsule", "clean", "rage", "split"];
+  const COUNTDOWN_TOTAL = 3;
+  const MAX_REVIVES_PER_RUN = 3;
   const BUTTONS = {
     restart: { x: 18, y: 18, w: 84, h: 38 },
     pause: { x: 288, y: 18, w: 84, h: 38 }
@@ -31,6 +47,15 @@
     { key: "king", label: "大王球", radius: 82, color: "#93c5fd", score: 64 }
   ];
   const RESULT_BUTTON = { x: 105, y: 478, w: 180, h: 52 };
+  const RESULT_REVIVE_BUTTON = { x: 36, y: 478, w: 104, h: 52 };
+  const RESULT_RESTART_BUTTON = { x: 148, y: 478, w: 96, h: 52 };
+  const RESULT_EXIT_BUTTON = { x: 252, y: 478, w: 102, h: 52 };
+  const CANVAS_TOOL_LAYOUT = [
+    { key: "capsule", x: 24, y: 768, w: 82, h: 54 },
+    { key: "clean", x: 112, y: 768, w: 82, h: 54 },
+    { key: "rage", x: 200, y: 768, w: 82, h: 54 },
+    { key: "split", x: 288, y: 768, w: 78, h: 54 }
+  ];
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -57,7 +82,7 @@
   class BlobMergeCore {
     constructor(options = {}) {
       this.platform = options.platform || {};
-      this.blobSprite = this.loadBlobSprite();
+      this.monsterSprites = this.loadMonsterSprites();
       this.canvas = null;
       this.ctx = null;
       this.viewport = { width: DESIGN_WIDTH, height: DESIGN_HEIGHT, dpr: 1 };
@@ -84,22 +109,37 @@
         warningTime: 0,
         message: "点一下开始，先轻铺底。",
         elapsedMs: 0,
-        bgmReady: false
+        bgmReady: false,
+        countdownActive: false,
+        countdownRemaining: 0,
+        countdownValue: 0
       };
+      this.revivesUsed = 0;
+      this.reviveSnapshots = [];
       this.idSeed = 1;
       this.resetRun();
     }
 
-    loadBlobSprite() {
+    loadMonsterSprites() {
       try {
         if (typeof Image === "undefined") return null;
-        const sprite = new Image();
-        sprite.decoding = "async";
-        sprite.src = "./assets/bubble-creature.png";
-        return sprite;
+        const createSprite = function (src) {
+          const sprite = new Image();
+          sprite.decoding = "async";
+          sprite.src = src;
+          return sprite;
+        };
+        return {
+          bubble: createSprite("./assets/bubble-creature.png")
+        };
       } catch {
         return null;
       }
+    }
+
+    getMonsterSprite(typeIndex) {
+      if (!this.monsterSprites) return null;
+      return this.monsterSprites.bubble || null;
     }
 
     attachRenderer(canvas, ctx) {
@@ -140,13 +180,16 @@
         typeIndex,
         x,
         y,
-        vx,
+        vx: Math.abs(vx) < 4 ? 0 : vx,
         vy,
         radius: type.radius,
+        baseRadius: type.radius,
         color: type.color,
         moodSeed: Math.random() * Math.PI * 2,
         blinkSeed: Math.random() * Math.PI * 2,
-        age: 0
+        age: 0,
+        specialType: null,
+        specialArmed: false
       };
     }
 
@@ -166,11 +209,334 @@
       this.state.warningTime = 0;
       this.state.message = "点一下开始，先轻铺底。";
       this.state.elapsedMs = 0;
+      this.state.toolStocks = this.createDefaultToolStocks();
+      this.state.capsuleTimer = 0;
+      this.state.rageTimer = 0;
+      this.state.rageRecoverTimer = 0;
+      this.state.rageBlobId = null;
+      this.state.splitBombArmed = false;
+      this.state.countdownActive = false;
+      this.state.countdownRemaining = 0;
+      this.state.countdownValue = 0;
       this.dragging = false;
       this.pointerDownAt = null;
+      this.revivesUsed = 0;
+      this.reviveSnapshots = [];
+      this.recordReviveSnapshot();
       if (this.platform.stopBgm) {
         this.platform.stopBgm();
       }
+    }
+
+    createDefaultToolStocks() {
+      return {
+        capsule: TOOL_DEFAULT_STOCK,
+        clean: TOOL_DEFAULT_STOCK,
+        rage: TOOL_DEFAULT_STOCK,
+        split: TOOL_DEFAULT_STOCK
+      };
+    }
+
+    armStartCountdown() {
+      this.state.started = false;
+      this.state.paused = false;
+      this.state.gameOver = false;
+      this.state.success = false;
+      this.state.countdownActive = true;
+      this.state.countdownRemaining = COUNTDOWN_TOTAL;
+      this.state.countdownValue = COUNTDOWN_TOTAL;
+      this.state.message = "红线正在闪烁，3 秒后开始。";
+      this.platform.stopBgm && this.platform.stopBgm();
+    }
+
+    completeStartCountdown() {
+      this.state.countdownActive = false;
+      this.state.countdownRemaining = 0;
+      this.state.countdownValue = 0;
+      this.state.started = true;
+      this.state.paused = false;
+      this.state.message = "开始了，先把底部铺平。";
+      this.platform.startBgm && this.platform.startBgm();
+    }
+
+    getDangerLineY() {
+      const safeLift = this.state.capsuleTimer > 0 ? PIT.height * CAPSULE_SAFE_BONUS : 0;
+      return DANGER_LINE_Y - safeLift;
+    }
+
+    getToolStocks() {
+      if (!this.state.toolStocks) {
+        this.state.toolStocks = this.createDefaultToolStocks();
+      }
+      return this.state.toolStocks;
+    }
+
+    getToolTimerText() {
+      if (this.state.countdownActive) {
+        return `倒计时 ${this.state.countdownValue}`;
+      }
+      if (this.state.capsuleTimer > 0) {
+        return `神秘胶囊生效中，剩余 ${Math.ceil(this.state.capsuleTimer)} 秒`;
+      }
+      if (this.state.rageTimer > 0 || this.state.rageRecoverTimer > 0) {
+        const remain = this.state.rageTimer > 0 ? this.state.rageTimer : this.state.rageRecoverTimer;
+        return `发脾气生效中，剩余 ${Math.ceil(remain)} 秒`;
+      }
+      if (this.state.splitBombArmed) {
+        return "分裂弹待命中";
+      }
+      return "";
+    }
+
+    getToolSnapshot() {
+      const stocks = this.getToolStocks();
+      return TOOL_KEYS.map((key) => {
+        const meta = TOOL_META[key];
+        const stock = Math.max(0, Number(stocks[key] || 0));
+        const active =
+          (key === "capsule" && this.state.capsuleTimer > 0) ||
+          (key === "rage" && (this.state.rageTimer > 0 || this.state.rageRecoverTimer > 0)) ||
+          (key === "split" && this.state.splitBombArmed);
+        return {
+          key,
+          label: meta.label,
+          desc: meta.desc,
+          stock,
+          active,
+          disabled: stock <= 0 || !this.state.started || this.state.paused || this.state.gameOver || this.state.countdownActive
+        };
+      });
+    }
+
+    setStatus(text) {
+      this.state.message = text;
+    }
+
+    getBottomHalfBounds() {
+      if (!this.state.blobs.length) {
+        return { top: PIT.y, bottom: PIT.y + PIT.height, splitY: PIT.y + PIT.height / 2 };
+      }
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (let i = 0; i < this.state.blobs.length; i += 1) {
+        const blob = this.state.blobs[i];
+        top = Math.min(top, blob.y - blob.radius);
+        bottom = Math.max(bottom, blob.y + blob.radius);
+      }
+      if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) {
+        top = PIT.y;
+        bottom = PIT.y + PIT.height;
+      }
+      return {
+        top,
+        bottom,
+        splitY: top + (bottom - top) * 0.5
+      };
+    }
+
+    getRemoveToolTargetTypeIndex() {
+      const lowTypes = Array.from(new Set(
+        this.state.blobs
+          .map((blob) => blob.typeIndex)
+          .filter((typeIndex) => typeIndex >= 0 && typeIndex <= 2)
+      ));
+      if (!lowTypes.length) return null;
+      return lowTypes[Math.floor(Math.random() * lowTypes.length)];
+    }
+
+    getRageToolTarget() {
+      const bounds = this.getBottomHalfBounds();
+      const lowerHalfBlobs = this.state.blobs.filter((blob) => (
+        blob.typeIndex >= 3 && blob.typeIndex <= 5 && blob.y >= bounds.splitY
+      ));
+      if (!lowerHalfBlobs.length) return null;
+      const grouped = new Map();
+      for (let i = 0; i < lowerHalfBlobs.length; i += 1) {
+        const blob = lowerHalfBlobs[i];
+        const area = Math.PI * blob.radius * blob.radius;
+        const current = grouped.get(blob.typeIndex) || { typeIndex: blob.typeIndex, totalArea: 0, blobs: [] };
+        current.totalArea += area;
+        current.blobs.push(blob);
+        grouped.set(blob.typeIndex, current);
+      }
+      const topGroups = Array.from(grouped.values())
+        .sort((a, b) => b.totalArea - a.totalArea)
+        .slice(0, 2);
+      if (!topGroups.length) return null;
+      const chosenGroup = topGroups[Math.floor(Math.random() * topGroups.length)];
+      const target = chosenGroup.blobs[Math.floor(Math.random() * chosenGroup.blobs.length)];
+      return target || null;
+    }
+
+    restoreRageBlob(blob) {
+      if (!blob) return;
+      blob.radius = blob.baseRadius || TYPES[blob.typeIndex].radius;
+    }
+
+    activateTool(key) {
+      if (!TOOL_META[key]) {
+        return { ok: false, message: "未知技能" };
+      }
+      if (!this.state.started || this.state.paused || this.state.gameOver || this.state.countdownActive) {
+        return { ok: false, message: "当前状态不能用技能" };
+      }
+      const stocks = this.getToolStocks();
+      if ((stocks[key] || 0) <= 0) {
+        return { ok: false, message: `${TOOL_META[key].label}已用完` };
+      }
+
+      let ok = false;
+      if (key === "capsule") {
+        this.state.capsuleTimer = Math.max(this.state.capsuleTimer, CAPSULE_DURATION);
+        this.setStatus("神秘胶囊发动，危险线暂时上抬 5%");
+        ok = true;
+      } else if (key === "clean") {
+        const targetTypeIndex = this.getRemoveToolTargetTypeIndex();
+        if (targetTypeIndex == null) {
+          return { ok: false, message: "场上暂时没有 1-3 级目标" };
+        }
+        const before = this.state.blobs.length;
+        this.state.blobs = this.state.blobs.filter((blob) => blob.typeIndex !== targetTypeIndex);
+        const removedCount = before - this.state.blobs.length;
+        this.setStatus(`移除道具发动，已清掉 ${TYPES[targetTypeIndex].label} 共 ${removedCount} 个`);
+        ok = removedCount > 0;
+      } else if (key === "rage") {
+        const target = this.getRageToolTarget();
+        if (!target) {
+          return { ok: false, message: "场上暂时没有可发脾气的 4-6 级目标" };
+        }
+        if (this.state.rageBlobId) {
+          const prev = this.state.blobs.find((blob) => blob.id === this.state.rageBlobId);
+          this.restoreRageBlob(prev);
+        }
+        target.radius = (target.baseRadius || TYPES[target.typeIndex].radius) * RAGE_SCALE;
+        target.vx *= 0.82;
+        target.vy *= 0.82;
+        this.state.rageBlobId = target.id;
+        this.state.rageTimer = RAGE_DURATION;
+        this.state.rageRecoverTimer = 0;
+        this.setStatus(`发脾气发动，${TYPES[target.typeIndex].label} 巨化并挤压周围 5 秒`);
+        ok = true;
+      } else if (key === "split") {
+        if (this.state.splitBombArmed) {
+          return { ok: false, message: "分裂弹已经待命" };
+        }
+        this.state.splitBombArmed = true;
+        this.setStatus("分裂弹待命，下一颗下落生物会在命中后裂解目标");
+        ok = true;
+      }
+
+      if (ok) {
+        stocks[key] = Math.max(0, Number(stocks[key] || 0) - 1);
+        return { ok: true, message: this.state.message };
+      }
+      return { ok: false, message: `${TOOL_META[key].label}当前无法使用` };
+    }
+
+    createReviveSnapshot() {
+      return {
+        blobs: this.state.blobs.map((blob) => ({ ...blob })),
+        pointerX: this.state.pointerX,
+        nextType: this.state.nextType,
+        score: this.state.score,
+        drops: this.state.drops,
+        merges: this.state.merges,
+        highestType: this.state.highestType,
+        warningTime: this.state.warningTime,
+        elapsedMs: this.state.elapsedMs,
+        toolStocks: { ...this.getToolStocks() },
+        capsuleTimer: this.state.capsuleTimer,
+        rageTimer: this.state.rageTimer,
+        rageRecoverTimer: this.state.rageRecoverTimer,
+        rageBlobId: this.state.rageBlobId,
+        splitBombArmed: this.state.splitBombArmed
+      };
+    }
+
+    recordReviveSnapshot() {
+      this.reviveSnapshots.push(this.createReviveSnapshot());
+      if (this.reviveSnapshots.length > 64) {
+        this.reviveSnapshots = this.reviveSnapshots.slice(-64);
+      }
+    }
+
+    canShareRevive() {
+      return !this.state.success && this.state.gameOver && this.revivesUsed < MAX_REVIVES_PER_RUN && this.reviveSnapshots.length > 0;
+    }
+
+    restoreReviveSnapshot(snapshot) {
+      if (!snapshot) return false;
+      this.state.blobs = snapshot.blobs.map((blob) => ({ ...blob }));
+      this.state.pointerX = snapshot.pointerX;
+      this.state.nextType = snapshot.nextType;
+      this.state.score = snapshot.score;
+      this.state.drops = snapshot.drops;
+      this.state.merges = snapshot.merges;
+      this.state.highestType = snapshot.highestType;
+      this.state.warningTime = snapshot.warningTime;
+      this.state.elapsedMs = snapshot.elapsedMs;
+      this.state.toolStocks = { ...snapshot.toolStocks };
+      this.state.capsuleTimer = snapshot.capsuleTimer || 0;
+      this.state.rageTimer = snapshot.rageTimer || 0;
+      this.state.rageRecoverTimer = snapshot.rageRecoverTimer || 0;
+      this.state.rageBlobId = snapshot.rageBlobId || null;
+      this.state.splitBombArmed = Boolean(snapshot.splitBombArmed);
+      this.state.dropCooldown = 0;
+      this.state.started = true;
+      this.state.paused = false;
+      this.state.gameOver = false;
+      this.state.success = false;
+      this.state.countdownActive = false;
+      this.state.countdownRemaining = 0;
+      this.state.countdownValue = 0;
+      this.setStatus(`分享复活成功，已回退到结束前更早的局面。剩余 ${Math.max(0, MAX_REVIVES_PER_RUN - this.revivesUsed)} 次`);
+      this.platform.startBgm && this.platform.startBgm();
+      return true;
+    }
+
+    shareRevive() {
+      if (!this.canShareRevive()) {
+        return { ok: false, message: "当前无法分享复活" };
+      }
+      const targetDrops = Math.max(0, this.state.drops - 10);
+      let snapshot = this.reviveSnapshots[0] || null;
+      for (let i = this.reviveSnapshots.length - 1; i >= 0; i -= 1) {
+        const candidate = this.reviveSnapshots[i];
+        if (candidate && candidate.drops <= targetDrops) {
+          snapshot = candidate;
+          break;
+        }
+      }
+      if (!snapshot) snapshot = this.reviveSnapshots[0] || null;
+      if (!snapshot) {
+        return { ok: false, message: "没有可用的复活快照" };
+      }
+      this.revivesUsed += 1;
+      const ok = this.restoreReviveSnapshot(snapshot);
+      return { ok, message: this.state.message, remain: Math.max(0, MAX_REVIVES_PER_RUN - this.revivesUsed) };
+    }
+
+    applySplitBombHit(splitBlob, targetBlob) {
+      if (!splitBlob || !targetBlob) return false;
+      const offset = Math.max(18, TYPES[0].radius * 1.15);
+      const leftBlob = this.createBlob(
+        0,
+        clamp(targetBlob.x - offset, PIT.x + 20, PIT.x + PIT.width - 20),
+        Math.max(PIT.y + 30, targetBlob.y - 8),
+        -64,
+        -110
+      );
+      const rightBlob = this.createBlob(
+        0,
+        clamp(targetBlob.x + offset, PIT.x + 20, PIT.x + PIT.width - 20),
+        Math.max(PIT.y + 30, targetBlob.y - 8),
+        64,
+        -110
+      );
+      this.state.blobs = this.state.blobs.filter((blob) => blob.id !== splitBlob.id && blob.id !== targetBlob.id);
+      this.state.blobs.push(leftBlob, rightBlob);
+      this.setStatus("分裂弹命中，目标已裂成两个 1 级生物");
+      return true;
     }
 
     togglePause() {
@@ -186,25 +552,28 @@
     }
 
     startIfNeeded() {
-      if (this.state.started) return;
-      this.state.started = true;
-      this.state.paused = false;
-      this.state.message = "开始了，先把底部铺平。";
-      this.platform.startBgm && this.platform.startBgm();
+      if (this.state.started || this.state.countdownActive) return;
+      this.armStartCountdown();
     }
 
     dropBlob() {
-      if (this.state.gameOver || this.state.paused) return;
+      if (this.state.gameOver || this.state.paused || this.state.countdownActive) return;
       if (this.state.dropCooldown > 0) return;
-      this.startIfNeeded();
+      if (!this.state.started) return;
       const typeIndex = this.state.nextType;
       const spawnX = clamp(this.state.pointerX, PIT.x + 28, PIT.x + PIT.width - 28);
-      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, randomRange(-30, 30), 0);
+      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, 0, 0);
+      if (this.state.splitBombArmed) {
+        blob.specialType = "splitBomb";
+        blob.specialArmed = true;
+        this.state.splitBombArmed = false;
+      }
       this.state.blobs.push(blob);
       this.state.nextType = this.randomTypeIndex();
       this.state.dropCooldown = DROP_COOLDOWN;
       this.state.drops += 1;
       this.state.message = `已投下 ${TYPES[typeIndex].label}，下一手优先整理支撑面。`;
+      this.recordReviveSnapshot();
     }
 
     finishRun(success) {
@@ -225,11 +594,20 @@
 
     update(dt) {
       this.state.dropCooldown = Math.max(0, this.state.dropCooldown - dt);
+      if (this.state.countdownActive) {
+        this.state.countdownRemaining = Math.max(0, this.state.countdownRemaining - dt);
+        this.state.countdownValue = Math.max(1, Math.ceil(this.state.countdownRemaining));
+        if (this.state.countdownRemaining <= 0) {
+          this.completeStartCountdown();
+        }
+        return;
+      }
       if (!this.state.started || this.state.paused || this.state.gameOver) {
         return;
       }
 
       this.state.elapsedMs += dt * 1000;
+      this.state.capsuleTimer = Math.max(0, this.state.capsuleTimer - dt);
       const blobs = this.state.blobs;
       for (let i = 0; i < blobs.length; i += 1) {
         const blob = blobs[i];
@@ -237,8 +615,9 @@
         blob.vy += GRAVITY * dt;
         blob.x += blob.vx * dt;
         blob.y += blob.vy * dt;
-        blob.vx *= 0.998;
+        blob.vx *= 0.96;
         blob.vy *= 0.998;
+        if (Math.abs(blob.vx) < 2.5) blob.vx = 0;
 
         if (blob.x - blob.radius < PIT.x) {
           blob.x = PIT.x + blob.radius;
@@ -251,7 +630,43 @@
         if (blob.y + blob.radius > FLOOR_Y) {
           blob.y = FLOOR_Y - blob.radius;
           blob.vy = -Math.abs(blob.vy) * FLOOR_BOUNCE;
-          if (Math.abs(blob.vy) < 18) blob.vy = 0;
+          if (Math.abs(blob.vy) < 14) blob.vy = 0;
+        }
+      }
+
+      if (this.state.rageBlobId) {
+        const rageBlob = blobs.find((blob) => blob.id === this.state.rageBlobId);
+        if (!rageBlob) {
+          this.state.rageBlobId = null;
+          this.state.rageTimer = 0;
+          this.state.rageRecoverTimer = 0;
+        } else if (this.state.rageTimer > 0) {
+          this.state.rageTimer = Math.max(0, this.state.rageTimer - dt);
+          for (let i = 0; i < blobs.length; i += 1) {
+            const blob = blobs[i];
+            if (blob.id === rageBlob.id) continue;
+            const dx = blob.x - rageBlob.x;
+            const dy = blob.y - rageBlob.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+            const pushRange = rageBlob.radius + blob.radius + 54;
+            if (dist > pushRange) continue;
+            const force = (1 - dist / pushRange) * 220;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            blob.vx += nx * force * dt;
+            blob.vy += ny * force * dt * 0.65;
+          }
+          if (this.state.rageTimer <= 0) {
+            this.state.rageRecoverTimer = RAGE_RECOVER_DURATION;
+          }
+        } else if (this.state.rageRecoverTimer > 0) {
+          this.state.rageRecoverTimer = Math.max(0, this.state.rageRecoverTimer - dt);
+          const recoverRatio = 1 - this.state.rageRecoverTimer / RAGE_RECOVER_DURATION;
+          rageBlob.radius = (rageBlob.baseRadius || TYPES[rageBlob.typeIndex].radius) * (RAGE_SCALE - ((RAGE_SCALE - 1) * recoverRatio));
+          if (this.state.rageRecoverTimer <= 0) {
+            this.restoreRageBlob(rageBlob);
+            this.state.rageBlobId = null;
+          }
         }
       }
 
@@ -272,6 +687,13 @@
           const minDist = a.radius + b.radius;
           if (dist >= minDist) continue;
 
+          if (a.specialType === "splitBomb" && a.specialArmed) {
+            if (this.applySplitBombHit(a, b)) return;
+          }
+          if (b.specialType === "splitBomb" && b.specialArmed) {
+            if (this.applySplitBombHit(b, a)) return;
+          }
+
           const overlap = minDist - dist;
           const nx = dx / dist;
           const ny = dy / dist;
@@ -280,11 +702,12 @@
           b.x += nx * overlap * 0.5;
           b.y += ny * overlap * 0.5;
 
-          const push = overlap * 7.5;
-          a.vx -= nx * push;
-          a.vy -= ny * push;
-          b.vx += nx * push;
-          b.vy += ny * push;
+          const pushX = overlap * 3.6;
+          const pushY = overlap * 6.2;
+          a.vx -= nx * pushX;
+          a.vy -= ny * pushY;
+          b.vx += nx * pushX;
+          b.vy += ny * pushY;
         }
       }
     }
@@ -300,10 +723,13 @@
           const a = blobs[i];
           const b = blobs[j];
           if (a.typeIndex !== b.typeIndex) continue;
+          if (a.specialType === "splitBomb" || b.specialType === "splitBomb") continue;
+          if (a.age <= 0.01 || b.age <= 0.01) continue;
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-          if (dist > (a.radius + b.radius) * 0.52) continue;
+          const minDist = a.radius + b.radius;
+          if (dist > minDist - MERGE_TOUCH_GAP) continue;
           removed.add(a.id);
           removed.add(b.id);
           const nextIndex = Math.min(TYPES.length - 1, a.typeIndex + 1);
@@ -311,8 +737,8 @@
             nextIndex,
             (a.x + b.x) * 0.5,
             (a.y + b.y) * 0.5,
-            (a.vx + b.vx) * 0.18,
-            -180
+            (a.vx + b.vx) * 0.06,
+            -150
           );
           spawned.push(merged);
           this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
@@ -340,10 +766,11 @@
         return;
       }
       let topY = FLOOR_Y;
+      const dangerLineY = this.getDangerLineY();
       for (let i = 0; i < this.state.blobs.length; i += 1) {
         topY = Math.min(topY, this.state.blobs[i].y - this.state.blobs[i].radius);
       }
-      if (topY <= DANGER_LINE_Y) {
+      if (topY <= dangerLineY) {
         this.state.warningTime += dt;
       } else {
         this.state.warningTime = Math.max(0, this.state.warningTime - dt * 1.4);
@@ -365,7 +792,27 @@
       this.pointerDownAt = point;
 
       if (this.state.gameOver) {
-        if (hitRect(point, RESULT_BUTTON)) {
+        if (this.platform.domUi) {
+          if (hitRect(point, RESULT_BUTTON)) {
+            this.resetRun();
+            this.armStartCountdown();
+          }
+          return;
+        }
+        if (this.canShareRevive() && hitRect(point, RESULT_REVIVE_BUTTON)) {
+          if (typeof this.platform.requestShareRevive === "function") {
+            this.platform.requestShareRevive();
+          } else {
+            this.shareRevive();
+          }
+          return;
+        }
+        if (hitRect(point, RESULT_RESTART_BUTTON)) {
+          this.resetRun();
+          this.armStartCountdown();
+          return;
+        }
+        if (hitRect(point, RESULT_EXIT_BUTTON)) {
           this.resetRun();
         }
         return;
@@ -373,11 +820,21 @@
 
       if (hitRect(point, BUTTONS.restart)) {
         this.resetRun();
+        this.armStartCountdown();
         return;
       }
       if (hitRect(point, BUTTONS.pause)) {
         this.togglePause();
         return;
+      }
+      if (!this.platform.domUi) {
+        for (let i = 0; i < CANVAS_TOOL_LAYOUT.length; i += 1) {
+          const rect = CANVAS_TOOL_LAYOUT[i];
+          if (hitRect(point, rect)) {
+            this.activateTool(rect.key);
+            return;
+          }
+        }
       }
       this.dragging = true;
       this.state.pointerX = clamp(point.x, PIT.x + 28, PIT.x + PIT.width - 28);
@@ -497,18 +954,20 @@
 
     drawGuideLine(ctx) {
       const percent = clamp(this.state.warningTime / MAX_WARNING_TIME, 0, 1);
-      ctx.strokeStyle = percent > 0.7 ? "#ef4444" : percent > 0.25 ? "#f59e0b" : "rgba(248,113,113,0.55)";
+      const dangerLineY = this.getDangerLineY();
+      const countdownBlink = this.state.countdownActive && Math.floor((this.state.countdownRemaining % 1) * 10) < 5;
+      ctx.strokeStyle = countdownBlink ? "#ef4444" : percent > 0.7 ? "#ef4444" : percent > 0.25 ? "#f59e0b" : "rgba(248,113,113,0.55)";
       ctx.lineWidth = 3;
       ctx.setLineDash([10, 8]);
       ctx.beginPath();
-      ctx.moveTo(PIT.x + 16, DANGER_LINE_Y);
-      ctx.lineTo(PIT.x + PIT.width - 16, DANGER_LINE_Y);
+      ctx.moveTo(PIT.x + 16, dangerLineY);
+      ctx.lineTo(PIT.x + PIT.width - 16, dangerLineY);
       ctx.stroke();
       ctx.setLineDash([]);
 
       ctx.fillStyle = "#fee2e2";
       ctx.font = "700 12px sans-serif";
-      ctx.fillText("危险线", PIT.x + 16, DANGER_LINE_Y - 8);
+      ctx.fillText(this.state.capsuleTimer > 0 ? "危险线↑" : "危险线", PIT.x + 16, dangerLineY - 8);
 
       ctx.fillStyle = "rgba(255,255,255,0.12)";
       this.roundRect(ctx, 20, 134, 350, 10, 999, true, false);
@@ -518,11 +977,29 @@
 
     drawBlobs(ctx) {
       const blobs = this.state.blobs.slice().sort((a, b) => a.radius - b.radius);
-      const spriteReady = this.blobSprite && this.blobSprite.complete && this.blobSprite.naturalWidth > 0;
       for (let i = 0; i < blobs.length; i += 1) {
         const blob = blobs[i];
+        const sprite = this.getMonsterSprite(blob.typeIndex);
+        const spriteReady = sprite && sprite.complete && sprite.naturalWidth > 0;
         ctx.save();
         ctx.translate(blob.x, blob.y);
+        if (spriteReady) {
+          ctx.fillStyle = "#111827";
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+          ctx.fill();
+          const coverSize = blob.radius * 2.34;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.globalAlpha = 1;
+          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.04, coverSize, coverSize);
+          ctx.restore();
+          ctx.restore();
+          continue;
+        }
+
         ctx.fillStyle = blob.color;
         ctx.beginPath();
         ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
@@ -532,18 +1009,6 @@
         ctx.beginPath();
         ctx.arc(-blob.radius * 0.28, -blob.radius * 0.34, blob.radius * 0.34, 0, Math.PI * 2);
         ctx.fill();
-
-        if (spriteReady) {
-          const spriteSize = blob.radius * 2.34;
-          const spriteY = -blob.radius * 1.2;
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(0, 0, blob.radius * 0.98, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.globalAlpha = 0.92;
-          ctx.drawImage(this.blobSprite, -spriteSize / 2, spriteY, spriteSize, spriteSize);
-          ctx.restore();
-        }
 
         const blink = Math.sin(blob.age * 3 + blob.blinkSeed) > 0.92;
         ctx.strokeStyle = "#0f172a";
@@ -588,8 +1053,8 @@
     }
 
     drawOverlay(ctx) {
-      if (!this.state.started && !this.state.gameOver) {
-        this.drawCenterPanel(ctx, "准备开始", "点任意位置开始。手机和 PC 都按这套尺寸验收。", "开始");
+      if (this.state.countdownActive) {
+        this.drawCountdownOverlay(ctx);
         return;
       }
       if (this.state.paused && !this.state.gameOver) {
@@ -597,12 +1062,93 @@
         return;
       }
       if (this.state.gameOver) {
-        const title = this.state.success ? "挑战成功" : "挑战失败";
-        const copy = this.state.success
-          ? `你已经合出 ${TYPES[TYPES.length - 1].label}，当前分数 ${this.state.score}。`
-          : `这局分数 ${this.state.score}，危险线累计超过阈值。`;
-        this.drawCenterPanel(ctx, title, copy, "再来一局");
+        if (this.platform.domUi) {
+          const title = this.state.success ? "挑战成功" : "挑战失败";
+          const copy = this.state.success
+            ? `你已经合出 ${TYPES[TYPES.length - 1].label}，当前分数 ${this.state.score}。`
+            : `这局分数 ${this.state.score}，危险线累计超过阈值。`;
+          this.drawCenterPanel(ctx, title, copy, "再来一局");
+        } else {
+          this.drawCanvasResultOverlay(ctx);
+        }
       }
+      if (!this.platform.domUi) {
+        this.drawCanvasToolBar(ctx);
+      }
+    }
+
+    drawCountdownOverlay(ctx) {
+      const remain = String(Math.max(1, this.state.countdownValue || 1));
+      ctx.fillStyle = "rgba(2, 6, 23, 0.18)";
+      ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "700 92px sans-serif";
+      const textWidth = ctx.measureText(remain).width;
+      ctx.fillText(remain, (DESIGN_WIDTH - textWidth) / 2, 394);
+      ctx.font = "600 18px sans-serif";
+      const sub = "红线同步闪烁，倒计时结束后开始";
+      const subWidth = ctx.measureText(sub).width;
+      ctx.fillText(sub, (DESIGN_WIDTH - subWidth) / 2, 430);
+    }
+
+    drawCanvasToolBar(ctx) {
+      const tools = this.getToolSnapshot();
+      for (let i = 0; i < CANVAS_TOOL_LAYOUT.length; i += 1) {
+        const rect = CANVAS_TOOL_LAYOUT[i];
+        const tool = tools.find((item) => item.key === rect.key);
+        if (!tool) continue;
+        ctx.fillStyle = tool.active ? "rgba(79, 70, 229, 0.96)" : tool.disabled ? "rgba(52, 63, 112, 0.62)" : "rgba(18, 24, 72, 0.92)";
+        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 18, true, false);
+        ctx.strokeStyle = tool.active ? "rgba(196, 181, 253, 0.9)" : "rgba(196, 220, 255, 0.16)";
+        ctx.lineWidth = 1.5;
+        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 18, false, true);
+        ctx.fillStyle = "#eef2ff";
+        ctx.font = "700 12px sans-serif";
+        const shortLabel = tool.label.length > 4 ? tool.label.slice(0, 4) : tool.label;
+        const labelWidth = ctx.measureText(shortLabel).width;
+        ctx.fillText(shortLabel, rect.x + (rect.w - labelWidth) / 2, rect.y + 21);
+        ctx.font = "700 14px sans-serif";
+        const stockText = `x${tool.stock}`;
+        const stockWidth = ctx.measureText(stockText).width;
+        ctx.fillText(stockText, rect.x + (rect.w - stockWidth) / 2, rect.y + 42);
+      }
+
+      const timerText = this.getToolTimerText();
+      if (timerText) {
+        ctx.fillStyle = "rgba(18, 24, 72, 0.92)";
+        this.roundRect(ctx, 28, 734, 334, 26, 999, true, false);
+        ctx.fillStyle = "#eef2ff";
+        ctx.font = "600 12px sans-serif";
+        const width = ctx.measureText(timerText).width;
+        ctx.fillText(timerText, (DESIGN_WIDTH - width) / 2, 751);
+      }
+    }
+
+    drawCanvasResultOverlay(ctx) {
+      ctx.fillStyle = "rgba(2, 6, 23, 0.56)";
+      ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+      ctx.fillStyle = "#10213d";
+      this.roundRect(ctx, 24, 204, 342, 356, 28, true, false);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+      ctx.lineWidth = 2;
+      this.roundRect(ctx, 24, 204, 342, 356, 28, false, true);
+
+      const title = this.state.success ? "挑战成功" : "本局失败";
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "700 28px sans-serif";
+      ctx.fillText(title, 46, 252);
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "500 16px sans-serif";
+      this.drawWrappedText(ctx, `分数 ${this.state.score} · 合并 ${this.state.merges} 次 · 用时 ${formatSeconds(Math.floor(this.state.elapsedMs / 1000))}`, 46, 286, 296, 24);
+      if (!this.state.success) {
+        this.drawWrappedText(ctx, `分享复活剩余 ${Math.max(0, MAX_REVIVES_PER_RUN - this.revivesUsed)} 次，可回退到结束前约 10 步`, 46, 336, 296, 24);
+      }
+
+      if (!this.state.success && this.canShareRevive()) {
+        this.drawButton(ctx, RESULT_REVIVE_BUTTON, "分享复活", "#7c3aed");
+      }
+      this.drawButton(ctx, RESULT_RESTART_BUTTON, "再来一局", "#22c55e");
+      this.drawButton(ctx, RESULT_EXIT_BUTTON, "退出", "#475569");
     }
 
     drawCenterPanel(ctx, title, copy, action) {
