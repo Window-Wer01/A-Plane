@@ -592,22 +592,22 @@
 }
 
 .wx-game-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  height: 100%;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 750 / 1334;
+  min-height: 0;
 }
 
 .wx-board-stage {
   position: relative;
-  width: 130%;
-  margin-left: -15%;
-  margin-top: 72px;
-  flex: 0 0 auto;
+  width: 100%;
+  height: 100%;
+  margin-left: 0;
+  margin-top: 0;
+  flex: none;
   min-height: 0;
-  height: auto;
-  aspect-ratio: 390 / 844;
-  border-radius: 0;
+  aspect-ratio: 750 / 1334;
+  border-radius: 0 0 18px 18px;
   overflow: hidden;
 }
 
@@ -624,7 +624,7 @@
   left: 0;
   right: 0;
   top: 0;
-  height: 54px;
+  height: 104px;
   background: linear-gradient(180deg, rgba(53, 60, 151, 0.98) 0%, rgba(48, 56, 144, 0.98) 100%);
   border-bottom: 1px solid rgba(160, 196, 255, 0.18);
   box-shadow: inset 0 -1px 0 rgba(255,255,255,0.06);
@@ -640,14 +640,15 @@
 
 .wx-game-topbar {
   position: absolute;
-  left: 6px;
-  right: 52px;
-  top: 6px;
+  left: 8px;
+  right: 56px;
+  top: 8px;
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 38px;
-  gap: 6px;
-  min-height: 38px;
-  align-items: stretch;
+  grid-template-columns: 86px 112px;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 84px;
+  align-items: start;
 }
 
 .wx-audio-btn {
@@ -662,7 +663,7 @@
 .wx-top-panel,
 .wx-return-btn {
   min-height: 38px;
-  border-radius: 7px;
+  border-radius: 8px;
   border: 1px solid rgba(196, 220, 255, 0.12);
   background:
     linear-gradient(180deg, rgba(24, 31, 108, 0.96) 0%, rgba(17, 24, 90, 0.98) 100%);
@@ -670,27 +671,32 @@
 }
 
 .wx-top-panel {
-  padding: 3px 8px;
+  padding: 6px 8px 4px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
 }
 
 .wx-panel-label {
-  display: none;
+  display: block;
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 
 .wx-return-btn {
   position: absolute;
-  right: 6px;
-  top: 6px;
-  width: 38px;
-  min-width: 38px;
-  min-height: 38px;
-  height: 38px;
+  right: 12px;
+  top: 12px;
+  width: 46px;
+  min-width: 46px;
+  min-height: 34px;
+  height: 34px;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 202, 202, 0.42);
   background: linear-gradient(180deg, #ff6b75 0%, #e11d48 100%);
   box-shadow: 0 8px 18px rgba(127, 29, 29, 0.24), inset 0 1px 0 rgba(255,255,255,0.24);
@@ -743,10 +749,11 @@
   align-items: baseline;
   gap: 4px;
   margin-top: 0;
+  justify-content: flex-start;
 }
 
 .wx-step-current {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
   color: #ffffff;
   font-weight: 900;
@@ -767,31 +774,39 @@
 
 .wx-next-center {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 8px 0 6px;
   justify-self: center;
+  min-height: 86px;
 }
 
 .wx-next-preview {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 6px;
   margin-top: 0;
 }
 
 .wx-next-orb {
-  width: 30px;
-  height: 30px;
+  width: 54px;
+  height: 54px;
 }
 
 .wx-next-meta {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .wx-next-label {
-  display: none;
+  display: block;
+  font-size: 11px;
+  line-height: 1;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .wx-next-meta strong {
@@ -889,8 +904,8 @@
 .wx-stage-mascot {
   position: relative;
   position: absolute;
-  right: 8px;
-  top: 106px;
+  left: 6px;
+  top: 54px;
   width: 92px;
   height: 114px;
   border: none;
@@ -998,16 +1013,19 @@
 .wechat-game-layout .canvas-wrap,
 .wx-board-shell {
   position: relative;
-  flex: 1 1 auto;
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 102px;
+  bottom: 174px;
   min-height: 0;
-  width: 100%;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
+  width: auto;
+  display: block;
   overflow: hidden;
   background: transparent;
   border: none;
   box-shadow: none;
+  border-radius: 22px;
 }
 
 .wechat-game-layout #gameCanvas {
@@ -1039,9 +1057,9 @@
 
 .wx-tool-stage {
   position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 18px;
+  left: 14px;
+  right: 14px;
+  bottom: 60px;
   margin-top: 0;
   padding: 0;
   z-index: 8;
@@ -1143,12 +1161,12 @@
 }
 
 .wx-ad-stage {
-  position: sticky;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--wx-banner-lift));
-  margin-top: -2px;
+  position: relative;
+  bottom: auto;
+  margin-top: 2px;
   padding-bottom: 0;
   z-index: 6;
-  background: linear-gradient(180deg, rgba(29, 53, 117, 0) 0%, rgba(29, 53, 117, 0.88) 36%, rgba(29, 53, 117, 0.96) 100%);
+  background: transparent;
 }
 
 .wx-tv-ad-shell {
@@ -1287,11 +1305,12 @@
   }
 
   .wx-game-topbar {
-    left: 5px;
-    right: 47px;
-    top: 5px;
-    grid-template-columns: minmax(106px, 1fr) 34px;
-    gap: 5px;
+    left: 7px;
+    right: 48px;
+    top: 7px;
+    grid-template-columns: 74px 100px;
+    gap: 6px;
+    min-height: 74px;
   }
 
   .wx-top-panel,
@@ -1309,15 +1328,15 @@
   }
 
   .wx-next-orb {
-    width: 28px;
-    height: 28px;
+    width: 48px;
+    height: 48px;
   }
 
   .wx-return-btn {
-    right: 5px;
-    top: 5px;
-    width: 34px;
-    min-width: 34px;
+    right: 10px;
+    top: 10px;
+    width: 42px;
+    min-width: 42px;
     min-height: 34px;
     height: 34px;
   }
@@ -1332,16 +1351,16 @@
   }
 
   .wx-stage-mascot {
-    right: 8px;
-    top: 96px;
-    width: 82px;
-    height: 102px;
+    left: 4px;
+    top: 52px;
+    width: 84px;
+    height: 104px;
   }
 
   .wx-tool-stage {
-    left: 12px;
-    right: 12px;
-    bottom: 14px;
+    left: 10px;
+    right: 10px;
+    bottom: 54px;
   }
 
   .wx-tool-grid {
@@ -1385,7 +1404,7 @@
   }
 
   .wx-stage-mascot .wx-game-pet-text {
-    top: 108px;
+    top: 106px;
     width: 82px;
     font-size: 10px;
   }

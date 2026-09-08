@@ -5,14 +5,15 @@
     root.BlobMergeCore = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  const DESIGN_WIDTH = 390;
-  const DESIGN_HEIGHT = 844;
-  const PIT = { x: 2, y: 94, width: 386, height: 671 };
+  const DESIGN_WIDTH = 420;
+  const DESIGN_HEIGHT = 760;
+  const PIT = { x: 28, y: 120, width: 364, height: 592 };
   const FLOOR_Y = PIT.y + PIT.height;
-  const DANGER_LINE_Y = PIT.y + 60;
-  const SPAWN_Y = 76;
-  const DROP_COOLDOWN = 0.16;
-  const GRAVITY = 1320;
+  const DANGER_LINE_Y = PIT.y + 54;
+  const SPAWN_Y = 78;
+  const DROP_COOLDOWN = 0.26;
+  const BASE_GRAVITY = 560;
+  const MAX_FALL_SPEED_BASE = 660;
   const MERGE_SCORE_FACTOR = 16;
   const MAX_WARNING_TIME = 2.6;
   const WALL_BOUNCE = 0.44;
@@ -38,7 +39,7 @@
   const MAX_REVIVES_PER_RUN = 3;
   const BUTTONS = {
     restart: { x: 18, y: 18, w: 84, h: 38 },
-    pause: { x: 288, y: 18, w: 84, h: 38 }
+    pause: { x: 318, y: 18, w: 84, h: 38 }
   };
   const TYPES = [
     { key: "seed", label: "种子球", radius: 18, color: "#7dd3fc", score: 1 },
@@ -49,10 +50,10 @@
     { key: "core", label: "星核球", radius: 66, color: "#fde68a", score: 32 },
     { key: "king", label: "大王球", radius: 82, color: "#93c5fd", score: 64 }
   ];
-  const RESULT_BUTTON = { x: 105, y: 478, w: 180, h: 52 };
-  const RESULT_REVIVE_BUTTON = { x: 36, y: 478, w: 104, h: 52 };
-  const RESULT_RESTART_BUTTON = { x: 148, y: 478, w: 96, h: 52 };
-  const RESULT_EXIT_BUTTON = { x: 252, y: 478, w: 102, h: 52 };
+  const RESULT_BUTTON = { x: 120, y: 478, w: 180, h: 52 };
+  const RESULT_REVIVE_BUTTON = { x: 36, y: 478, w: 112, h: 52 };
+  const RESULT_RESTART_BUTTON = { x: 156, y: 478, w: 104, h: 52 };
+  const RESULT_EXIT_BUTTON = { x: 268, y: 478, w: 108, h: 52 };
   const CANVAS_TOOL_LAYOUT = [
     { key: "capsule", x: 24, y: 768, w: 82, h: 54 },
     { key: "clean", x: 112, y: 768, w: 82, h: 54 },
@@ -187,7 +188,7 @@
         typeIndex,
         x,
         y,
-        vx: Math.abs(vx) < 4 ? 0 : vx,
+        vx,
         vy,
         radius: type.radius,
         baseRadius: type.radius,
@@ -627,12 +628,11 @@
       for (let i = 0; i < blobs.length; i += 1) {
         const blob = blobs[i];
         blob.age += dt;
-        blob.vy += GRAVITY * dt;
+        blob.vy = Math.min(blob.vy + this.getBlobGravity(blob) * dt, this.getBlobMaxFallSpeed(blob));
         blob.x += blob.vx * dt;
         blob.y += blob.vy * dt;
-        blob.vx *= 0.96;
-        blob.vy *= 0.998;
-        if (Math.abs(blob.vx) < 2.5) blob.vx = 0;
+        blob.vx *= 0.99976;
+        blob.vy *= 0.99986;
 
         if (blob.x - blob.radius < PIT.x) {
           blob.x = PIT.x + blob.radius;
@@ -796,7 +796,7 @@
           );
           spawned.push(merged);
           this.applyMergeShockwave(merged.x, merged.y, merged.radius, [merged.id]);
-          this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score * MERGE_SCORE_FACTOR}`, TYPES[nextIndex].color);
+          this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score}`, TYPES[nextIndex].color);
           this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1 + nextIndex * 0.24);
           this.spawnSparks(
             merged.x,
@@ -1199,7 +1199,15 @@
 
     getBlobMass(blob) {
       const r = blob.radius || TYPES[blob.typeIndex].radius;
-      return Math.max(1, Math.PI * r * r);
+      return Math.max(0.8, r * r * 0.012);
+    }
+
+    getBlobGravity(blob) {
+      return BASE_GRAVITY * (0.78 + blob.typeIndex * 0.055);
+    }
+
+    getBlobMaxFallSpeed(blob) {
+      return MAX_FALL_SPEED_BASE * (0.92 + blob.typeIndex * 0.048);
     }
 
     spawnPopup(x, y, text, color = "#fff7ed") {
