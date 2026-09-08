@@ -15,8 +15,11 @@
   const GRAVITY = 1320;
   const MERGE_SCORE_FACTOR = 16;
   const MAX_WARNING_TIME = 2.6;
-  const WALL_BOUNCE = 0.06;
-  const FLOOR_BOUNCE = 0.04;
+  const WALL_BOUNCE = 0.44;
+  const FLOOR_BOUNCE = 0.34;
+  const BLOB_RESTITUTION = 0.68;
+  const STACK_SQUISH_PUSH = 58;
+  const STACK_SQUISH_DOWN = 18;
   const MERGE_TOUCH_GAP = -0.8;
   const TOOL_DEFAULT_STOCK = 5;
   const CAPSULE_DURATION = 30;
@@ -110,6 +113,10 @@
         message: "点一下开始，先轻铺底。",
         elapsedMs: 0,
         bgmReady: false,
+        popups: [],
+        bursts: [],
+        sparks: [],
+        cameraPunch: 0,
         countdownActive: false,
         countdownRemaining: 0,
         countdownValue: 0
@@ -209,6 +216,10 @@
       this.state.warningTime = 0;
       this.state.message = "点一下开始，先轻铺底。";
       this.state.elapsedMs = 0;
+      this.state.popups = [];
+      this.state.bursts = [];
+      this.state.sparks = [];
+      this.state.cameraPunch = 0;
       this.state.toolStocks = this.createDefaultToolStocks();
       this.state.capsuleTimer = 0;
       this.state.rageTimer = 0;
@@ -475,6 +486,10 @@
       this.state.highestType = snapshot.highestType;
       this.state.warningTime = snapshot.warningTime;
       this.state.elapsedMs = snapshot.elapsedMs;
+      this.state.popups = [];
+      this.state.bursts = [];
+      this.state.sparks = [];
+      this.state.cameraPunch = 0;
       this.state.toolStocks = { ...snapshot.toolStocks };
       this.state.capsuleTimer = snapshot.capsuleTimer || 0;
       this.state.rageTimer = snapshot.rageTimer || 0;
@@ -673,6 +688,7 @@
       this.resolveCollisions();
       this.resolveMerges();
       this.updateDanger(dt);
+      this.updateFx(dt);
     }
 
     resolveCollisions() {
@@ -694,20 +710,58 @@
             if (this.applySplitBombHit(b, a)) return;
           }
 
-          const overlap = minDist - dist;
           const nx = dx / dist;
           const ny = dy / dist;
-          a.x -= nx * overlap * 0.5;
-          a.y -= ny * overlap * 0.5;
-          b.x += nx * overlap * 0.5;
-          b.y += ny * overlap * 0.5;
+          const overlap = minDist - dist;
+          const massA = this.getBlobMass(a);
+          const massB = this.getBlobMass(b);
+          const invMassA = 1 / massA;
+          const invMassB = 1 / massB;
+          const invMassSum = invMassA + invMassB;
 
-          const pushX = overlap * 3.6;
-          const pushY = overlap * 6.2;
-          a.vx -= nx * pushX;
-          a.vy -= ny * pushY;
-          b.vx += nx * pushX;
-          b.vy += ny * pushY;
+          a.x -= nx * overlap * (invMassA / invMassSum);
+          a.y -= ny * overlap * (invMassA / invMassSum);
+          b.x += nx * overlap * (invMassB / invMassSum);
+          b.y += ny * overlap * (invMassB / invMassSum);
+
+          const rvx = b.vx - a.vx;
+          const rvy = b.vy - a.vy;
+          const rel = rvx * nx + rvy * ny;
+          const verticalLoad = Math.max(0, (a.radius + b.radius) - Math.abs(a.y - b.y));
+          const tx = -ny;
+          const ty = nx;
+          const tangentRel = rvx * tx + rvy * ty;
+
+          if (rel < 0) {
+            const impulse = (-(1 + BLOB_RESTITUTION) * rel) / invMassSum;
+            a.vx -= impulse * nx * invMassA;
+            a.vy -= impulse * ny * invMassA;
+            b.vx += impulse * nx * invMassB;
+            b.vy += impulse * ny * invMassB;
+          }
+
+          const separationBoost = Math.min(26, overlap * 6.2);
+          a.vx -= nx * separationBoost * invMassA * 7.2;
+          a.vy -= ny * separationBoost * invMassA * 3.3;
+          b.vx += nx * separationBoost * invMassB * 7.2;
+          b.vy += ny * separationBoost * invMassB * 3.3;
+
+          const slipBoost = Math.min(12, Math.abs(tangentRel) * 0.05 + overlap * 1.2);
+          a.vx -= tx * slipBoost * invMassA;
+          a.vy -= ty * slipBoost * invMassA * 0.2;
+          b.vx += tx * slipBoost * invMassB;
+          b.vy += ty * slipBoost * invMassB * 0.2;
+
+          if (verticalLoad > minDist * 0.24) {
+            const sideDir = dx === 0 ? (Math.random() > 0.5 ? 1 : -1) : Math.sign(dx);
+            const squishPower = Math.min(1, verticalLoad / minDist);
+            const lateral = STACK_SQUISH_PUSH * squishPower;
+            const downward = STACK_SQUISH_DOWN * squishPower;
+            a.vx -= sideDir * lateral * invMassA;
+            b.vx += sideDir * lateral * invMassB;
+            a.vy += downward * invMassA;
+            b.vy += downward * invMassB;
+          }
         }
       }
     }
@@ -737,10 +791,24 @@
             nextIndex,
             (a.x + b.x) * 0.5,
             (a.y + b.y) * 0.5,
-            (a.vx + b.vx) * 0.06,
-            -150
+            (a.vx + b.vx) * 0.02,
+            Math.min((a.vy + b.vy) * 0.02, -175)
           );
           spawned.push(merged);
+          this.applyMergeShockwave(merged.x, merged.y, merged.radius, [merged.id]);
+          this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score * MERGE_SCORE_FACTOR}`, TYPES[nextIndex].color);
+          this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1 + nextIndex * 0.24);
+          this.spawnSparks(
+            merged.x,
+            merged.y,
+            TYPES[nextIndex].color,
+            10 + nextIndex * 2,
+            160 + nextIndex * 28,
+            0.55 + nextIndex * 0.03
+          );
+          if (nextIndex >= 4) {
+            this.state.cameraPunch = Math.max(this.state.cameraPunch, 0.02 + nextIndex * 0.004);
+          }
           this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
           this.state.merges += 1;
           this.state.highestType = Math.max(this.state.highestType, nextIndex);
@@ -871,6 +939,10 @@
 
       ctx.save();
       ctx.translate(this.sceneOffsetX, this.sceneOffsetY);
+      if (this.state.cameraPunch > 0) {
+        const shake = this.state.cameraPunch * 16;
+        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake * 0.7);
+      }
       ctx.scale(this.sceneScale, this.sceneScale);
       this.drawScene(ctx);
       ctx.restore();
@@ -887,6 +959,7 @@
       this.drawPit(ctx);
       this.drawGuideLine(ctx);
       this.drawBlobs(ctx);
+      this.drawFx(ctx);
       this.drawOverlay(ctx);
     }
 
@@ -973,6 +1046,10 @@
       this.roundRect(ctx, 20, 134, 350, 10, 999, true, false);
       ctx.fillStyle = percent > 0.7 ? "#ef4444" : percent > 0.25 ? "#f59e0b" : "#38bdf8";
       this.roundRect(ctx, 20, 134, 350 * percent, 10, 999, true, false);
+      if (percent > 0.02) {
+        ctx.fillStyle = `rgba(251,113,133,${Math.min(0.12, percent * 0.16)})`;
+        ctx.fillRect(PIT.x + 2, PIT.y + 2, PIT.width - 4, Math.max(0, dangerLineY - PIT.y));
+      }
     }
 
     drawBlobs(ctx) {
@@ -988,13 +1065,13 @@
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.fill();
-          const coverSize = blob.radius * 2.58;
+          const coverSize = blob.radius * 3.2;
           ctx.save();
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.clip();
           ctx.globalAlpha = 1;
-          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.09, coverSize, coverSize);
+          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.18, coverSize, coverSize);
           ctx.restore();
           ctx.restore();
           continue;
@@ -1049,6 +1126,131 @@
         ctx.beginPath();
         ctx.arc(guideX, 94, TYPES[this.state.nextType].radius * 0.72, 0, Math.PI * 2);
         ctx.fill();
+      }
+    }
+
+    drawFx(ctx) {
+      for (let i = 0; i < this.state.popups.length; i += 1) {
+        const popup = this.state.popups[i];
+        const alpha = clamp(popup.life / 0.9, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = popup.color;
+        ctx.font = "700 18px sans-serif";
+        const width = ctx.measureText(popup.text).width;
+        ctx.fillText(popup.text, popup.x - width / 2, popup.y);
+        ctx.restore();
+      }
+
+      for (let i = 0; i < this.state.sparks.length; i += 1) {
+        const spark = this.state.sparks[i];
+        const alpha = clamp(spark.life / spark.maxLife, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = spark.color;
+        ctx.beginPath();
+        ctx.arc(spark.x, spark.y, spark.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (let i = 0; i < this.state.bursts.length; i += 1) {
+        const burst = this.state.bursts[i];
+        const alpha = clamp(burst.life / burst.maxLife, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = burst.color;
+        ctx.lineWidth = Math.max(2, 4 * alpha);
+        ctx.beginPath();
+        ctx.arc(burst.x, burst.y, burst.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    updateFx(dt) {
+      for (let i = 0; i < this.state.popups.length; i += 1) {
+        const popup = this.state.popups[i];
+        popup.life -= dt;
+        popup.y -= 36 * dt;
+      }
+      this.state.popups = this.state.popups.filter((popup) => popup.life > 0);
+
+      for (let i = 0; i < this.state.bursts.length; i += 1) {
+        const burst = this.state.bursts[i];
+        burst.life -= dt;
+        burst.radius += 140 * dt * burst.scale;
+      }
+      this.state.bursts = this.state.bursts.filter((burst) => burst.life > 0);
+
+      for (let i = 0; i < this.state.sparks.length; i += 1) {
+        const spark = this.state.sparks[i];
+        spark.life -= dt;
+        spark.vy += 360 * dt;
+        spark.x += spark.vx * dt;
+        spark.y += spark.vy * dt;
+        spark.vx *= 0.986;
+        spark.vy *= 0.988;
+      }
+      this.state.sparks = this.state.sparks.filter((spark) => spark.life > 0);
+
+      this.state.cameraPunch = Math.max(0, this.state.cameraPunch - dt * 0.12);
+    }
+
+    getBlobMass(blob) {
+      const r = blob.radius || TYPES[blob.typeIndex].radius;
+      return Math.max(1, Math.PI * r * r);
+    }
+
+    spawnPopup(x, y, text, color = "#fff7ed") {
+      this.state.popups.push({ x, y, text, color, life: 0.9 });
+    }
+
+    spawnBurst(x, y, color, scale = 1) {
+      this.state.bursts.push({
+        x,
+        y,
+        color,
+        life: 0.65 + scale * 0.08,
+        maxLife: 0.65 + scale * 0.08,
+        radius: 24 + scale * 14,
+        scale
+      });
+    }
+
+    spawnSparks(x, y, color, count, speedBase, lifeBase) {
+      const n = Math.max(6, Math.floor(count));
+      for (let i = 0; i < n; i += 1) {
+        const a = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.35;
+        const s = speedBase * (0.6 + Math.random() * 0.9);
+        const life = lifeBase * (0.75 + Math.random() * 0.6);
+        this.state.sparks.push({
+          x,
+          y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - s * 0.08,
+          r: 1.6 + Math.random() * 2.2,
+          life,
+          maxLife: life,
+          color
+        });
+      }
+    }
+
+    applyMergeShockwave(x, y, mergedRadius, sourceIds = []) {
+      const shockRange = mergedRadius * 2.4 + 38;
+      for (let i = 0; i < this.state.blobs.length; i += 1) {
+        const blob = this.state.blobs[i];
+        if (sourceIds.includes(blob.id)) continue;
+        const dx = blob.x - x;
+        const dy = blob.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        if (dist > shockRange) continue;
+        const power = (1 - dist / shockRange) * (mergedRadius * 2.1);
+        const nx = dx / dist;
+        const ny = dy / dist;
+        blob.vx += nx * power * 3.2;
+        blob.vy += ny * power * 1.4 - power * 0.18;
       }
     }
 

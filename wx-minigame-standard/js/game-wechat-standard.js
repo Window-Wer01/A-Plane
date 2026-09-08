@@ -393,7 +393,6 @@
 
     let currentScreen = "menu";
     let lastGameOverState = false;
-    let pauseGlyphTimer = null;
     let menuClickTimer = null;
     let session = {
       mode: "web-loading",
@@ -448,15 +447,10 @@
       show(elements.pausePanel, true);
     }
 
-    function flashPauseGlyph() {
+    function syncPauseGlyph() {
       if (!elements.pauseGlyph) return;
-      show(elements.pauseGlyph, true);
-      if (pauseGlyphTimer) {
-        clearTimeout(pauseGlyphTimer);
-      }
-      pauseGlyphTimer = setTimeout(function () {
-        show(elements.pauseGlyph, false);
-      }, 1200);
+      const pausePanelOpen = !elements.pausePanel?.classList.contains("hidden");
+      show(elements.pauseGlyph, currentScreen === "game" && core.state.paused && !core.state.gameOver && !pausePanelOpen);
     }
 
     function closePausePanel(resumeGame) {
@@ -465,6 +459,7 @@
       if (resumeGame && core.state.paused && !core.state.gameOver) {
         core.togglePause();
       }
+      syncPauseGlyph();
     }
 
     function openHelpPanel() {
@@ -609,6 +604,7 @@
       syncPetPanel();
       syncGameHud();
       syncResultPanel();
+      syncPauseGlyph();
       if (!core.state.gameOver && lastGameOverState) {
         show(elements.resultPanel, false);
       }
@@ -674,7 +670,6 @@
         if (core.state.countdownActive) return;
         if (!core.state.paused) {
           core.togglePause();
-          flashPauseGlyph();
           if (menuClickTimer) clearTimeout(menuClickTimer);
           menuClickTimer = setTimeout(function () {
             menuClickTimer = null;
@@ -689,10 +684,15 @@
           syncUi();
           return;
         }
-        flashPauseGlyph();
         menuClickTimer = setTimeout(function () {
           menuClickTimer = null;
         }, 380);
+        syncUi();
+      });
+
+      elements.pauseGlyph?.addEventListener("click", function () {
+        if (currentScreen !== "game" || !core.state.paused || core.state.gameOver) return;
+        core.togglePause();
         syncUi();
       });
 

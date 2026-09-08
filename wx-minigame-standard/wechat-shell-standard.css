@@ -600,7 +600,9 @@
 
 .wx-board-stage {
   position: relative;
-  width: 100%;
+  width: 130%;
+  margin-left: -15%;
+  margin-top: 72px;
   flex: 0 0 auto;
   min-height: 0;
   height: auto;
@@ -888,7 +890,7 @@
   position: relative;
   position: absolute;
   right: 8px;
-  top: 34px;
+  top: 106px;
   width: 92px;
   height: 114px;
   border: none;
@@ -1032,14 +1034,18 @@
   line-height: 1;
   z-index: 40;
   backdrop-filter: blur(8px);
+  cursor: pointer;
 }
 
 .wx-tool-stage {
-  position: relative;
-  bottom: auto;
-  margin-top: -154px;
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  margin-top: 0;
   padding: 0;
-  z-index: 4;
+  z-index: 8;
+  pointer-events: none;
 }
 
 .wx-tool-grid {
@@ -1047,6 +1053,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   align-items: center;
+  pointer-events: auto;
 }
 
 .wx-tool-card {
@@ -1132,6 +1139,7 @@
   color: #eef2ff;
   font-size: 11px;
   line-height: 1.35;
+  pointer-events: auto;
 }
 
 .wx-ad-stage {
@@ -1325,17 +1333,15 @@
 
   .wx-stage-mascot {
     right: 8px;
-    top: 30px;
+    top: 96px;
     width: 82px;
     height: 102px;
   }
 
-  .wx-board-stage {
-    height: auto;
-  }
-
   .wx-tool-stage {
-    margin-top: -136px;
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
   }
 
   .wx-tool-grid {
