@@ -18,9 +18,9 @@
   const MAX_WARNING_TIME = 2.6;
   const WALL_BOUNCE = 0.44;
   const FLOOR_BOUNCE = 0.34;
-  const BLOB_RESTITUTION = 0.68;
-  const STACK_SQUISH_PUSH = 58;
-  const STACK_SQUISH_DOWN = 18;
+  const BLOB_RESTITUTION = 0.74;
+  const STACK_SQUISH_PUSH = 64;
+  const STACK_SQUISH_DOWN = 20;
   const MERGE_TOUCH_GAP = -0.8;
   const TOOL_DEFAULT_STOCK = 5;
   const CAPSULE_DURATION = 30;
@@ -578,7 +578,9 @@
       if (!this.state.started) return;
       const typeIndex = this.state.nextType;
       const spawnX = clamp(this.state.pointerX, PIT.x + 28, PIT.x + PIT.width - 28);
-      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, 0, 0);
+      const initialVy = -36 + Math.random() * 18;
+      const initialVx = (Math.random() - 0.5) * 2.4;
+      const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, initialVx, initialVy);
       if (this.state.splitBombArmed) {
         blob.specialType = "splitBomb";
         blob.specialArmed = true;
@@ -740,13 +742,13 @@
             b.vy += impulse * ny * invMassB;
           }
 
-          const separationBoost = Math.min(26, overlap * 6.2);
-          a.vx -= nx * separationBoost * invMassA * 7.2;
-          a.vy -= ny * separationBoost * invMassA * 3.3;
-          b.vx += nx * separationBoost * invMassB * 7.2;
-          b.vy += ny * separationBoost * invMassB * 3.3;
+          const separationBoost = Math.min(30, overlap * 7.2);
+          a.vx -= nx * separationBoost * invMassA * 8.4;
+          a.vy -= ny * separationBoost * invMassA * 3.8;
+          b.vx += nx * separationBoost * invMassB * 8.4;
+          b.vy += ny * separationBoost * invMassB * 3.8;
 
-          const slipBoost = Math.min(12, Math.abs(tangentRel) * 0.05 + overlap * 1.2);
+          const slipBoost = Math.min(16, Math.abs(tangentRel) * 0.06 + overlap * 1.35);
           a.vx -= tx * slipBoost * invMassA;
           a.vy -= ty * slipBoost * invMassA * 0.2;
           b.vx += tx * slipBoost * invMassB;
@@ -791,23 +793,23 @@
             nextIndex,
             (a.x + b.x) * 0.5,
             (a.y + b.y) * 0.5,
-            (a.vx + b.vx) * 0.02,
-            Math.min((a.vy + b.vy) * 0.02, -175)
+            (a.vx + b.vx) * 0.035,
+            Math.min((a.vy + b.vy) * 0.035, -210)
           );
           spawned.push(merged);
           this.applyMergeShockwave(merged.x, merged.y, merged.radius, [merged.id]);
           this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score}`, TYPES[nextIndex].color);
-          this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1 + nextIndex * 0.24);
+          this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1.18 + nextIndex * 0.28);
           this.spawnSparks(
             merged.x,
             merged.y,
             TYPES[nextIndex].color,
-            10 + nextIndex * 2,
-            160 + nextIndex * 28,
-            0.55 + nextIndex * 0.03
+            14 + nextIndex * 3,
+            210 + nextIndex * 32,
+            0.68 + nextIndex * 0.04
           );
           if (nextIndex >= 4) {
-            this.state.cameraPunch = Math.max(this.state.cameraPunch, 0.02 + nextIndex * 0.004);
+            this.state.cameraPunch = Math.max(this.state.cameraPunch, 0.03 + nextIndex * 0.006);
           }
           this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
           this.state.merges += 1;
@@ -949,13 +951,21 @@
     }
 
     drawScene(ctx) {
-      const panelGradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
-      panelGradient.addColorStop(0, "#13274a");
-      panelGradient.addColorStop(1, "#0f1f39");
-      ctx.fillStyle = panelGradient;
-      this.roundRect(ctx, 0, 0, DESIGN_WIDTH, DESIGN_HEIGHT, 28, true, false);
+      if (this.platform.domUi) {
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
+        bgGradient.addColorStop(0, "rgba(24, 48, 90, 0.96)");
+        bgGradient.addColorStop(1, "rgba(11, 23, 45, 0.98)");
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+      } else {
+        const panelGradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
+        panelGradient.addColorStop(0, "#13274a");
+        panelGradient.addColorStop(1, "#0f1f39");
+        ctx.fillStyle = panelGradient;
+        this.roundRect(ctx, 0, 0, DESIGN_WIDTH, DESIGN_HEIGHT, 28, true, false);
+        this.drawHud(ctx);
+      }
 
-      this.drawHud(ctx);
       this.drawPit(ctx);
       this.drawGuideLine(ctx);
       this.drawBlobs(ctx);
@@ -1038,14 +1048,16 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = "#fee2e2";
-      ctx.font = "700 12px sans-serif";
-      ctx.fillText(this.state.capsuleTimer > 0 ? "危险线↑" : "危险线", PIT.x + 16, dangerLineY - 8);
+      if (!this.platform.domUi) {
+        ctx.fillStyle = "#fee2e2";
+        ctx.font = "700 12px sans-serif";
+        ctx.fillText(this.state.capsuleTimer > 0 ? "危险线↑" : "危险线", PIT.x + 16, dangerLineY - 8);
 
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      this.roundRect(ctx, 20, 134, 350, 10, 999, true, false);
-      ctx.fillStyle = percent > 0.7 ? "#ef4444" : percent > 0.25 ? "#f59e0b" : "#38bdf8";
-      this.roundRect(ctx, 20, 134, 350 * percent, 10, 999, true, false);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        this.roundRect(ctx, 20, 134, 350, 10, 999, true, false);
+        ctx.fillStyle = percent > 0.7 ? "#ef4444" : percent > 0.25 ? "#f59e0b" : "#38bdf8";
+        this.roundRect(ctx, 20, 134, 350 * percent, 10, 999, true, false);
+      }
       if (percent > 0.02) {
         ctx.fillStyle = `rgba(251,113,133,${Math.min(0.12, percent * 0.16)})`;
         ctx.fillRect(PIT.x + 2, PIT.y + 2, PIT.width - 4, Math.max(0, dangerLineY - PIT.y));
@@ -1254,11 +1266,11 @@
         const dy = blob.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
         if (dist > shockRange) continue;
-        const power = (1 - dist / shockRange) * (mergedRadius * 2.1);
+        const power = (1 - dist / shockRange) * (mergedRadius * 2.45);
         const nx = dx / dist;
         const ny = dy / dist;
-        blob.vx += nx * power * 3.2;
-        blob.vy += ny * power * 1.4 - power * 0.18;
+        blob.vx += nx * power * 4.1;
+        blob.vy += ny * power * 1.8 - power * 0.22;
       }
     }
 
@@ -1267,18 +1279,12 @@
         this.drawCountdownOverlay(ctx);
         return;
       }
-      if (this.state.paused && !this.state.gameOver) {
+      if (this.state.paused && !this.state.gameOver && !this.platform.domUi) {
         this.drawCenterPanel(ctx, "已暂停", "当前局面已冻结，点右上角继续或左上角重开。", "继续");
         return;
       }
       if (this.state.gameOver) {
-        if (this.platform.domUi) {
-          const title = this.state.success ? "挑战成功" : "挑战失败";
-          const copy = this.state.success
-            ? `你已经合出 ${TYPES[TYPES.length - 1].label}，当前分数 ${this.state.score}。`
-            : `这局分数 ${this.state.score}，危险线累计超过阈值。`;
-          this.drawCenterPanel(ctx, title, copy, "再来一局");
-        } else {
+        if (!this.platform.domUi) {
           this.drawCanvasResultOverlay(ctx);
         }
       }
