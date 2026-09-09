@@ -68,6 +68,8 @@
   const WEB_BGM_SRC = "./assets/bgm-paper-boat.mp3";
   const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
   const MAX_WARNING_TIME = 2.6;
+  const DESIGN_STAGE_WIDTH = 750;
+  const DESIGN_STAGE_HEIGHT = 1222;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -78,6 +80,15 @@
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins}:${String(secs).padStart(2, "0")}`;
+  }
+
+  function hasAutoStartFlag() {
+    try {
+      const search = root.location && typeof root.location.search === "string" ? root.location.search : "";
+      return /(?:\?|&)autostart=1(?:&|$)/.test(search);
+    } catch {
+      return false;
+    }
   }
 
   function safeText(node, text) {
@@ -350,6 +361,9 @@
       elements[id] = doc.getElementById(id);
     });
     elements.gameShell = doc.querySelector(".wx-board-shell") || elements.gameCanvas?.parentElement || null;
+    elements.boardStage = doc.querySelector(".wx-board-stage");
+    elements.adStage = doc.querySelector(".wx-ad-stage");
+    elements.shellRoot = doc.querySelector(".wechat-mini-shell");
     return elements;
   }
 
@@ -410,6 +424,7 @@
       myRank: 3,
       entries: []
     };
+    let lastPauseGlyphResumeAt = 0;
 
     function persistSettings() {
       settingsStorage.set("audio-enabled", settings.audioEnabled ? "1" : "0");
@@ -418,6 +433,69 @@
     }
 
     function resizeCanvas() {
+      const shellRoot = elements.shellRoot;
+      const boardStage = elements.boardStage;
+      const adStage = elements.adStage;
+      const viewportWidth = Math.max(
+        doc.documentElement?.clientWidth || 0,
+        root.innerWidth || 0,
+        390
+      );
+      const viewportHeight = Math.max(
+        doc.documentElement?.clientHeight || 0,
+        root.innerHeight || 0,
+        680
+      );
+      const shellStyle = shellRoot ? root.getComputedStyle(shellRoot) : null;
+      const shellInsetX = shellStyle
+        ? (parseFloat(shellStyle.paddingLeft || "0") + parseFloat(shellStyle.paddingRight || "0"))
+        : 0;
+      const availableWidth = Math.max(320, viewportWidth - shellInsetX);
+      const fitScale = clamp(availableWidth / DESIGN_STAGE_WIDTH, 0.52, 1.18);
+      const targetBannerHeight = Math.round(clamp(102 * fitScale, 88, 112));
+      const adHeight = adStage
+        ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
+        : targetBannerHeight;
+      const availableStageHeight = Math.max(520, viewportHeight - adHeight - 10);
+      const targetStageHeight = Math.round(Math.min(
+        availableStageHeight,
+        availableWidth * (DESIGN_STAGE_HEIGHT / DESIGN_STAGE_WIDTH)
+      ));
+
+      if (shellRoot) {
+        shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
+        shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(86 * fitScale, 68, 96))}px`);
+        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 8, 14))}px`);
+        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(150 * fitScale, 104, 150))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(146 * fitScale, 94, 146))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(112 * fitScale, 82, 112))}px`);
+        shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(14 * fitScale, 7, 14))}px`);
+        shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(68 * fitScale, 48, 68))}px`);
+        shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(10 * fitScale, 7, 10))}px`);
+        shellRoot.style.setProperty("--wx-topbar-step-width", `${Math.round(clamp(112 * fitScale, 74, 112))}px`);
+        shellRoot.style.setProperty("--wx-topbar-next-width", `${Math.round(clamp(124 * fitScale, 100, 124))}px`);
+        shellRoot.style.setProperty("--wx-topbar-gap", `${Math.round(clamp(10 * fitScale, 6, 10))}px`);
+        shellRoot.style.setProperty("--wx-topbar-min-height", `${Math.round(clamp(98 * fitScale, 74, 98))}px`);
+        shellRoot.style.setProperty("--wx-return-right", `${Math.round(clamp(14 * fitScale, 10, 14))}px`);
+        shellRoot.style.setProperty("--wx-return-top", `${Math.round(clamp(12 * fitScale, 10, 12))}px`);
+        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(46 * fitScale, 42, 46))}px`);
+        shellRoot.style.setProperty("--wx-return-height", `${Math.round(clamp(34 * fitScale, 34, 36))}px`);
+        shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(24 * fitScale, 18, 24))}px`);
+        shellRoot.style.setProperty("--wx-step-separator-font", `${Math.round(clamp(16 * fitScale, 14, 16))}px`);
+        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(60 * fitScale, 48, 60))}px`);
+        shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(12 * fitScale, 4, 12))}px`);
+        shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp(62 * fitScale, 52, 62))}px`);
+        shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(96 * fitScale, 84, 96))}px`);
+        shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(118 * fitScale, 104, 118))}px`);
+        shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(12 * fitScale, 10, 12))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(10 * fitScale, 0, 10))}px`);
+        shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(10 * fitScale, 6, 10))}px`);
+        shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(11 * fitScale, 9, 11))}px`);
+      }
+      if (boardStage) {
+        boardStage.style.height = `${Math.max(520, targetStageHeight)}px`;
+      }
+
       const wrapper = elements.gameShell || canvas.parentElement || canvas;
       const rect = wrapper.getBoundingClientRect();
       const width = Math.max(320, Math.floor(rect.width || 390));
@@ -452,6 +530,7 @@
       }
       show(elements.helpPanel, false);
       show(elements.pausePanel, true);
+      show(elements.pauseGlyph, false);
     }
 
     function syncPauseGlyph() {
@@ -482,9 +561,25 @@
       }
     }
 
+    function resumeFromPauseGlyph(event) {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      const now = Date.now();
+      if (now - lastPauseGlyphResumeAt < 120) return;
+      lastPauseGlyphResumeAt = now;
+      if (currentScreen !== "game" || !core.state.paused || core.state.gameOver) return;
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      core.togglePause();
+      syncUi();
+    }
+
     function restartRunAndEnterGame() {
       show(elements.resultPanel, false);
       show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      show(elements.pauseGlyph, false);
       core.resetRun();
       core.armStartCountdown();
       audio.stop();
@@ -677,6 +772,8 @@
       elements.rankBackBtn?.addEventListener("click", function () { setScreen("menu"); });
       elements.rankRefreshBtn?.addEventListener("click", refreshRanks);
       elements.petBackBtn?.addEventListener("click", function () {
+        show(elements.pausePanel, false);
+        show(elements.helpPanel, false);
         setScreen(petReturnScreen === "game" ? "game" : "menu");
         syncUi();
       });
@@ -689,26 +786,23 @@
         if (!glyphVisible && !panelOpen) {
           core.togglePause();
           show(elements.pausePanel, false);
+          show(elements.helpPanel, false);
           show(elements.pauseGlyph, true);
           syncUi();
           return;
         }
         if (!panelOpen) {
-          if (!core.state.paused) {
-            core.togglePause();
-          }
           openPausePanel();
           syncUi();
           return;
         }
+        show(elements.pausePanel, false);
         syncUi();
       });
 
-      elements.pauseGlyph?.addEventListener("click", function () {
-        if (currentScreen !== "game" || !core.state.paused || core.state.gameOver) return;
-        core.togglePause();
-        syncUi();
-      });
+      elements.pauseGlyph?.addEventListener("click", resumeFromPauseGlyph);
+      elements.pauseGlyph?.addEventListener("pointerup", resumeFromPauseGlyph);
+      elements.pauseGlyph?.addEventListener("touchend", resumeFromPauseGlyph, { passive: false });
 
       elements.resumeGameBtn?.addEventListener("click", function () { closePausePanel(true); });
       elements.pauseRestartBtn?.addEventListener("click", restartRunAndEnterGame);
@@ -728,6 +822,7 @@
       });
       elements.pauseExitBtn?.addEventListener("click", function () {
         closePausePanel(false);
+        show(elements.pauseGlyph, false);
         setScreen("menu");
       });
       elements.helpCloseBtn?.addEventListener("click", function () {
@@ -774,8 +869,10 @@
 
       elements.gamePetChip?.addEventListener("click", function () {
         if (currentScreen === "game" && !core.state.gameOver && !core.state.paused) {
-          openPausePanel();
+          core.togglePause();
         }
+        show(elements.pausePanel, false);
+        show(elements.helpPanel, false);
         petReturnScreen = currentScreen === "game" ? "game" : "menu";
         setScreen("pet");
         syncUi();
@@ -802,6 +899,12 @@
     setScreen("menu");
     resizeCanvas();
     syncUi();
+
+    if (hasAutoStartFlag()) {
+      root.setTimeout(function () {
+        restartRunAndEnterGame();
+      }, 60);
+    }
 
     serviceBundle.login.initSession().then((nextSession) => {
       session = nextSession;
