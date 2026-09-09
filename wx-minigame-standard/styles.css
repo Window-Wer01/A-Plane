@@ -365,9 +365,9 @@ code {
 #gameCanvas {
   display: block;
   width: 100%;
-  max-width: 420px;
+  max-width: 750px;
   margin: 0 auto;
-  aspect-ratio: 420 / 760;
+  aspect-ratio: 750 / 1334;
   touch-action: none;
 }
 

@@ -67,6 +67,7 @@
 
   const WEB_BGM_SRC = "./assets/bgm-paper-boat.mp3";
   const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
+  const MAX_WARNING_TIME = 2.6;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -237,6 +238,8 @@
 
   function createLoop(updateFrame, options) {
     let lastTime = 0;
+    let accumulator = 0;
+    const FIXED_DT = 1 / 60;
     const nowFn = options && typeof options.now === "function"
       ? options.now
       : function () { return Date.now(); };
@@ -252,9 +255,13 @@
 
     function frame(now) {
       if (!lastTime) lastTime = now;
-      const dt = Math.min(0.033, Math.max(0.001, (now - lastTime) / 1000));
+      const frameTime = Math.min(0.1, Math.max(0.001, (now - lastTime) / 1000));
       lastTime = now;
-      updateFrame(dt);
+      accumulator += frameTime;
+      while (accumulator >= FIXED_DT) {
+        updateFrame(FIXED_DT, frameTime);
+        accumulator -= FIXED_DT;
+      }
       raf(frame);
     }
 
@@ -329,8 +336,8 @@
       "petBackBtn", "petGardenTip", "petCoinValue", "petEnergyStatus", "petEnergyFill", "petEnergyValue",
       "petMoodStatus", "petMoodFill", "petMoodValue", "petGiftStatus", "petGiftValue",
       "petCleanStatus", "petCleanFill", "petCleanValue", "petBubble", "petAvatar",
-      "gameCanvas", "scoreValue", "bestValue", "currentStepValue", "minStepValue",
-      "nextBlob", "nextName", "nextHint",
+      "gameCanvas", "bestValue", "currentStepValue", "minStepValue",
+      "nextBlob", "dangerMeter", "dangerFill",
       "gameOfflineHint",
       "gameMenuBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
       "gameToolGrid", "gameToolTimer", "pausePanel", "resumeGameBtn", "pauseRestartBtn", "pauseHelpBtn", "pauseAudioBtn", "pauseExitBtn",
@@ -393,11 +400,11 @@
 
     let currentScreen = "menu";
     let lastGameOverState = false;
-    let menuClickTimer = null;
     let session = {
       mode: "web-loading",
       nickName: "网页试玩玩家"
     };
+    let petReturnScreen = "menu";
     let rankSnapshot = {
       mode: "local",
       myRank: 3,
@@ -568,13 +575,9 @@
     }
 
     function syncGameHud() {
-      const nextMeta = getTypeMeta(core.state.nextType);
-      safeText(elements.scoreValue, "");
       safeText(elements.bestValue, String(core.bestScore || 0));
       safeText(elements.currentStepValue, String(core.state.drops));
       safeText(elements.minStepValue, core.state.success ? String(core.state.drops) : "0");
-      safeText(elements.nextName, nextMeta.label);
-      safeText(elements.nextHint, nextMeta.hint);
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
       safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");
@@ -595,6 +598,15 @@
       );
       safeText(elements.shellNotice, "");
       show(elements.gameOfflineHint, offline && currentScreen === "game");
+
+      const dangerPercent = clamp(core.state.warningTime / MAX_WARNING_TIME, 0, 1);
+      if (elements.dangerFill) {
+        elements.dangerFill.style.width = `${dangerPercent * 100}%`;
+      }
+      if (elements.dangerMeter) {
+        const state = dangerPercent > 0.7 ? "danger" : dangerPercent > 0.25 ? "warning" : "safe";
+        elements.dangerMeter.dataset.state = state;
+      }
     }
 
     function syncUi() {
@@ -652,6 +664,7 @@
         refreshRanks();
       });
       elements.menuPetBtn?.addEventListener("click", function () {
+        petReturnScreen = "menu";
         setScreen("pet");
         syncUi();
       });
@@ -663,30 +676,31 @@
 
       elements.rankBackBtn?.addEventListener("click", function () { setScreen("menu"); });
       elements.rankRefreshBtn?.addEventListener("click", refreshRanks);
-      elements.petBackBtn?.addEventListener("click", function () { setScreen("menu"); });
+      elements.petBackBtn?.addEventListener("click", function () {
+        setScreen(petReturnScreen === "game" ? "game" : "menu");
+        syncUi();
+      });
 
       elements.gameMenuBtn?.addEventListener("click", function () {
         if (currentScreen !== "game" || core.state.gameOver) return;
         if (core.state.countdownActive) return;
-        if (!core.state.paused) {
+        const glyphVisible = elements.pauseGlyph ? !elements.pauseGlyph.classList.contains("hidden") : false;
+        const panelOpen = elements.pausePanel ? !elements.pausePanel.classList.contains("hidden") : false;
+        if (!glyphVisible && !panelOpen) {
           core.togglePause();
-          if (menuClickTimer) clearTimeout(menuClickTimer);
-          menuClickTimer = setTimeout(function () {
-            menuClickTimer = null;
-          }, 380);
+          show(elements.pausePanel, false);
+          show(elements.pauseGlyph, true);
           syncUi();
           return;
         }
-        if (menuClickTimer) {
-          clearTimeout(menuClickTimer);
-          menuClickTimer = null;
+        if (!panelOpen) {
+          if (!core.state.paused) {
+            core.togglePause();
+          }
           openPausePanel();
           syncUi();
           return;
         }
-        menuClickTimer = setTimeout(function () {
-          menuClickTimer = null;
-        }, 380);
         syncUi();
       });
 
@@ -762,6 +776,7 @@
         if (currentScreen === "game" && !core.state.gameOver && !core.state.paused) {
           openPausePanel();
         }
+        petReturnScreen = currentScreen === "game" ? "game" : "menu";
         setScreen("pet");
         syncUi();
       });

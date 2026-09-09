@@ -5,12 +5,21 @@
     root.BlobMergeCore = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  const DESIGN_WIDTH = 420;
-  const DESIGN_HEIGHT = 760;
-  const PIT = { x: 28, y: 120, width: 364, height: 592 };
+  const BASE_DESIGN_WIDTH = 420;
+  const BASE_DESIGN_HEIGHT = 760;
+  const DESIGN_WIDTH = 750;
+  const DESIGN_HEIGHT = 1334;
+  const SCALE_X = DESIGN_WIDTH / BASE_DESIGN_WIDTH;
+  const SCALE_Y = DESIGN_HEIGHT / BASE_DESIGN_HEIGHT;
+  const SCALE_UI = Math.min(SCALE_X, SCALE_Y);
+  const sx = (value) => value * SCALE_X;
+  const sy = (value) => value * SCALE_Y;
+  const su = (value) => value * SCALE_UI;
+  const rect = (x, y, w, h) => ({ x: sx(x), y: sy(y), w: sx(w), h: sy(h) });
+  const PIT = { x: 22, y: 154, width: 706, height: 1036 };
   const FLOOR_Y = PIT.y + PIT.height;
-  const DANGER_LINE_Y = PIT.y + 54;
-  const SPAWN_Y = 78;
+  const DANGER_LINE_Y = PIT.y + 76;
+  const SPAWN_Y = 108;
   const DROP_COOLDOWN = 0.26;
   const BASE_GRAVITY = 560;
   const MAX_FALL_SPEED_BASE = 660;
@@ -38,28 +47,29 @@
   const COUNTDOWN_TOTAL = 3;
   const MAX_REVIVES_PER_RUN = 3;
   const BUTTONS = {
-    restart: { x: 18, y: 18, w: 84, h: 38 },
-    pause: { x: 318, y: 18, w: 84, h: 38 }
+    restart: rect(18, 18, 84, 38),
+    pause: rect(318, 18, 84, 38)
   };
   const TYPES = [
-    { key: "seed", label: "种子球", radius: 18, color: "#7dd3fc", score: 1 },
-    { key: "bud", label: "幼芽球", radius: 24, color: "#86efac", score: 2 },
-    { key: "puff", label: "啵啵球", radius: 31, color: "#f9a8d4", score: 4 },
-    { key: "jelly", label: "果冻球", radius: 40, color: "#c4b5fd", score: 8 },
-    { key: "orbit", label: "轨道球", radius: 52, color: "#fdba74", score: 16 },
-    { key: "core", label: "星核球", radius: 66, color: "#fde68a", score: 32 },
-    { key: "king", label: "大王球", radius: 82, color: "#93c5fd", score: 64 }
+    { key: "seed", label: "种子球", radius: su(18), color: "#7dd3fc", score: 1 },
+    { key: "bud", label: "幼芽球", radius: su(24), color: "#86efac", score: 2 },
+    { key: "puff", label: "啵啵球", radius: su(31), color: "#f9a8d4", score: 4 },
+    { key: "jelly", label: "果冻球", radius: su(40), color: "#c4b5fd", score: 8 },
+    { key: "orbit", label: "轨道球", radius: su(52), color: "#fdba74", score: 16 },
+    { key: "core", label: "星核球", radius: su(66), color: "#fde68a", score: 32 },
+    { key: "king", label: "大王球", radius: su(82), color: "#93c5fd", score: 64 }
   ];
-  const RESULT_BUTTON = { x: 120, y: 478, w: 180, h: 52 };
-  const RESULT_REVIVE_BUTTON = { x: 36, y: 478, w: 112, h: 52 };
-  const RESULT_RESTART_BUTTON = { x: 156, y: 478, w: 104, h: 52 };
-  const RESULT_EXIT_BUTTON = { x: 268, y: 478, w: 108, h: 52 };
+  const RESULT_BUTTON = rect(120, 478, 180, 52);
+  const RESULT_REVIVE_BUTTON = rect(36, 478, 112, 52);
+  const RESULT_RESTART_BUTTON = rect(156, 478, 104, 52);
+  const RESULT_EXIT_BUTTON = rect(268, 478, 108, 52);
   const CANVAS_TOOL_LAYOUT = [
-    { key: "capsule", x: 24, y: 768, w: 82, h: 54 },
-    { key: "clean", x: 112, y: 768, w: 82, h: 54 },
-    { key: "rage", x: 200, y: 768, w: 82, h: 54 },
-    { key: "split", x: 288, y: 768, w: 78, h: 54 }
+    { key: "capsule", ...rect(24, 768, 82, 54) },
+    { key: "clean", ...rect(112, 768, 82, 54) },
+    { key: "rage", ...rect(200, 768, 82, 54) },
+    { key: "split", ...rect(288, 768, 78, 54) }
   ];
+  const DOM_VIEW_TOP = Math.max(0, SPAWN_Y - 12);
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -159,6 +169,12 @@
       this.viewport.width = Math.max(1, width);
       this.viewport.height = Math.max(1, height);
       this.viewport.dpr = Math.max(1, dpr);
+      if (this.platform.domUi) {
+        this.sceneScale = this.viewport.width / DESIGN_WIDTH;
+        this.sceneOffsetX = 0;
+        this.sceneOffsetY = -DOM_VIEW_TOP * this.sceneScale;
+        return;
+      }
       this.sceneScale = Math.min(this.viewport.width / DESIGN_WIDTH, this.viewport.height / DESIGN_HEIGHT);
       this.sceneOffsetX = (this.viewport.width - DESIGN_WIDTH * this.sceneScale) / 2;
       this.sceneOffsetY = (this.viewport.height - DESIGN_HEIGHT * this.sceneScale) / 2;
@@ -579,7 +595,7 @@
       const typeIndex = this.state.nextType;
       const spawnX = clamp(this.state.pointerX, PIT.x + 28, PIT.x + PIT.width - 28);
       const initialVy = -36 + Math.random() * 18;
-      const initialVx = (Math.random() - 0.5) * 2.4;
+      const initialVx = 0;
       const blob = this.createBlob(typeIndex, spawnX, SPAWN_Y, initialVx, initialVy);
       if (this.state.splitBombArmed) {
         blob.specialType = "splitBomb";
@@ -626,6 +642,19 @@
 
       this.state.elapsedMs += dt * 1000;
       this.state.capsuleTimer = Math.max(0, this.state.capsuleTimer - dt);
+      const subSteps = 3;
+      const subDt = dt / subSteps;
+      for (let i = 0; i < subSteps; i += 1) {
+        this.advanceBlobs(subDt);
+        this.updateRage(subDt);
+        this.resolveCollisions();
+        this.resolveMerges();
+        this.updateDanger(subDt);
+      }
+      this.updateFx(dt);
+    }
+
+    advanceBlobs(dt) {
       const blobs = this.state.blobs;
       for (let i = 0; i < blobs.length; i += 1) {
         const blob = blobs[i];
@@ -650,47 +679,48 @@
           if (Math.abs(blob.vy) < 14) blob.vy = 0;
         }
       }
+    }
 
-      if (this.state.rageBlobId) {
-        const rageBlob = blobs.find((blob) => blob.id === this.state.rageBlobId);
-        if (!rageBlob) {
+    updateRage(dt) {
+      if (!this.state.rageBlobId) return;
+      const blobs = this.state.blobs;
+      const rageBlob = blobs.find((blob) => blob.id === this.state.rageBlobId);
+      if (!rageBlob) {
+        this.state.rageBlobId = null;
+        this.state.rageTimer = 0;
+        this.state.rageRecoverTimer = 0;
+        return;
+      }
+      if (this.state.rageTimer > 0) {
+        this.state.rageTimer = Math.max(0, this.state.rageTimer - dt);
+        for (let i = 0; i < blobs.length; i += 1) {
+          const blob = blobs[i];
+          if (blob.id === rageBlob.id) continue;
+          const dx = blob.x - rageBlob.x;
+          const dy = blob.y - rageBlob.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+          const pushRange = rageBlob.radius + blob.radius + 54;
+          if (dist > pushRange) continue;
+          const force = (1 - dist / pushRange) * 220;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          blob.vx += nx * force * dt;
+          blob.vy += ny * force * dt * 0.65;
+        }
+        if (this.state.rageTimer <= 0) {
+          this.state.rageRecoverTimer = RAGE_RECOVER_DURATION;
+        }
+        return;
+      }
+      if (this.state.rageRecoverTimer > 0) {
+        this.state.rageRecoverTimer = Math.max(0, this.state.rageRecoverTimer - dt);
+        const recoverRatio = 1 - this.state.rageRecoverTimer / RAGE_RECOVER_DURATION;
+        rageBlob.radius = (rageBlob.baseRadius || TYPES[rageBlob.typeIndex].radius) * (RAGE_SCALE - ((RAGE_SCALE - 1) * recoverRatio));
+        if (this.state.rageRecoverTimer <= 0) {
+          this.restoreRageBlob(rageBlob);
           this.state.rageBlobId = null;
-          this.state.rageTimer = 0;
-          this.state.rageRecoverTimer = 0;
-        } else if (this.state.rageTimer > 0) {
-          this.state.rageTimer = Math.max(0, this.state.rageTimer - dt);
-          for (let i = 0; i < blobs.length; i += 1) {
-            const blob = blobs[i];
-            if (blob.id === rageBlob.id) continue;
-            const dx = blob.x - rageBlob.x;
-            const dy = blob.y - rageBlob.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-            const pushRange = rageBlob.radius + blob.radius + 54;
-            if (dist > pushRange) continue;
-            const force = (1 - dist / pushRange) * 220;
-            const nx = dx / dist;
-            const ny = dy / dist;
-            blob.vx += nx * force * dt;
-            blob.vy += ny * force * dt * 0.65;
-          }
-          if (this.state.rageTimer <= 0) {
-            this.state.rageRecoverTimer = RAGE_RECOVER_DURATION;
-          }
-        } else if (this.state.rageRecoverTimer > 0) {
-          this.state.rageRecoverTimer = Math.max(0, this.state.rageRecoverTimer - dt);
-          const recoverRatio = 1 - this.state.rageRecoverTimer / RAGE_RECOVER_DURATION;
-          rageBlob.radius = (rageBlob.baseRadius || TYPES[rageBlob.typeIndex].radius) * (RAGE_SCALE - ((RAGE_SCALE - 1) * recoverRatio));
-          if (this.state.rageRecoverTimer <= 0) {
-            this.restoreRageBlob(rageBlob);
-            this.state.rageBlobId = null;
-          }
         }
       }
-
-      this.resolveCollisions();
-      this.resolveMerges();
-      this.updateDanger(dt);
-      this.updateFx(dt);
     }
 
     resolveCollisions() {
@@ -952,11 +982,8 @@
 
     drawScene(ctx) {
       if (this.platform.domUi) {
-        const bgGradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
-        bgGradient.addColorStop(0, "rgba(24, 48, 90, 0.96)");
-        bgGradient.addColorStop(1, "rgba(11, 23, 45, 0.98)");
-        ctx.fillStyle = bgGradient;
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+        ctx.fillStyle = "rgba(16, 33, 72, 0.22)";
+        ctx.fillRect(0, PIT.y - 32, DESIGN_WIDTH, PIT.height + 64);
       } else {
         const panelGradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
         panelGradient.addColorStop(0, "#13274a");
@@ -1130,14 +1157,15 @@
         ctx.strokeStyle = "rgba(255,255,255,0.25)";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(guideX, 78);
+        ctx.moveTo(guideX, this.platform.domUi ? PIT.y + 8 : 78);
         ctx.lineTo(guideX, PIT.y + 18);
         ctx.stroke();
-
-        ctx.fillStyle = TYPES[this.state.nextType].color;
-        ctx.beginPath();
-        ctx.arc(guideX, 94, TYPES[this.state.nextType].radius * 0.72, 0, Math.PI * 2);
-        ctx.fill();
+        if (!this.platform.domUi) {
+          ctx.fillStyle = TYPES[this.state.nextType].color;
+          ctx.beginPath();
+          ctx.arc(guideX, 94, TYPES[this.state.nextType].radius * 0.72, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
@@ -1298,13 +1326,13 @@
       ctx.fillStyle = "rgba(2, 6, 23, 0.18)";
       ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "700 92px sans-serif";
+      ctx.font = `700 ${Math.round(su(92))}px sans-serif`;
       const textWidth = ctx.measureText(remain).width;
-      ctx.fillText(remain, (DESIGN_WIDTH - textWidth) / 2, 394);
-      ctx.font = "600 18px sans-serif";
+      ctx.fillText(remain, (DESIGN_WIDTH - textWidth) / 2, sy(394));
+      ctx.font = `600 ${Math.round(su(18))}px sans-serif`;
       const sub = "红线同步闪烁，倒计时结束后开始";
       const subWidth = ctx.measureText(sub).width;
-      ctx.fillText(sub, (DESIGN_WIDTH - subWidth) / 2, 430);
+      ctx.fillText(sub, (DESIGN_WIDTH - subWidth) / 2, sy(430));
     }
 
     drawCanvasToolBar(ctx) {
@@ -1314,29 +1342,29 @@
         const tool = tools.find((item) => item.key === rect.key);
         if (!tool) continue;
         ctx.fillStyle = tool.active ? "rgba(79, 70, 229, 0.96)" : tool.disabled ? "rgba(52, 63, 112, 0.62)" : "rgba(18, 24, 72, 0.92)";
-        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 18, true, false);
+        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, su(18), true, false);
         ctx.strokeStyle = tool.active ? "rgba(196, 181, 253, 0.9)" : "rgba(196, 220, 255, 0.16)";
-        ctx.lineWidth = 1.5;
-        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 18, false, true);
+        ctx.lineWidth = su(1.5);
+        this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, su(18), false, true);
         ctx.fillStyle = "#eef2ff";
-        ctx.font = "700 12px sans-serif";
+        ctx.font = `700 ${Math.round(su(12))}px sans-serif`;
         const shortLabel = tool.label.length > 4 ? tool.label.slice(0, 4) : tool.label;
         const labelWidth = ctx.measureText(shortLabel).width;
-        ctx.fillText(shortLabel, rect.x + (rect.w - labelWidth) / 2, rect.y + 21);
-        ctx.font = "700 14px sans-serif";
+        ctx.fillText(shortLabel, rect.x + (rect.w - labelWidth) / 2, rect.y + sy(21));
+        ctx.font = `700 ${Math.round(su(14))}px sans-serif`;
         const stockText = `x${tool.stock}`;
         const stockWidth = ctx.measureText(stockText).width;
-        ctx.fillText(stockText, rect.x + (rect.w - stockWidth) / 2, rect.y + 42);
+        ctx.fillText(stockText, rect.x + (rect.w - stockWidth) / 2, rect.y + sy(42));
       }
 
       const timerText = this.getToolTimerText();
       if (timerText) {
         ctx.fillStyle = "rgba(18, 24, 72, 0.92)";
-        this.roundRect(ctx, 28, 734, 334, 26, 999, true, false);
+        this.roundRect(ctx, sx(28), sy(734), sx(334), sy(26), su(999), true, false);
         ctx.fillStyle = "#eef2ff";
-        ctx.font = "600 12px sans-serif";
+        ctx.font = `600 ${Math.round(su(12))}px sans-serif`;
         const width = ctx.measureText(timerText).width;
-        ctx.fillText(timerText, (DESIGN_WIDTH - width) / 2, 751);
+        ctx.fillText(timerText, (DESIGN_WIDTH - width) / 2, sy(751));
       }
     }
 
@@ -1344,20 +1372,20 @@
       ctx.fillStyle = "rgba(2, 6, 23, 0.56)";
       ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
       ctx.fillStyle = "#10213d";
-      this.roundRect(ctx, 24, 204, 342, 356, 28, true, false);
+      this.roundRect(ctx, sx(24), sy(204), sx(342), sy(356), su(28), true, false);
       ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
-      ctx.lineWidth = 2;
-      this.roundRect(ctx, 24, 204, 342, 356, 28, false, true);
+      ctx.lineWidth = su(2);
+      this.roundRect(ctx, sx(24), sy(204), sx(342), sy(356), su(28), false, true);
 
       const title = this.state.success ? "挑战成功" : "本局失败";
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "700 28px sans-serif";
-      ctx.fillText(title, 46, 252);
+      ctx.font = `700 ${Math.round(su(28))}px sans-serif`;
+      ctx.fillText(title, sx(46), sy(252));
       ctx.fillStyle = "#cbd5e1";
-      ctx.font = "500 16px sans-serif";
-      this.drawWrappedText(ctx, `分数 ${this.state.score} · 合并 ${this.state.merges} 次 · 用时 ${formatSeconds(Math.floor(this.state.elapsedMs / 1000))}`, 46, 286, 296, 24);
+      ctx.font = `500 ${Math.round(su(16))}px sans-serif`;
+      this.drawWrappedText(ctx, `分数 ${this.state.score} · 合并 ${this.state.merges} 次 · 用时 ${formatSeconds(Math.floor(this.state.elapsedMs / 1000))}`, sx(46), sy(286), sx(296), sy(24));
       if (!this.state.success) {
-        this.drawWrappedText(ctx, `分享复活剩余 ${Math.max(0, MAX_REVIVES_PER_RUN - this.revivesUsed)} 次，可回退到结束前约 10 步`, 46, 336, 296, 24);
+        this.drawWrappedText(ctx, `分享复活剩余 ${Math.max(0, MAX_REVIVES_PER_RUN - this.revivesUsed)} 次，可回退到结束前约 10 步`, sx(46), sy(336), sx(296), sy(24));
       }
 
       if (!this.state.success && this.canShareRevive()) {
@@ -1371,32 +1399,32 @@
       ctx.fillStyle = "rgba(2, 6, 23, 0.56)";
       ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
       ctx.fillStyle = "#10213d";
-      this.roundRect(ctx, 44, 244, 302, 308, 28, true, false);
+      this.roundRect(ctx, sx(44), sy(244), sx(302), sy(308), su(28), true, false);
       ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
-      ctx.lineWidth = 2;
-      this.roundRect(ctx, 44, 244, 302, 308, 28, false, true);
+      ctx.lineWidth = su(2);
+      this.roundRect(ctx, sx(44), sy(244), sx(302), sy(308), su(28), false, true);
 
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "700 28px sans-serif";
-      ctx.fillText(title, 70, 304);
+      ctx.font = `700 ${Math.round(su(28))}px sans-serif`;
+      ctx.fillText(title, sx(70), sy(304));
       ctx.fillStyle = "#cbd5e1";
-      ctx.font = "500 16px sans-serif";
-      this.drawWrappedText(ctx, copy, 70, 344, 250, 24);
+      ctx.font = `500 ${Math.round(su(16))}px sans-serif`;
+      this.drawWrappedText(ctx, copy, sx(70), sy(344), sx(250), sy(24));
 
       ctx.fillStyle = "#22c55e";
-      this.roundRect(ctx, RESULT_BUTTON.x, RESULT_BUTTON.y, RESULT_BUTTON.w, RESULT_BUTTON.h, 16, true, false);
+      this.roundRect(ctx, RESULT_BUTTON.x, RESULT_BUTTON.y, RESULT_BUTTON.w, RESULT_BUTTON.h, su(16), true, false);
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "700 18px sans-serif";
-      ctx.fillText(action, RESULT_BUTTON.x + 50, RESULT_BUTTON.y + 32);
+      ctx.font = `700 ${Math.round(su(18))}px sans-serif`;
+      ctx.fillText(action, RESULT_BUTTON.x + sx(50), RESULT_BUTTON.y + sy(32));
     }
 
     drawButton(ctx, rect, text, color) {
       ctx.fillStyle = color;
-      this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 14, true, false);
+      this.roundRect(ctx, rect.x, rect.y, rect.w, rect.h, su(14), true, false);
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "700 16px sans-serif";
+      ctx.font = `700 ${Math.round(su(16))}px sans-serif`;
       const textWidth = ctx.measureText(text).width;
-      ctx.fillText(text, rect.x + (rect.w - textWidth) / 2, rect.y + 25);
+      ctx.fillText(text, rect.x + (rect.w - textWidth) / 2, rect.y + sy(25));
     }
 
     drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
