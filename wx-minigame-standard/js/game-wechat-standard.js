@@ -451,16 +451,22 @@
         ? (parseFloat(shellStyle.paddingLeft || "0") + parseFloat(shellStyle.paddingRight || "0"))
         : 0;
       const availableWidth = Math.max(320, viewportWidth - shellInsetX);
-      const fitScale = clamp(availableWidth / DESIGN_STAGE_WIDTH, 0.52, 1.18);
-      const targetBannerHeight = Math.round(clamp(102 * fitScale, 88, 112));
+      const widthScale = clamp(availableWidth / DESIGN_STAGE_WIDTH, 0.52, 1.18);
+      const targetBannerHeight = Math.round(clamp(102 * widthScale, 88, 112));
       const adHeight = adStage
         ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
         : targetBannerHeight;
       const availableStageHeight = Math.max(520, viewportHeight - adHeight - 10);
-      const targetStageHeight = Math.round(Math.min(
-        availableStageHeight,
-        availableWidth * (DESIGN_STAGE_HEIGHT / DESIGN_STAGE_WIDTH)
-      ));
+      const fitScale = clamp(
+        Math.min(
+          availableWidth / DESIGN_STAGE_WIDTH,
+          availableStageHeight / DESIGN_STAGE_HEIGHT
+        ),
+        0.52,
+        1.18
+      );
+      const targetStageWidth = Math.round(Math.min(availableWidth, DESIGN_STAGE_WIDTH * fitScale));
+      const targetStageHeight = Math.round(Math.min(availableStageHeight, DESIGN_STAGE_HEIGHT * fitScale));
 
       if (shellRoot) {
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
@@ -468,7 +474,7 @@
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(150 * fitScale, 104, 150))}px`);
         shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(146 * fitScale, 94, 146))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(112 * fitScale, 82, 112))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(72 * fitScale, 56, 74))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(14 * fitScale, 7, 14))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(68 * fitScale, 48, 68))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(10 * fitScale, 7, 10))}px`);
@@ -493,7 +499,8 @@
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(11 * fitScale, 9, 11))}px`);
       }
       if (boardStage) {
-        boardStage.style.height = `${Math.max(520, targetStageHeight)}px`;
+        boardStage.style.width = `${targetStageWidth}px`;
+        boardStage.style.height = `${Math.max(520, availableStageHeight)}px`;
       }
 
       const wrapper = elements.gameShell || canvas.parentElement || canvas;
