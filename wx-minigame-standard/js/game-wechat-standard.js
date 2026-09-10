@@ -479,10 +479,10 @@
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(152 * fitScale, 110, 158))}px`);
         shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(138 * fitScale, 102, 144))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(156 * fitScale, 116, 162))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(124 * fitScale, 88, 132))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
-        shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(8 * fitScale, 4, 9))}px`);
+        shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(28 * fitScale, 18, 30))}px`);
         shellRoot.style.setProperty("--wx-topbar-step-width", `${Math.round(clamp(86 * fitScale, 64, 90))}px`);
         shellRoot.style.setProperty("--wx-topbar-next-width", `${Math.round(clamp(132 * fitScale, 104, 136))}px`);
         shellRoot.style.setProperty("--wx-topbar-gap", `${Math.round(clamp(12 * fitScale, 8, 14))}px`);
@@ -494,13 +494,14 @@
         shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(26 * fitScale, 18, 26))}px`);
         shellRoot.style.setProperty("--wx-step-separator-font", `${Math.round(clamp(16 * fitScale, 14, 16))}px`);
         shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(64 * fitScale, 50, 66))}px`);
-        shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(22 * fitScale, 14, 24))}px`);
+        shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(44 * fitScale, 28, 48))}px`);
+        shellRoot.style.setProperty("--wx-next-shift-x", `${Math.round(clamp(-20 * fitScale, -26, -12))}px`);
         shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(14 * fitScale, 8, 16))}px`);
         shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp(74 * fitScale, 56, 76))}px`);
         shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(104 * fitScale, 84, 106))}px`);
         shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(126 * fitScale, 104, 128))}px`);
         shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(18 * fitScale, 10, 22))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(-18 * fitScale, -24, -10))}px`);
         shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
       }

@@ -19,10 +19,10 @@
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   --wx-overlay-height: 152px;
   --wx-stage-top: 138px;
-  --wx-stage-bottom: 156px;
+  --wx-stage-bottom: 124px;
   --wx-topbar-left: 16px;
   --wx-topbar-right: 82px;
-  --wx-topbar-top: 8px;
+  --wx-topbar-top: 28px;
   --wx-topbar-step-width: 86px;
   --wx-topbar-next-width: 132px;
   --wx-topbar-gap: 12px;
@@ -34,13 +34,14 @@
   --wx-step-font: 26px;
   --wx-step-separator-font: 16px;
   --wx-next-orb-size: 64px;
-  --wx-next-top: 22px;
+  --wx-next-top: 44px;
+  --wx-next-shift-x: -20px;
   --wx-mascot-left: 14px;
   --wx-mascot-top: 74px;
   --wx-mascot-width: 104px;
   --wx-mascot-height: 126px;
   --wx-tool-horizontal-padding: 8px;
-  --wx-tool-bottom: 18px;
+  --wx-tool-bottom: -18px;
   --wx-tool-gap: 14px;
   --wx-tool-timer-font: 12px;
   position: relative;
@@ -502,7 +503,7 @@
 
 .wx-next-center {
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--wx-next-shift-x));
   top: var(--wx-next-top);
   transform: translateX(-50%);
   display: flex;
