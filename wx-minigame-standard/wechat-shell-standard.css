@@ -1193,6 +1193,7 @@
 }
 
 .wx-tool-timer {
+  display: none !important;
   margin-top: 16px;
   min-height: 30px;
   padding: 7px 10px;

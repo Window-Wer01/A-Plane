@@ -1107,18 +1107,16 @@
         ctx.save();
         ctx.translate(blob.x, blob.y);
         if (spriteReady) {
-          ctx.fillStyle = "#111827";
+          ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
           ctx.beginPath();
-          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+          ctx.arc(0, blob.radius * 0.04, blob.radius * 0.9, 0, Math.PI * 2);
           ctx.fill();
-          const coverSize = blob.radius * 2.7;
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.globalAlpha = 1;
-          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.04, coverSize, coverSize);
-          ctx.restore();
+          const drawWidth = blob.radius * 2.28;
+          const drawHeight = drawWidth * (sprite.naturalHeight / sprite.naturalWidth);
+          const offsetY = -drawHeight * 0.54;
+          ctx.shadowColor = "rgba(15, 23, 42, 0.24)";
+          ctx.shadowBlur = blob.radius * 0.28;
+          ctx.drawImage(sprite, -drawWidth / 2, offsetY, drawWidth, drawHeight);
           ctx.restore();
           continue;
         }
