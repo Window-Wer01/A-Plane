@@ -1111,13 +1111,13 @@
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.fill();
-          const coverSize = blob.radius * 3.2;
+          const coverSize = blob.radius * 2.7;
           ctx.save();
           ctx.beginPath();
           ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
           ctx.clip();
           ctx.globalAlpha = 1;
-          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.18, coverSize, coverSize);
+          ctx.drawImage(sprite, -coverSize / 2, -coverSize / 2 - blob.radius * 0.04, coverSize, coverSize);
           ctx.restore();
           ctx.restore();
           continue;

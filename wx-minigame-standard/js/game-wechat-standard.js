@@ -475,12 +475,14 @@
 
       if (shellRoot) {
         const toolSize = Math.round(clamp(92 * fitScale, 74, 98));
+        const mascotWidth = Math.round(clamp(104 * fitScale, 84, 106));
+        const mascotHeight = Math.round(clamp(126 * fitScale, 104, 128));
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
         shellRoot.style.setProperty("--wx-tool-size", `${toolSize}px`);
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(152 * fitScale, 110, 158))}px`);
-        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp((162 * fitScale) + toolSize * 0.22, 134, 188))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp((-62 * fitScale) - toolSize, -188, -120))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp((162 * fitScale) - toolSize * 0.4, 108, 140))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp((-62 * fitScale) - toolSize * 0.35, -118, -84))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(28 * fitScale, 18, 30))}px`);
@@ -498,11 +500,11 @@
         shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(44 * fitScale, 28, 48))}px`);
         shellRoot.style.setProperty("--wx-next-shift-x", `${Math.round(clamp(-20 * fitScale, -26, -12))}px`);
         shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(14 * fitScale, 8, 16))}px`);
-        shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp(74 * fitScale, 56, 76))}px`);
-        shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(104 * fitScale, 84, 106))}px`);
-        shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(126 * fitScale, 104, 128))}px`);
+        shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp((74 * fitScale) - mascotHeight * 0.5, 8, 28))}px`);
+        shellRoot.style.setProperty("--wx-mascot-width", `${mascotWidth}px`);
+        shellRoot.style.setProperty("--wx-mascot-height", `${mascotHeight}px`);
         shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp((-52 * fitScale) - toolSize, -182, -108))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp((-52 * fitScale) - toolSize * 0.12, -78, -44))}px`);
         shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
       }

@@ -18,8 +18,8 @@
   --wx-stage-side-gap: 10px;
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   --wx-overlay-height: 152px;
-  --wx-stage-top: 182px;
-  --wx-stage-bottom: -154px;
+  --wx-stage-top: 126px;
+  --wx-stage-bottom: -94px;
   --wx-topbar-left: 16px;
   --wx-topbar-right: 82px;
   --wx-topbar-top: 28px;
@@ -37,11 +37,11 @@
   --wx-next-top: 44px;
   --wx-next-shift-x: -20px;
   --wx-mascot-left: 14px;
-  --wx-mascot-top: 74px;
+  --wx-mascot-top: 12px;
   --wx-mascot-width: 104px;
   --wx-mascot-height: 126px;
   --wx-tool-horizontal-padding: 8px;
-  --wx-tool-bottom: -144px;
+  --wx-tool-bottom: -56px;
   --wx-tool-gap: 14px;
   --wx-tool-timer-font: 12px;
   position: relative;
@@ -1116,7 +1116,7 @@
   gap: var(--wx-tool-gap);
   align-items: end;
   pointer-events: auto;
-  transform: translateY(12px);
+  transform: translateY(0);
 }
 
 .wx-tool-card {
