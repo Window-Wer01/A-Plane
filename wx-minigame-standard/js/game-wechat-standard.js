@@ -474,7 +474,7 @@
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(150 * fitScale, 104, 150))}px`);
         shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(146 * fitScale, 94, 146))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(72 * fitScale, 56, 74))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(92 * fitScale, 72, 96))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(14 * fitScale, 7, 14))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(68 * fitScale, 48, 68))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(10 * fitScale, 7, 10))}px`);
@@ -500,7 +500,7 @@
       }
       if (boardStage) {
         boardStage.style.width = `${targetStageWidth}px`;
-        boardStage.style.height = `${Math.max(520, availableStageHeight)}px`;
+        boardStage.style.height = `${Math.max(520, targetStageHeight)}px`;
       }
 
       const wrapper = elements.gameShell || canvas.parentElement || canvas;

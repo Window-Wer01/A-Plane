@@ -630,7 +630,7 @@
 .wx-game-stage {
   position: relative;
   width: 100%;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   height: auto;
   min-height: 0;
   display: flex;
@@ -640,7 +640,7 @@
 .wx-board-stage {
   position: relative;
   width: 100%;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   height: auto;
   margin-left: 0;
   margin-top: 0;
