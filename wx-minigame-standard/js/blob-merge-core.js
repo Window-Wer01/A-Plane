@@ -866,11 +866,18 @@
         return;
       }
       let topY = FLOOR_Y;
+      let stableBlobCount = 0;
       const dangerLineY = this.getDangerLineY();
       for (let i = 0; i < this.state.blobs.length; i += 1) {
-        topY = Math.min(topY, this.state.blobs[i].y - this.state.blobs[i].radius);
+        const blob = this.state.blobs[i];
+        const stableNearStack =
+          Math.abs(blob.vy) <= 18 &&
+          (blob.y + blob.radius >= FLOOR_Y - 6 || blob.y >= dangerLineY - blob.radius * 0.35);
+        if (!stableNearStack) continue;
+        stableBlobCount += 1;
+        topY = Math.min(topY, blob.y - blob.radius);
       }
-      if (topY <= dangerLineY) {
+      if (stableBlobCount > 0 && topY <= dangerLineY) {
         this.state.warningTime += dt;
       } else {
         this.state.warningTime = Math.max(0, this.state.warningTime - dt * 1.4);

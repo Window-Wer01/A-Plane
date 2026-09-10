@@ -478,8 +478,8 @@
         shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(92 * fitScale, 74, 98))}px`);
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(152 * fitScale, 110, 158))}px`);
-        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(138 * fitScale, 102, 144))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(124 * fitScale, 88, 132))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(150 * fitScale, 112, 156))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(30 * fitScale, 20, 44))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(28 * fitScale, 18, 30))}px`);
@@ -501,7 +501,7 @@
         shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(104 * fitScale, 84, 106))}px`);
         shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(126 * fitScale, 104, 128))}px`);
         shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(-18 * fitScale, -24, -10))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(-52 * fitScale, -68, -36))}px`);
         shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
       }
@@ -599,6 +599,17 @@
       audio.stop();
       requestGameFullscreen(doc);
       setScreen("game");
+      syncUi();
+    }
+
+    function exitCurrentRunToMenu() {
+      show(elements.resultPanel, false);
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      show(elements.pauseGlyph, false);
+      core.resetRun();
+      audio.stop();
+      setScreen("menu");
       syncUi();
     }
 
@@ -836,8 +847,7 @@
       });
       elements.pauseExitBtn?.addEventListener("click", function () {
         closePausePanel(false);
-        show(elements.pauseGlyph, false);
-        setScreen("menu");
+        exitCurrentRunToMenu();
       });
       elements.helpCloseBtn?.addEventListener("click", function () {
         closeHelpPanel();
@@ -845,8 +855,7 @@
 
       elements.resultRestartBtn?.addEventListener("click", restartRunAndEnterGame);
       elements.resultExitBtn?.addEventListener("click", function () {
-        show(elements.resultPanel, false);
-        setScreen("menu");
+        exitCurrentRunToMenu();
       });
       elements.resultDoubleRewardBtn?.addEventListener("click", async function () {
         if (!core.state.success) {
