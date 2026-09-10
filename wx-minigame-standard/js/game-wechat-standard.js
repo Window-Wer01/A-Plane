@@ -474,12 +474,13 @@
       const targetStageHeight = Math.round(DESIGN_STAGE_HEIGHT * fitScale);
 
       if (shellRoot) {
+        const toolSize = Math.round(clamp(92 * fitScale, 74, 98));
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
-        shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(92 * fitScale, 74, 98))}px`);
+        shellRoot.style.setProperty("--wx-tool-size", `${toolSize}px`);
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(152 * fitScale, 110, 158))}px`);
-        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(162 * fitScale, 122, 170))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(-62 * fitScale, -84, -42))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp((162 * fitScale) + toolSize * 0.22, 134, 188))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp((-62 * fitScale) - toolSize, -188, -120))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(28 * fitScale, 18, 30))}px`);
@@ -501,7 +502,7 @@
         shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(104 * fitScale, 84, 106))}px`);
         shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(126 * fitScale, 104, 128))}px`);
         shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(-52 * fitScale, -68, -36))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp((-52 * fitScale) - toolSize, -182, -108))}px`);
         shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
       }
@@ -600,6 +601,33 @@
       requestGameFullscreen(doc);
       setScreen("game");
       syncUi();
+    }
+
+    function tryExitShell() {
+      try {
+        if (root.wx && typeof root.wx.exitMiniProgram === "function") {
+          root.wx.exitMiniProgram({});
+          return true;
+        }
+      } catch {}
+      try {
+        if (root.WeixinJSBridge && typeof root.WeixinJSBridge.call === "function") {
+          root.WeixinJSBridge.call("closeWindow");
+          return true;
+        }
+      } catch {}
+      try {
+        if (typeof root.close === "function") {
+          root.close();
+        }
+      } catch {}
+      try {
+        if (root.location && typeof root.location.replace === "function") {
+          root.location.replace("about:blank");
+          return true;
+        }
+      } catch {}
+      return false;
     }
 
     function exitCurrentRunToMenu() {
@@ -789,9 +817,8 @@
         syncUi();
       });
       elements.menuExitBtn?.addEventListener("click", function () {
-        setScreen("menu");
-        show(elements.resultPanel, false);
-        show(elements.pausePanel, false);
+        exitCurrentRunToMenu();
+        tryExitShell();
       });
 
       elements.rankBackBtn?.addEventListener("click", function () { setScreen("menu"); });
