@@ -17,23 +17,24 @@
   --wx-tool-size: 92px;
   --wx-stage-side-gap: 10px;
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
-  --wx-overlay-height: 182px;
-  --wx-stage-top: 164px;
+  --wx-overlay-height: 152px;
+  --wx-stage-top: 138px;
   --wx-stage-bottom: 156px;
   --wx-topbar-left: 16px;
   --wx-topbar-right: 82px;
-  --wx-topbar-top: 12px;
-  --wx-topbar-step-width: 128px;
+  --wx-topbar-top: 8px;
+  --wx-topbar-step-width: 86px;
   --wx-topbar-next-width: 132px;
   --wx-topbar-gap: 12px;
-  --wx-topbar-min-height: 112px;
+  --wx-topbar-min-height: 86px;
   --wx-return-right: 16px;
-  --wx-return-top: 12px;
+  --wx-return-top: 28px;
   --wx-return-width: 50px;
   --wx-return-height: 36px;
   --wx-step-font: 26px;
   --wx-step-separator-font: 16px;
   --wx-next-orb-size: 64px;
+  --wx-next-top: 22px;
   --wx-mascot-left: 14px;
   --wx-mascot-top: 74px;
   --wx-mascot-width: 104px;
@@ -502,7 +503,7 @@
 .wx-next-center {
   position: absolute;
   left: 50%;
-  top: 0;
+  top: var(--wx-next-top);
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -711,7 +712,7 @@
 }
 
 .wx-top-panel {
-  padding: 10px 12px 8px;
+  padding: 7px 10px 6px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -719,7 +720,7 @@
 }
 
 .wx-panel-label {
-  display: block;
+  display: none;
   font-size: 11px;
   line-height: 1;
   color: rgba(255,255,255,0.9);

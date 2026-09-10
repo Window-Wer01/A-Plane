@@ -301,7 +301,7 @@
 
     getToolTimerText() {
       if (this.state.countdownActive) {
-        return `倒计时 ${this.state.countdownValue}`;
+        return "";
       }
       if (this.state.capsuleTimer > 0) {
         return `神秘胶囊生效中，剩余 ${Math.ceil(this.state.capsuleTimer)} 秒`;
@@ -1329,10 +1329,6 @@
       ctx.font = `700 ${Math.round(su(92))}px sans-serif`;
       const textWidth = ctx.measureText(remain).width;
       ctx.fillText(remain, (DESIGN_WIDTH - textWidth) / 2, sy(394));
-      ctx.font = `600 ${Math.round(su(18))}px sans-serif`;
-      const sub = "红线同步闪烁，倒计时结束后开始";
-      const subWidth = ctx.measureText(sub).width;
-      ctx.fillText(sub, (DESIGN_WIDTH - subWidth) / 2, sy(430));
     }
 
     drawCanvasToolBar(ctx) {
