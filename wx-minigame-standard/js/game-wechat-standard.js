@@ -69,7 +69,7 @@
   const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
   const MAX_WARNING_TIME = 2.6;
   const DESIGN_STAGE_WIDTH = 750;
-  const DESIGN_STAGE_HEIGHT = 1222;
+  const DESIGN_STAGE_HEIGHT = 1334;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -450,31 +450,36 @@
       const shellInsetX = shellStyle
         ? (parseFloat(shellStyle.paddingLeft || "0") + parseFloat(shellStyle.paddingRight || "0"))
         : 0;
+      const shellInsetY = shellStyle
+        ? (parseFloat(shellStyle.paddingTop || "0") + parseFloat(shellStyle.paddingBottom || "0"))
+        : 0;
       const availableWidth = Math.max(320, viewportWidth - shellInsetX);
-      const widthScale = clamp(availableWidth / DESIGN_STAGE_WIDTH, 0.52, 1.18);
-      const targetBannerHeight = Math.round(clamp(102 * widthScale, 88, 112));
+      const widthScale = availableWidth / DESIGN_STAGE_WIDTH;
+      const heightScaleBase = Math.max(520, viewportHeight - shellInsetY) / DESIGN_STAGE_HEIGHT;
+      const targetBannerHeight = Math.round(clamp(102 * clamp(widthScale, 0.46, 1.18), 88, 112));
       const adHeight = adStage
         ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
         : targetBannerHeight;
-      const availableStageHeight = Math.max(520, viewportHeight - adHeight - 10);
+      const availableStageHeight = Math.max(520, viewportHeight - adHeight - shellInsetY);
       const fitScale = clamp(
         Math.min(
-          availableWidth / DESIGN_STAGE_WIDTH,
-          availableStageHeight / DESIGN_STAGE_HEIGHT
+          widthScale,
+          availableStageHeight / DESIGN_STAGE_HEIGHT,
+          heightScaleBase
         ),
-        0.52,
+        0.46,
         1.18
       );
-      const targetStageWidth = Math.round(Math.min(availableWidth, DESIGN_STAGE_WIDTH * fitScale));
-      const targetStageHeight = Math.round(Math.min(availableStageHeight, DESIGN_STAGE_HEIGHT * fitScale));
+      const targetStageWidth = Math.round(DESIGN_STAGE_WIDTH * fitScale);
+      const targetStageHeight = Math.round(DESIGN_STAGE_HEIGHT * fitScale);
 
       if (shellRoot) {
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
         shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(86 * fitScale, 68, 96))}px`);
-        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 8, 14))}px`);
+        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(8 * fitScale, 4, 10))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(150 * fitScale, 104, 150))}px`);
         shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(146 * fitScale, 94, 146))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(92 * fitScale, 72, 96))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(126 * fitScale, 92, 126))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(14 * fitScale, 7, 14))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(68 * fitScale, 48, 68))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(10 * fitScale, 7, 10))}px`);
@@ -499,8 +504,8 @@
         shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(11 * fitScale, 9, 11))}px`);
       }
       if (boardStage) {
-        boardStage.style.width = `${targetStageWidth}px`;
-        boardStage.style.height = `${Math.max(520, targetStageHeight)}px`;
+        boardStage.style.width = `${Math.min(availableWidth, targetStageWidth)}px`;
+        boardStage.style.height = `${Math.min(availableStageHeight, Math.max(520, targetStageHeight))}px`;
       }
 
       const wrapper = elements.gameShell || canvas.parentElement || canvas;

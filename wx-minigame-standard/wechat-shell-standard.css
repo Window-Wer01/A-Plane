@@ -15,11 +15,11 @@
   --wx-tool-extra-lift: 0px;
   --wx-stage-compress: 0px;
   --wx-tool-size: 86px;
-  --wx-stage-side-gap: 10px;
+  --wx-stage-side-gap: 8px;
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   --wx-overlay-height: 150px;
   --wx-stage-top: 146px;
-  --wx-stage-bottom: 112px;
+  --wx-stage-bottom: 126px;
   --wx-topbar-left: 14px;
   --wx-topbar-right: 68px;
   --wx-topbar-top: 10px;
@@ -46,7 +46,7 @@
   overflow: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 0 8px 2px;
+  padding: 0 4px 2px;
 }
 
 .wx-shell-notice {
@@ -630,7 +630,7 @@
 .wx-game-stage {
   position: relative;
   width: 100%;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   height: auto;
   min-height: 0;
   display: flex;
@@ -1323,9 +1323,9 @@
     --wx-game-topbar-height: 52px;
     --wx-game-bottom-gap: 3px;
     --wx-tool-size: 94px;
-    --wx-stage-side-gap: 10px;
+    --wx-stage-side-gap: 8px;
     --wx-game-safe-offset: calc(var(--wx-banner-height) + 10px);
-    padding: 0 6px 8px;
+    padding: 0 2px 4px;
   }
 
   .wx-home-info-grid,
@@ -1351,7 +1351,7 @@
   }
 
   .wx-board-stage {
-    width: calc(100% - 12px);
+    width: 100%;
     margin: 0 auto;
   }
 
@@ -1443,8 +1443,8 @@
   }
 
   .wx-ad-stage {
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 
   .wx-stage-mascot-body {
