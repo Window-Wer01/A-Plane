@@ -456,7 +456,7 @@
       const availableWidth = Math.max(320, viewportWidth - shellInsetX);
       const widthScale = availableWidth / DESIGN_STAGE_WIDTH;
       const heightScaleBase = Math.max(520, viewportHeight - shellInsetY) / DESIGN_STAGE_HEIGHT;
-      const targetBannerHeight = Math.round(clamp(102 * clamp(widthScale, 0.46, 1.18), 88, 112));
+      const targetBannerHeight = Math.round(clamp(104 * clamp(widthScale, 0.46, 1.18), 92, 116));
       const adHeight = adStage
         ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
         : targetBannerHeight;
@@ -475,33 +475,33 @@
 
       if (shellRoot) {
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
-        shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(86 * fitScale, 68, 96))}px`);
-        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(8 * fitScale, 4, 10))}px`);
-        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(150 * fitScale, 104, 150))}px`);
-        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(146 * fitScale, 94, 146))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(126 * fitScale, 92, 126))}px`);
-        shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(14 * fitScale, 7, 14))}px`);
-        shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(68 * fitScale, 48, 68))}px`);
-        shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(10 * fitScale, 7, 10))}px`);
-        shellRoot.style.setProperty("--wx-topbar-step-width", `${Math.round(clamp(112 * fitScale, 74, 112))}px`);
-        shellRoot.style.setProperty("--wx-topbar-next-width", `${Math.round(clamp(124 * fitScale, 100, 124))}px`);
-        shellRoot.style.setProperty("--wx-topbar-gap", `${Math.round(clamp(10 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-topbar-min-height", `${Math.round(clamp(98 * fitScale, 74, 98))}px`);
-        shellRoot.style.setProperty("--wx-return-right", `${Math.round(clamp(14 * fitScale, 10, 14))}px`);
+        shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(92 * fitScale, 74, 98))}px`);
+        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
+        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(182 * fitScale, 132, 188))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(164 * fitScale, 120, 170))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(156 * fitScale, 116, 162))}px`);
+        shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
+        shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
+        shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(12 * fitScale, 8, 13))}px`);
+        shellRoot.style.setProperty("--wx-topbar-step-width", `${Math.round(clamp(128 * fitScale, 90, 132))}px`);
+        shellRoot.style.setProperty("--wx-topbar-next-width", `${Math.round(clamp(132 * fitScale, 104, 136))}px`);
+        shellRoot.style.setProperty("--wx-topbar-gap", `${Math.round(clamp(12 * fitScale, 8, 14))}px`);
+        shellRoot.style.setProperty("--wx-topbar-min-height", `${Math.round(clamp(112 * fitScale, 84, 116))}px`);
+        shellRoot.style.setProperty("--wx-return-right", `${Math.round(clamp(16 * fitScale, 11, 18))}px`);
         shellRoot.style.setProperty("--wx-return-top", `${Math.round(clamp(12 * fitScale, 10, 12))}px`);
-        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(46 * fitScale, 42, 46))}px`);
+        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(50 * fitScale, 44, 50))}px`);
         shellRoot.style.setProperty("--wx-return-height", `${Math.round(clamp(34 * fitScale, 34, 36))}px`);
-        shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(24 * fitScale, 18, 24))}px`);
+        shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(26 * fitScale, 18, 26))}px`);
         shellRoot.style.setProperty("--wx-step-separator-font", `${Math.round(clamp(16 * fitScale, 14, 16))}px`);
-        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(60 * fitScale, 48, 60))}px`);
-        shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(12 * fitScale, 4, 12))}px`);
-        shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp(62 * fitScale, 52, 62))}px`);
-        shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(96 * fitScale, 84, 96))}px`);
-        shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(118 * fitScale, 104, 118))}px`);
-        shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(12 * fitScale, 10, 12))}px`);
-        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(10 * fitScale, 0, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(10 * fitScale, 6, 10))}px`);
-        shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(11 * fitScale, 9, 11))}px`);
+        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(64 * fitScale, 50, 66))}px`);
+        shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(14 * fitScale, 8, 16))}px`);
+        shellRoot.style.setProperty("--wx-mascot-top", `${Math.round(clamp(74 * fitScale, 56, 76))}px`);
+        shellRoot.style.setProperty("--wx-mascot-width", `${Math.round(clamp(104 * fitScale, 84, 106))}px`);
+        shellRoot.style.setProperty("--wx-mascot-height", `${Math.round(clamp(126 * fitScale, 104, 128))}px`);
+        shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${Math.round(clamp(18 * fitScale, 10, 22))}px`);
+        shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
+        shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
       }
       if (boardStage) {
         boardStage.style.width = `${Math.min(availableWidth, targetStageWidth)}px`;
