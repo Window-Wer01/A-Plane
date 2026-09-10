@@ -478,8 +478,8 @@
         shellRoot.style.setProperty("--wx-tool-size", `${Math.round(clamp(92 * fitScale, 74, 98))}px`);
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
         shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(152 * fitScale, 110, 158))}px`);
-        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(150 * fitScale, 112, 156))}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(30 * fitScale, 20, 44))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${Math.round(clamp(162 * fitScale, 122, 170))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(-62 * fitScale, -84, -42))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${Math.round(clamp(28 * fitScale, 18, 30))}px`);

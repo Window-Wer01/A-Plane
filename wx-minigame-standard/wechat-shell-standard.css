@@ -18,8 +18,8 @@
   --wx-stage-side-gap: 10px;
   --wx-game-safe-offset: calc(var(--wx-banner-height) + 18px);
   --wx-overlay-height: 152px;
-  --wx-stage-top: 150px;
-  --wx-stage-bottom: 30px;
+  --wx-stage-top: 162px;
+  --wx-stage-bottom: -62px;
   --wx-topbar-left: 16px;
   --wx-topbar-right: 82px;
   --wx-topbar-top: 28px;
