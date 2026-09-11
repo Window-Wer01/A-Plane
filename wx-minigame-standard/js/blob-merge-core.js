@@ -16,7 +16,8 @@
   const sy = (value) => value * SCALE_Y;
   const su = (value) => value * SCALE_UI;
   const rect = (x, y, w, h) => ({ x: sx(x), y: sy(y), w: sx(w), h: sy(h) });
-  const PIT = { x: 22, y: 154, width: 706, height: 1036 };
+  const LOWEST_BLOB_HEIGHT = su(18) * 2;
+  const PIT = { x: 22, y: 154, width: 706, height: 1036 - LOWEST_BLOB_HEIGHT };
   const FLOOR_Y = PIT.y + PIT.height;
   const DANGER_LINE_Y = PIT.y + 60;
   const SPAWN_Y = 108;

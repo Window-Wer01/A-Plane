@@ -944,6 +944,7 @@
 }
 
 .wx-stage-mascot {
+  display: none !important;
   position: relative;
   position: absolute;
   left: var(--wx-mascot-left);
