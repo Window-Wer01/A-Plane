@@ -31,6 +31,7 @@
   const BLOB_RESTITUTION = 0.74;
   const STACK_SQUISH_PUSH = 64;
   const STACK_SQUISH_DOWN = 20;
+  const COLLISION_SKIN = su(2.4);
   const MERGE_TOUCH_GAP = -0.8;
   const TOOL_DEFAULT_STOCK = 5;
   const CAPSULE_DURATION = 30;
@@ -733,7 +734,7 @@
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-          const minDist = a.radius + b.radius;
+          const minDist = a.radius + b.radius + COLLISION_SKIN;
           if (dist >= minDist) continue;
 
           if (a.specialType === "splitBomb" && a.specialArmed) {
@@ -815,7 +816,7 @@
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-          const minDist = a.radius + b.radius;
+          const minDist = a.radius + b.radius + COLLISION_SKIN * 0.72;
           if (dist > minDist - MERGE_TOUCH_GAP) continue;
           removed.add(a.id);
           removed.add(b.id);
