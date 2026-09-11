@@ -1,0 +1,223 @@
+/*
+ * UI-TEST-001
+ * 独立临时美术验证样式。
+ * 所有规则均限定在 .ui-test-001 下，不影响正式入口。
+ */
+
+.ui-test-001 {
+  --ui-test-dark: #0a0b10;
+  --ui-test-teal: #54aca0;
+  --ui-test-cyan: #5fd1d4;
+  --ui-test-blue: #21295d;
+  --ui-test-yellow: #efee56;
+  background: var(--ui-test-dark);
+}
+
+.ui-test-001 .wechat-mini-shell {
+  background:
+    linear-gradient(rgba(10, 11, 16, 0.08), rgba(10, 11, 16, 0.08)),
+    url("./assets/ui-test-001/background/scene_bg_full@2x.png") center / cover no-repeat;
+}
+
+.ui-test-001 .wx-menu-build-notice {
+  display: block;
+  border: 1px solid rgba(239, 238, 86, 0.8);
+  background: rgba(10, 11, 16, 0.88);
+  color: #efee56;
+}
+
+.ui-test-001 .wx-game-stage,
+.ui-test-001 .wx-board-stage {
+  background:
+    linear-gradient(rgba(10, 11, 16, 0.05), rgba(10, 11, 16, 0.05)),
+    url("./assets/ui-test-001/background/scene_bg_full@2x.png") center / cover no-repeat;
+}
+
+.ui-test-001 .wx-stage-overlay {
+  background:
+    url("./assets/ui-test-001/ui/ui_topbar_bg@2x.png") top center / 100% 126px no-repeat;
+}
+
+.ui-test-001 .wx-top-panel {
+  border: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+.ui-test-001 .wx-step-panel {
+  background-image: url("./assets/ui-test-001/ui/ui_step_panel@2x.png");
+}
+
+.ui-test-001 .wx-next-center {
+  background-image: url("./assets/ui-test-001/ui/ui_next_panel@2x.png");
+}
+
+.ui-test-001 .wx-step-current,
+.ui-test-001 .wx-step-best,
+.ui-test-001 .wx-step-separator {
+  color: #e1eff0;
+  text-shadow: 0 2px 0 #0a0b10, 0 0 8px rgba(95, 209, 212, 0.8);
+}
+
+.ui-test-001 .wx-return-btn {
+  border: 0;
+  border-radius: 0;
+  background: url("./assets/ui-test-001/ui/btn_back_red@3x.png") center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+
+.ui-test-001 .wx-return-arrow {
+  display: none;
+}
+
+.ui-test-001 .wx-board-shell {
+  border: 0;
+  border-radius: 28px;
+  box-shadow: none;
+}
+
+.ui-test-001 .wx-board-shell::before,
+.ui-test-001 .wx-board-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.ui-test-001 .wx-board-shell::before {
+  background-image: url("./assets/ui-test-001/playfield/playfield_frame_outer@2x.png");
+}
+
+.ui-test-001 .wx-board-shell::after {
+  background-image: url("./assets/ui-test-001/playfield/playfield_frame_inner@2x.png");
+  opacity: 0.74;
+}
+
+.ui-test-001 .danger-meter {
+  left: 5%;
+  right: 5%;
+  z-index: 7;
+  background: transparent;
+}
+
+.ui-test-001 .danger-bar {
+  min-height: 18px;
+  border: 0;
+  background:
+    url("./assets/ui-test-001/playfield/danger_line_mask@2x.png") center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+
+.ui-test-001 .danger-fill {
+  opacity: 0.42;
+  border-radius: 999px;
+}
+
+.ui-test-001 .wx-tool-stage {
+  left: 0;
+  right: 0;
+  padding: 20px 8px 10px;
+  background:
+    url("./assets/ui-test-001/skills/ui_skill_bar_bg@2x.png") center / 100% 100% no-repeat;
+}
+
+.ui-test-001 .wx-tool-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: #e1eff0;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.ui-test-001 .wx-tool-card[data-tool-key="capsule"] {
+  background-image: url("./assets/ui-test-001/skills/skill_capsule_idle@2x.png");
+}
+
+.ui-test-001 .wx-tool-card[data-tool-key="clean"] {
+  background-image: url("./assets/ui-test-001/skills/skill_clean_idle@2x.png");
+}
+
+.ui-test-001 .wx-tool-card[data-tool-key="rage"] {
+  background-image: url("./assets/ui-test-001/skills/skill_rage_idle@2x.png");
+}
+
+.ui-test-001 .wx-tool-card[data-tool-key="split"] {
+  background-image: url("./assets/ui-test-001/skills/skill_split_idle@2x.png");
+}
+
+.ui-test-001 .wx-tool-card.is-active[data-tool-key="capsule"] {
+  background-image: url("./assets/ui-test-001/skills/skill_capsule_active@2x.png");
+}
+
+.ui-test-001 .wx-tool-card.is-active[data-tool-key="clean"] {
+  background-image: url("./assets/ui-test-001/skills/skill_clean_active@2x.png");
+}
+
+.ui-test-001 .wx-tool-card.is-active[data-tool-key="rage"] {
+  background-image: url("./assets/ui-test-001/skills/skill_rage_active@2x.png");
+}
+
+.ui-test-001 .wx-tool-card.is-active[data-tool-key="split"] {
+  background-image: url("./assets/ui-test-001/skills/skill_split_active@2x.png");
+}
+
+.ui-test-001 .wx-tool-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.ui-test-001 .wx-tool-stock {
+  top: -3px;
+  right: -3px;
+  min-width: 24px;
+  height: 24px;
+  overflow: hidden;
+  color: #0a0b10;
+  font-size: 8px;
+  border: 0;
+  background:
+    url("./assets/ui-test-001/skills/badge_count@2x.png") center / 100% 100% no-repeat;
+}
+
+.ui-test-001 .wx-ad-stage {
+  background:
+    url("./assets/ui-test-001/banner/banner_wrap_bg@2x.png") center / 100% 100% no-repeat;
+}
+
+.ui-test-001 .wx-ad-stage::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 18px;
+  pointer-events: none;
+  background:
+    url("./assets/ui-test-001/banner/banner_top_edge@2x.png") center / 100% 100% no-repeat;
+}
+
+.ui-test-001 .wx-tv-screen {
+  border-color: rgba(95, 209, 212, 0.8);
+  background: rgba(10, 11, 16, 0.72);
+}
+
+.ui-test-001 .wx-ad-placeholder {
+  color: #e1eff0;
+}
+
+.ui-test-001 .wx-ad-placeholder strong {
+  color: #efee56;
+}
