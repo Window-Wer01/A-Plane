@@ -1,0 +1,1189 @@
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = factory(
+      require("./blob-merge-core.js"),
+      {
+        RuntimeConfig: require("./services/runtime-config.js"),
+        LoginService: require("./services/login-service.js"),
+        AdService: require("./services/ad-service.js"),
+        ShareService: require("./services/share-service.js"),
+        RankService: require("./services/rank-service.js"),
+        UpdateService: require("./services/update-service.js")
+      },
+      typeof globalThis !== "undefined" ? globalThis : this
+    );
+  } else {
+    root.GameWechatStandard = factory(
+      root.BlobMergeCore,
+      {
+        RuntimeConfig: root.BlobRuntimeConfig,
+        LoginService: root.BlobLoginService,
+        AdService: root.BlobAdService,
+        ShareService: root.BlobShareService,
+        RankService: root.BlobRankService,
+        UpdateService: root.BlobUpdateService
+      },
+      root
+    );
+    if (root.document && root.document.getElementById("gameCanvas")) {
+      const boot = function () {
+        if (root.__BLOB_GAME_AUTO_INIT__ === false) return;
+        root.GameWechatStandard.initWebShell(root.document);
+      };
+      if (root.document.readyState === "loading") {
+        root.document.addEventListener("DOMContentLoaded", boot, { once: true });
+      } else {
+        boot();
+      }
+    }
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function (BlobMergeCore, services, root) {
+  "use strict";
+
+  if (!BlobMergeCore) {
+    throw new Error("BlobMergeCore 未加载，无法启动微信标准版运行时。");
+  }
+
+  const RuntimeConfig = services && services.RuntimeConfig;
+  const LoginService = services && services.LoginService;
+  const AdService = services && services.AdService;
+  const ShareService = services && services.ShareService;
+  const RankService = services && services.RankService;
+  const UpdateService = services && services.UpdateService;
+
+  if (!RuntimeConfig || !LoginService || !AdService || !ShareService || !RankService || !UpdateService) {
+    throw new Error("微信标准版服务模块缺失，无法继续启动。");
+  }
+
+  const TYPE_META = [
+    { label: "1号 种子球", hint: "先铺底，别急着冲高。" },
+    { label: "2号 幼芽球", hint: "优先补低洼位，减少侧翻。" },
+    { label: "3号 啵啵球", hint: "中路别堆太尖，先做承托。" },
+    { label: "4号 果冻球", hint: "这是过渡球，尽量别悬空。" },
+    { label: "5号 轨道球", hint: "开始占空间了，别挤满右侧。" },
+    { label: "6号 星核球", hint: "高阶球要有大底座支撑。" },
+    { label: "7号 大王球", hint: "再稳一次，就能直接收王。" }
+  ];
+
+  const WEB_BGM_SRC = "./assets/bgm-paper-boat.mp3";
+  const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
+  const MAX_WARNING_TIME = 2.6;
+  const DESIGN_STAGE_WIDTH = 750;
+  const DESIGN_STAGE_HEIGHT = 1334;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function formatDuration(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  }
+
+  function hasAutoStartFlag() {
+    try {
+      const search = root.location && typeof root.location.search === "string" ? root.location.search : "";
+      return /(?:\?|&)autostart=1(?:&|$)/.test(search);
+    } catch {
+      return false;
+    }
+  }
+
+  function safeText(node, text) {
+    if (node) node.textContent = text;
+  }
+
+  function show(node, visible) {
+    if (!node) return;
+    node.classList.toggle("hidden", !visible);
+  }
+
+  function requestGameFullscreen(doc) {
+    const target = (doc && doc.documentElement) || root.document?.documentElement;
+    if (!target) return Promise.resolve(false);
+    if (doc && doc.fullscreenElement) return Promise.resolve(true);
+    const request =
+      target.requestFullscreen ||
+      target.webkitRequestFullscreen ||
+      target.msRequestFullscreen;
+    if (typeof request !== "function") return Promise.resolve(false);
+    try {
+      const result = request.call(target);
+      if (result && typeof result.then === "function") {
+        return result.then(() => true).catch(() => false);
+      }
+      return Promise.resolve(true);
+    } catch {
+      return Promise.resolve(false);
+    }
+  }
+
+  function getTypeMeta(index) {
+    return TYPE_META[clamp(index, 0, TYPE_META.length - 1)] || TYPE_META[0];
+  }
+
+  function createStorageAdapter(prefix, wxApi) {
+    return {
+      get(key, fallbackValue) {
+        try {
+          const raw = wxApi
+            ? wxApi.getStorageSync(`${prefix}:${key}`)
+            : root.localStorage.getItem(`${prefix}:${key}`);
+          return raw === null || raw === undefined || raw === "" ? fallbackValue : raw;
+        } catch {
+          return fallbackValue;
+        }
+      },
+      set(key, value) {
+        try {
+          if (wxApi) {
+            wxApi.setStorageSync(`${prefix}:${key}`, value);
+          } else {
+            root.localStorage.setItem(`${prefix}:${key}`, String(value));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }
+
+  function createWebAudioManager(settings) {
+    let audio = null;
+
+    function ensureAudio() {
+      if (audio) return audio;
+      audio = new Audio(WEB_BGM_SRC);
+      audio.loop = true;
+      audio.preload = "auto";
+      audio.volume = settings.volume;
+      audio.playsInline = true;
+      audio.setAttribute("playsinline", "");
+      audio.setAttribute("webkit-playsinline", "");
+      return audio;
+    }
+
+    return {
+      start() {
+        if (!settings.audioEnabled) return;
+        const player = ensureAudio();
+        player.volume = settings.volume;
+        player.play().catch(() => {});
+      },
+      stop() {
+        if (!audio) return;
+        audio.pause();
+      },
+      syncVolume() {
+        if (audio) audio.volume = settings.volume;
+      }
+    };
+  }
+
+  function createWxAudioManager(settings, wxApi) {
+    let audio = null;
+
+    function ensureAudio() {
+      if (audio) return audio;
+      audio = wxApi.createInnerAudioContext();
+      audio.src = WX_BGM_SRC;
+      audio.loop = true;
+      audio.volume = settings.volume;
+      return audio;
+    }
+
+    return {
+      start() {
+        if (!settings.audioEnabled) return;
+        const player = ensureAudio();
+        player.volume = settings.volume;
+        player.play();
+      },
+      stop() {
+        if (!audio) return;
+        audio.pause();
+      },
+      syncVolume() {
+        if (audio) audio.volume = settings.volume;
+      }
+    };
+  }
+
+  function createCore(platform) {
+    return new BlobMergeCore({
+      platform: {
+        domUi: Boolean(platform.domUi),
+        startBgm() {
+          platform.audio.start();
+        },
+        stopBgm() {
+          platform.audio.stop();
+        },
+        storageGet(key) {
+          return platform.storage.get(key, "");
+        },
+        storageSet(key, value) {
+          platform.storage.set(key, value);
+        },
+        vibrate(duration) {
+          if (!platform.settings.vibrateEnabled) return;
+          if (platform.wx) {
+            platform.wx.vibrateShort({ type: duration > 24 ? "heavy" : "light" });
+            return;
+          }
+          if (root.navigator && root.navigator.vibrate) {
+            root.navigator.vibrate(duration);
+          }
+        },
+        requestShareRevive() {
+          if (typeof platform.requestShareRevive === "function") {
+            return platform.requestShareRevive();
+          }
+          return { ok: false };
+        }
+      }
+    });
+  }
+
+  function createLoop(updateFrame, options) {
+    let lastTime = 0;
+    let accumulator = 0;
+    const FIXED_DT = 1 / 60;
+    const nowFn = options && typeof options.now === "function"
+      ? options.now
+      : function () { return Date.now(); };
+    const raf = options && typeof options.raf === "function"
+      ? options.raf
+      : (typeof root.requestAnimationFrame === "function"
+          ? root.requestAnimationFrame.bind(root)
+          : function (callback) {
+              return root.setTimeout(function () {
+                callback(nowFn());
+              }, 16);
+            });
+
+    function frame(now) {
+      if (!lastTime) lastTime = now;
+      const frameTime = Math.min(0.1, Math.max(0.001, (now - lastTime) / 1000));
+      lastTime = now;
+      accumulator += frameTime;
+      while (accumulator >= FIXED_DT) {
+        updateFrame(FIXED_DT, frameTime);
+        accumulator -= FIXED_DT;
+      }
+      raf(frame);
+    }
+
+    raf(frame);
+  }
+
+  function renderToolGrid(container, timerNode, core) {
+    if (!container || !core || typeof core.getToolSnapshot !== "function") return;
+    const tools = core.getToolSnapshot();
+    container.innerHTML = tools.map((tool) => (
+      `<button class="wx-tool-card ${tool.stock <= 0 ? "is-empty" : ""} ${tool.active ? "is-active" : ""}" type="button" data-tool-key="${tool.key}" ${tool.disabled ? "disabled" : ""}>
+        <div class="wx-tool-name">${tool.label}</div>
+        <div class="wx-tool-stock">剩余 ${tool.stock}</div>
+        <div class="wx-tool-meta">${tool.desc}</div>
+      </button>`
+    )).join("");
+    if (timerNode) {
+      timerNode.textContent = "";
+      timerNode.classList.add("hidden");
+    }
+  }
+
+  function createLogger(config) {
+    return function log(type, payload) {
+      if (!config.debug || !config.debug.logLifecycle || !root.console || !root.console.log) return;
+      root.console.log(`[wx-standard] ${type}`, payload || "");
+    };
+  }
+
+  function createServiceBundle(options) {
+    const config = RuntimeConfig.createRuntimeConfig(root, options.wxApi || null);
+    const logger = createLogger(config);
+    const storage = options.storage;
+
+    const bundle = {
+      config: config,
+      logger: logger,
+      login: LoginService.createLoginService({
+        wxApi: options.wxApi,
+        storage: storage,
+        config: config
+      }),
+      ads: AdService.createAdService({
+        wxApi: options.wxApi,
+        config: config
+      }),
+      share: ShareService.createShareService({
+        wxApi: options.wxApi,
+        storage: storage,
+        config: config
+      }),
+      rank: RankService.createRankService({
+        wxApi: options.wxApi,
+        config: config
+      }),
+      update: UpdateService.createUpdateService({
+        wxApi: options.wxApi,
+        logger: logger
+      })
+    };
+
+    return bundle;
+  }
+
+  function collectElements(doc) {
+    const ids = [
+      "shellNotice", "menuBuildNotice", "shellNetworkState", "shellWelcomeTip",
+      "menuScreen", "friendRankScreen", "petParkScreen", "gameScreen",
+      "menuStartBtn", "menuRankBtn", "menuPetBtn", "menuExitBtn",
+      "rankBackBtn", "rankRefreshBtn", "rankOfflineTip", "friendLeaderboardList", "myRankValue", "rankSyncState",
+      "petBackBtn", "petGardenTip", "petCoinValue", "petEnergyStatus", "petEnergyFill", "petEnergyValue",
+      "petMoodStatus", "petMoodFill", "petMoodValue", "petGiftStatus", "petGiftValue",
+      "petCleanStatus", "petCleanFill", "petCleanValue", "petBubble", "petAvatar",
+      "gameCanvas", "bestValue", "currentStepValue", "minStepValue", "playCurrentStepValue", "playMinStepValue",
+      "nextBlob", "dangerMeter", "dangerFill",
+      "gameOfflineHint",
+      "gameMenuBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
+      "gameToolGrid", "gameToolTimer", "pausePanel", "resumeGameBtn", "pauseRestartBtn", "pauseHelpBtn", "pauseAudioBtn", "pauseExitBtn",
+      "resultPanel", "resultTitle", "resultScore", "resultBest", "resultDuration", "resultCoins",
+      "resultDoubleRewardBtn", "resultRestartBtn", "resultExitBtn", "resultShareBoard", "resultShareStatus",
+      "helpPanel", "helpCloseBtn"
+    ];
+    const elements = {};
+    ids.forEach((id) => {
+      elements[id] = doc.getElementById(id);
+    });
+    elements.gameShell = doc.querySelector(".wx-board-shell") || elements.gameCanvas?.parentElement || null;
+    elements.boardStage = doc.querySelector(".wx-board-stage");
+    elements.adStage = doc.querySelector(".wx-ad-stage");
+    elements.shellRoot = doc.querySelector(".wechat-mini-shell");
+    return elements;
+  }
+
+  function initWebShell(doc) {
+    const elements = collectElements(doc);
+    const canvas = elements.gameCanvas;
+    if (!canvas) {
+      throw new Error("找不到 `gameCanvas`，无法启动网页壳运行时。");
+    }
+
+    const settingsStorage = createStorageAdapter("wx-standard-settings");
+    const runtimeStorage = createStorageAdapter("wx-standard-runtime");
+    const settings = {
+      audioEnabled: settingsStorage.get("audio-enabled", "1") !== "0",
+      vibrateEnabled: settingsStorage.get("vibrate-enabled", "1") !== "0",
+      volume: clamp(Number(settingsStorage.get("volume", 0.42)) || 0.42, 0, 1)
+    };
+    const audio = createWebAudioManager(settings);
+    const serviceBundle = createServiceBundle({
+      storage: runtimeStorage
+    });
+    const core = createCore({
+      storage: runtimeStorage,
+      audio: audio,
+      settings: settings,
+      domUi: true,
+      requestShareRevive: async function () {
+        const shareResult = serviceBundle.share.shareRevive({
+          score: core.state.score,
+          durationMs: core.state.elapsedMs
+        });
+        const reviveResult = core.shareRevive();
+        safeText(
+          elements.resultShareStatus,
+          reviveResult.ok
+            ? `分享状态：${shareResult.mode}；复活成功，剩余 ${reviveResult.remain} 次。`
+            : `分享状态：${shareResult.mode}；当前没有可用复活。`
+        );
+        if (reviveResult.ok) {
+          show(elements.resultPanel, false);
+          syncUi();
+        }
+        return reviveResult;
+      }
+    });
+    const ctx = canvas.getContext("2d");
+    core.attachRenderer(canvas, ctx);
+
+    let currentScreen = "menu";
+    let lastGameOverState = false;
+    let session = {
+      mode: "web-loading",
+      nickName: "网页试玩玩家"
+    };
+    let petReturnScreen = "menu";
+    let rankSnapshot = {
+      mode: "local",
+      myRank: 3,
+      entries: []
+    };
+    let lastPauseGlyphResumeAt = 0;
+
+    function persistSettings() {
+      settingsStorage.set("audio-enabled", settings.audioEnabled ? "1" : "0");
+      settingsStorage.set("vibrate-enabled", settings.vibrateEnabled ? "1" : "0");
+      settingsStorage.set("volume", settings.volume);
+    }
+
+    function resizeCanvas() {
+      const shellRoot = elements.shellRoot;
+      const boardStage = elements.boardStage;
+      const adStage = elements.adStage;
+      const viewportWidth = Math.max(
+        doc.documentElement?.clientWidth || 0,
+        root.innerWidth || 0,
+        390
+      );
+      const viewportHeight = Math.max(
+        doc.documentElement?.clientHeight || 0,
+        root.innerHeight || 0,
+        680
+      );
+      const shellStyle = shellRoot ? root.getComputedStyle(shellRoot) : null;
+      const shellInsetX = shellStyle
+        ? (parseFloat(shellStyle.paddingLeft || "0") + parseFloat(shellStyle.paddingRight || "0"))
+        : 0;
+      const shellInsetY = shellStyle
+        ? (parseFloat(shellStyle.paddingTop || "0") + parseFloat(shellStyle.paddingBottom || "0"))
+        : 0;
+      const availableWidth = Math.max(320, viewportWidth - shellInsetX);
+      const widthScale = availableWidth / DESIGN_STAGE_WIDTH;
+      const heightScaleBase = Math.max(520, viewportHeight - shellInsetY) / DESIGN_STAGE_HEIGHT;
+      const targetBannerHeight = Math.round(clamp(156 * clamp(widthScale, 0.46, 1.18), 112, 160));
+      const adHeight = adStage
+        ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
+        : targetBannerHeight;
+      const availableStageHeight = Math.max(520, viewportHeight - adHeight - shellInsetY);
+      const fitScale = clamp(
+        Math.min(
+          widthScale,
+          availableStageHeight / DESIGN_STAGE_HEIGHT,
+          heightScaleBase
+        ),
+        0.46,
+        1.18
+      );
+      const targetStageWidth = Math.round(DESIGN_STAGE_WIDTH * fitScale);
+      const targetStageHeight = Math.round(DESIGN_STAGE_HEIGHT * fitScale);
+
+      if (shellRoot) {
+        const toolSize = Math.round(clamp(142 * fitScale, 92, 146));
+        const mascotWidth = Math.round(clamp(104 * fitScale, 84, 106));
+        const mascotHeight = Math.round(clamp(126 * fitScale, 104, 128));
+        const stageTop = Math.round(clamp(170 * fitScale, 116, 170));
+        const topbarTop = Math.round(clamp(24 * fitScale, 16, 24));
+        const topbarStepWidth = Math.round(clamp(112 * fitScale, 76, 112));
+        const topbarNextWidth = Math.round(clamp(112 * fitScale, 82, 112));
+        const topbarGap = Math.round(clamp(12 * fitScale, 8, 14));
+        const topbarMinHeight = Math.round(clamp(86 * fitScale, 64, 90));
+        const returnTop = Math.round(clamp(24 * fitScale, 16, 24));
+        const toolBottom = 0;
+        const mascotTop = Math.round(clamp(stageTop - mascotHeight, 4, 28));
+        shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
+        shellRoot.style.setProperty("--wx-tool-size", `${toolSize}px`);
+        shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
+        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(170 * fitScale, 116, 170))}px`);
+        shellRoot.style.setProperty("--wx-stage-top", `${stageTop}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(164 * fitScale, 108, 164))}px`);
+        shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
+        shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
+        shellRoot.style.setProperty("--wx-topbar-top", `${topbarTop}px`);
+        shellRoot.style.setProperty("--wx-topbar-step-width", `${topbarStepWidth}px`);
+        shellRoot.style.setProperty("--wx-topbar-next-width", `${topbarNextWidth}px`);
+        shellRoot.style.setProperty("--wx-topbar-gap", `${topbarGap}px`);
+        shellRoot.style.setProperty("--wx-topbar-min-height", `${topbarMinHeight}px`);
+        shellRoot.style.setProperty("--wx-return-right", `${Math.round(clamp(16 * fitScale, 11, 18))}px`);
+        shellRoot.style.setProperty("--wx-return-top", `${returnTop}px`);
+        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(76 * fitScale, 50, 76))}px`);
+        shellRoot.style.setProperty("--wx-return-height", `${Math.round(clamp(58 * fitScale, 38, 58))}px`);
+        shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(26 * fitScale, 18, 26))}px`);
+        shellRoot.style.setProperty("--wx-step-separator-font", `${Math.round(clamp(16 * fitScale, 14, 16))}px`);
+        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(72 * fitScale, 52, 72))}px`);
+        shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(58 * fitScale, 38, 58))}px`);
+        shellRoot.style.setProperty("--wx-next-shift-x", "0px");
+        shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(14 * fitScale, 8, 16))}px`);
+        shellRoot.style.setProperty("--wx-mascot-top", `${mascotTop}px`);
+        shellRoot.style.setProperty("--wx-mascot-width", `${mascotWidth}px`);
+        shellRoot.style.setProperty("--wx-mascot-height", `${mascotHeight}px`);
+        shellRoot.style.setProperty("--wx-tool-horizontal-padding", `${Math.round(clamp(8 * fitScale, 6, 10))}px`);
+        shellRoot.style.setProperty("--wx-tool-bottom", `${toolBottom}px`);
+        shellRoot.style.setProperty("--wx-tool-gap", `${Math.round(clamp(14 * fitScale, 8, 14))}px`);
+        shellRoot.style.setProperty("--wx-tool-timer-font", `${Math.round(clamp(12 * fitScale, 9, 12))}px`);
+      }
+      if (boardStage) {
+        boardStage.style.width = `${Math.min(availableWidth, targetStageWidth)}px`;
+        boardStage.style.height = `${Math.min(availableStageHeight, Math.max(520, targetStageHeight))}px`;
+      }
+
+      const wrapper = elements.gameShell || canvas.parentElement || canvas;
+      const rect = wrapper.getBoundingClientRect();
+      const width = Math.max(320, Math.floor(rect.width || 390));
+      const height = Math.max(540, Math.floor(rect.height || 680));
+      const dpr = Math.max(1, Math.min(2, root.devicePixelRatio || 1));
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      core.setViewport(width, height, dpr);
+      core.render();
+    }
+
+    function setScreen(name) {
+      currentScreen = name;
+      show(elements.menuScreen, name === "menu");
+      show(elements.friendRankScreen, name === "rank");
+      show(elements.petParkScreen, name === "pet");
+      show(elements.gameScreen, name === "game");
+      if (name === "game") {
+        serviceBundle.ads.showBanner();
+        root.requestAnimationFrame(resizeCanvas);
+      } else {
+        serviceBundle.ads.hideBanner();
+      }
+    }
+
+    function openPausePanel() {
+      if (!core.state.started || core.state.gameOver) return;
+      if (!core.state.paused) {
+        core.togglePause();
+      }
+      show(elements.helpPanel, false);
+      show(elements.pausePanel, true);
+      show(elements.pauseGlyph, false);
+    }
+
+    function syncPauseGlyph() {
+      if (!elements.pauseGlyph) return;
+      const pausePanelOpen = !elements.pausePanel?.classList.contains("hidden");
+      show(elements.pauseGlyph, currentScreen === "game" && core.state.paused && !core.state.gameOver && !pausePanelOpen);
+    }
+
+    function closePausePanel(resumeGame) {
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      if (resumeGame && core.state.paused && !core.state.gameOver) {
+        core.togglePause();
+      }
+      syncPauseGlyph();
+    }
+
+    function openHelpPanel() {
+      if (currentScreen !== "game") return;
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, true);
+    }
+
+    function closeHelpPanel() {
+      show(elements.helpPanel, false);
+      if (currentScreen === "game" && core.state.paused && !core.state.gameOver) {
+        show(elements.pausePanel, true);
+      }
+    }
+
+    function resumeFromPauseGlyph(event) {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      const now = Date.now();
+      if (now - lastPauseGlyphResumeAt < 120) return;
+      lastPauseGlyphResumeAt = now;
+      if (currentScreen !== "game" || !core.state.paused || core.state.gameOver) return;
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      core.togglePause();
+      syncUi();
+    }
+
+    function restartRunAndEnterGame() {
+      show(elements.resultPanel, false);
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      show(elements.pauseGlyph, false);
+      core.resetRun();
+      core.armStartCountdown();
+      audio.stop();
+      requestGameFullscreen(doc);
+      setScreen("game");
+      syncUi();
+    }
+
+    function tryExitShell() {
+      try {
+        if (root.wx && typeof root.wx.exitMiniProgram === "function") {
+          root.wx.exitMiniProgram({});
+          return true;
+        }
+      } catch {}
+      try {
+        if (root.WeixinJSBridge && typeof root.WeixinJSBridge.call === "function") {
+          root.WeixinJSBridge.call("closeWindow");
+          return true;
+        }
+      } catch {}
+      try {
+        if (typeof root.close === "function") {
+          root.close();
+        }
+      } catch {}
+      try {
+        if (root.location && typeof root.location.replace === "function") {
+          root.location.replace("about:blank");
+          return true;
+        }
+      } catch {}
+      return false;
+    }
+
+    function exitCurrentRunToMenu() {
+      show(elements.resultPanel, false);
+      show(elements.pausePanel, false);
+      show(elements.helpPanel, false);
+      show(elements.pauseGlyph, false);
+      core.resetRun();
+      audio.stop();
+      setScreen("menu");
+      syncUi();
+    }
+
+    async function refreshRanks() {
+      rankSnapshot = await serviceBundle.rank.refresh(core, session);
+      syncRankPanel();
+    }
+
+    function syncRankPanel() {
+      const entries = Array.isArray(rankSnapshot.entries) ? rankSnapshot.entries : [];
+      safeText(elements.myRankValue, `第 ${rankSnapshot.myRank || "-"} 名`);
+      safeText(
+        elements.rankSyncState,
+        rankSnapshot.mode === "remote"
+          ? "正式榜单已更新"
+          : rankSnapshot.mode === "open-data-pending"
+            ? "开放数据域待接画面"
+            : "本地模拟榜单"
+      );
+      if (elements.friendLeaderboardList) {
+        elements.friendLeaderboardList.innerHTML = entries.map((entry, index) => (
+          `<li class="leaderboard-item">
+            <span class="leaderboard-rank">${index + 1}</span>
+            <span class="leaderboard-name">${entry.name}</span>
+            <strong class="leaderboard-score">${entry.score}</strong>
+          </li>`
+        )).join("");
+      }
+    }
+
+    function syncPetPanel() {
+      const scoreFactor = clamp(Math.floor(core.state.score / 16), 0, 10);
+      const mergesFactor = clamp(core.state.merges, 0, 10);
+      const dangerFactor = clamp(10 - Math.round(core.state.warningTime * 3), 0, 10);
+      const giftCount = Math.max(0, Math.floor(core.state.score / 48));
+      const coinValue = core.state.score + core.state.merges * 3;
+
+      safeText(elements.petCoinValue, String(coinValue));
+      safeText(elements.petEnergyStatus, "体力越高，开局越稳。");
+      safeText(elements.petEnergyValue, `${scoreFactor}/10`);
+      if (elements.petEnergyFill) elements.petEnergyFill.style.width = `${scoreFactor * 10}%`;
+
+      safeText(elements.petMoodStatus, "连消越多，开心度越高。");
+      safeText(elements.petMoodValue, `${mergesFactor}/10`);
+      if (elements.petMoodFill) elements.petMoodFill.style.width = `${mergesFactor * 10}%`;
+
+      safeText(elements.petGiftStatus, "当前礼物数量按本局表现模拟。");
+      safeText(elements.petGiftValue, `${giftCount} 件`);
+
+      safeText(elements.petCleanStatus, "危险越低，清洁度越高。");
+      safeText(elements.petCleanValue, `${dangerFactor}/10`);
+      if (elements.petCleanFill) elements.petCleanFill.style.width = `${dangerFactor * 10}%`;
+
+      safeText(elements.petBubble, core.state.gameOver ? "辛苦啦，下一局继续冲。" : "先把底铺平，清洁度会更稳。");
+      safeText(elements.petAvatar, core.state.gameOver ? "👑" : "🐾");
+    }
+
+    function syncResultPanel() {
+      if (!core.state.gameOver) {
+        show(elements.resultPanel, false);
+        return;
+      }
+      const shareSummary = serviceBundle.share.getSummary();
+      show(elements.resultPanel, true);
+      safeText(elements.resultTitle, core.state.success ? "挑战成功" : "这局翻车了");
+      safeText(elements.resultScore, formatDuration(core.state.elapsedMs));
+      safeText(elements.resultBest, String(core.state.score));
+      safeText(elements.resultDuration, String(core.state.score * 2));
+      safeText(elements.resultCoins, String(core.state.score + core.state.merges * 3));
+      safeText(
+        elements.resultShareStatus,
+        core.state.success
+          ? `当前分享 ${shareSummary.totalShares} 次；通关卡片仍走分享链路。`
+          : `当前分享 ${shareSummary.totalShares} 次，复活分享 ${shareSummary.reviveShares} 次；本局还可复活 ${Math.max(0, 3 - (core.revivesUsed || 0))} 次。`
+      );
+      if (elements.resultShareBoard) {
+        elements.resultShareBoard.innerHTML = `
+          <div class="mini-stat"><span>最高阶</span><strong>${getTypeMeta(core.state.highestType).label}</strong></div>
+          <div class="mini-stat"><span>合成次数</span><strong>${core.state.merges}</strong></div>
+          <div class="mini-stat"><span>危险累计</span><strong>${core.state.warningTime.toFixed(1)}s</strong></div>
+        `;
+      }
+    }
+
+    function syncGameHud() {
+      safeText(elements.bestValue, String(core.bestScore || 0));
+      safeText(elements.currentStepValue, String(core.state.drops));
+      safeText(elements.minStepValue, core.state.success ? String(core.state.drops) : "0");
+      safeText(elements.playCurrentStepValue, String(core.state.drops));
+      safeText(elements.playMinStepValue, core.state.success ? String(core.state.drops) : "0");
+      safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
+      safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
+      safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");
+      if (elements.nextBlob) {
+        elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.08) 38%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd"][core.state.nextType] || "#7dd3fc"}`;
+      }
+
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      const sessionLabel = session && session.mode ? session.mode : "web-local";
+      safeText(elements.shellNetworkState, offline ? "离线也可游玩" : `登录状态：${sessionLabel}`);
+      safeText(
+        elements.shellWelcomeTip,
+        offline
+          ? "当前是离线状态，核心玩法不受影响。"
+          : serviceBundle.config.sync.userInfoUrl
+            ? "正式版已预留用户同步接口，接服务端后即可写入用户信息。"
+            : "当前没有配置用户同步接口，仍以本地试玩模式运行。"
+      );
+      safeText(elements.shellNotice, "");
+      show(elements.gameOfflineHint, offline && currentScreen === "game");
+
+      const dangerPercent = clamp(core.state.warningTime / MAX_WARNING_TIME, 0, 1);
+      if (elements.dangerFill) {
+        elements.dangerFill.style.width = `${dangerPercent * 100}%`;
+      }
+      if (elements.dangerMeter) {
+        const state = dangerPercent > 0.7 ? "danger" : dangerPercent > 0.25 ? "warning" : "safe";
+        elements.dangerMeter.dataset.state = state;
+      }
+    }
+
+    function syncUi() {
+      renderToolGrid(elements.gameToolGrid, elements.gameToolTimer, core);
+      safeText(elements.menuBuildNotice, `当前版本 ${serviceBundle.config.version} · 更新时间 ${serviceBundle.config.buildLabel}`);
+      syncRankPanel();
+      syncPetPanel();
+      syncGameHud();
+      syncResultPanel();
+      syncPauseGlyph();
+      if (!core.state.gameOver && lastGameOverState) {
+        show(elements.resultPanel, false);
+      }
+      lastGameOverState = core.state.gameOver;
+    }
+
+    function pointFromClient(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function bindCanvasEvents() {
+      const onPointerDown = function (event) {
+        event.preventDefault();
+        closePausePanel(false);
+        if (currentScreen === "game") {
+          requestGameFullscreen(doc);
+        }
+        const point = pointFromClient(event.clientX, event.clientY);
+        core.handlePointerDown(point.x, point.y);
+      };
+      const onPointerMove = function (event) {
+        if (event.pointerType === "mouse" && !(event.buttons & 1)) return;
+        const point = pointFromClient(event.clientX, event.clientY);
+        core.handlePointerMove(point.x, point.y);
+      };
+      const onPointerUp = function (event) {
+        const point = pointFromClient(event.clientX, event.clientY);
+        core.handlePointerUp(point.x, point.y);
+      };
+      canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+      canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+      canvas.addEventListener("pointerup", onPointerUp, { passive: false });
+      canvas.addEventListener("pointercancel", onPointerUp, { passive: false });
+      canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+    }
+
+    function bindButtons() {
+      elements.menuStartBtn?.addEventListener("click", restartRunAndEnterGame);
+      elements.menuRankBtn?.addEventListener("click", function () {
+        setScreen("rank");
+        refreshRanks();
+      });
+      elements.menuPetBtn?.addEventListener("click", function () {
+        petReturnScreen = "menu";
+        setScreen("pet");
+        syncUi();
+      });
+      elements.menuExitBtn?.addEventListener("click", function () {
+        exitCurrentRunToMenu();
+        tryExitShell();
+      });
+
+      elements.rankBackBtn?.addEventListener("click", function () { setScreen("menu"); });
+      elements.rankRefreshBtn?.addEventListener("click", refreshRanks);
+      elements.petBackBtn?.addEventListener("click", function () {
+        show(elements.pausePanel, false);
+        show(elements.helpPanel, false);
+        setScreen(petReturnScreen === "game" ? "game" : "menu");
+        syncUi();
+      });
+
+      elements.gameMenuBtn?.addEventListener("click", function () {
+        if (currentScreen !== "game" || core.state.gameOver) return;
+        if (core.state.countdownActive) return;
+        const glyphVisible = elements.pauseGlyph ? !elements.pauseGlyph.classList.contains("hidden") : false;
+        const panelOpen = elements.pausePanel ? !elements.pausePanel.classList.contains("hidden") : false;
+        if (!glyphVisible && !panelOpen) {
+          core.togglePause();
+          show(elements.pausePanel, false);
+          show(elements.helpPanel, false);
+          show(elements.pauseGlyph, true);
+          syncUi();
+          return;
+        }
+        if (!panelOpen) {
+          openPausePanel();
+          syncUi();
+          return;
+        }
+        show(elements.pausePanel, false);
+        syncUi();
+      });
+
+      elements.pauseGlyph?.addEventListener("click", resumeFromPauseGlyph);
+      elements.pauseGlyph?.addEventListener("pointerup", resumeFromPauseGlyph);
+      elements.pauseGlyph?.addEventListener("touchend", resumeFromPauseGlyph, { passive: false });
+
+      elements.resumeGameBtn?.addEventListener("click", function () { closePausePanel(true); });
+      elements.pauseRestartBtn?.addEventListener("click", restartRunAndEnterGame);
+      elements.pauseAudioBtn?.addEventListener("click", function () {
+        settings.audioEnabled = !settings.audioEnabled;
+        persistSettings();
+        audio.syncVolume();
+        if (!settings.audioEnabled) {
+          audio.stop();
+        } else if (core.state.started && !core.state.paused && !core.state.gameOver) {
+          audio.start();
+        }
+        syncUi();
+      });
+      elements.pauseHelpBtn?.addEventListener("click", function () {
+        openHelpPanel();
+      });
+      elements.pauseExitBtn?.addEventListener("click", function () {
+        closePausePanel(false);
+        exitCurrentRunToMenu();
+      });
+      elements.helpCloseBtn?.addEventListener("click", function () {
+        closeHelpPanel();
+      });
+
+      elements.resultRestartBtn?.addEventListener("click", restartRunAndEnterGame);
+      elements.resultExitBtn?.addEventListener("click", function () {
+        exitCurrentRunToMenu();
+      });
+      elements.resultDoubleRewardBtn?.addEventListener("click", async function () {
+        if (!core.state.success) {
+          const shareResult = serviceBundle.share.shareRevive({
+            score: core.state.score,
+            durationMs: core.state.elapsedMs
+          });
+          const reviveResult = core.shareRevive();
+          safeText(
+            elements.resultShareStatus,
+            reviveResult.ok
+              ? `分享状态：${shareResult.mode}；复活成功，剩余 ${reviveResult.remain} 次。`
+              : `分享状态：${shareResult.mode}；当前没有可用复活。`
+          );
+          if (reviveResult.ok) {
+            show(elements.resultPanel, false);
+            syncUi();
+          }
+          return;
+        }
+        const shareResult = serviceBundle.share.shareResult({
+          score: core.state.score,
+          durationMs: core.state.elapsedMs,
+          success: core.state.success
+        });
+        const rewardResult = await serviceBundle.ads.requestReward("double-reward");
+        safeText(
+          elements.resultShareStatus,
+          rewardResult.granted
+            ? `分享状态：${shareResult.mode}；奖励状态：${rewardResult.mode} 已到账。`
+            : `分享状态：${shareResult.mode}；奖励状态：${rewardResult.mode}，当前未获得翻倍奖励。`
+        );
+      });
+
+      elements.gamePetChip?.addEventListener("click", function () {
+        if (currentScreen === "game" && !core.state.gameOver && !core.state.paused) {
+          core.togglePause();
+        }
+        show(elements.pausePanel, false);
+        show(elements.helpPanel, false);
+        petReturnScreen = currentScreen === "game" ? "game" : "menu";
+        setScreen("pet");
+        syncUi();
+      });
+
+      elements.gameToolGrid?.addEventListener("click", function (event) {
+        const target = event.target && typeof event.target.closest === "function"
+          ? event.target.closest("[data-tool-key]")
+          : null;
+        if (!target) return;
+        const key = target.getAttribute("data-tool-key");
+        if (!key || typeof core.activateTool !== "function") return;
+        const result = core.activateTool(key);
+        syncUi();
+      });
+    }
+
+    bindCanvasEvents();
+    bindButtons();
+    renderToolGrid(elements.gameToolGrid, elements.gameToolTimer, core);
+    serviceBundle.share.init();
+    serviceBundle.update.init();
+    serviceBundle.ads.init();
+    setScreen("menu");
+    resizeCanvas();
+    syncUi();
+
+    if (hasAutoStartFlag()) {
+      root.setTimeout(function () {
+        restartRunAndEnterGame();
+      }, 60);
+    }
+
+    serviceBundle.login.initSession().then((nextSession) => {
+      session = nextSession;
+      syncUi();
+      return refreshRanks();
+    }).catch(() => {
+      syncUi();
+    });
+
+    root.addEventListener("resize", resizeCanvas);
+    root.addEventListener("online", syncUi);
+    root.addEventListener("offline", syncUi);
+    doc.addEventListener("visibilitychange", function () {
+      if (doc.hidden) {
+        audio.stop();
+      } else if (settings.audioEnabled && core.state.started && !core.state.paused && !core.state.gameOver) {
+        audio.start();
+      }
+    });
+
+    createLoop(function (dt) {
+      core.update(dt);
+      core.render();
+      syncUi();
+    });
+
+    return {
+      core: core,
+      services: serviceBundle,
+      resizeCanvas: resizeCanvas,
+      setScreen: setScreen
+    };
+  }
+
+  function initWxMiniGameMain() {
+    const wxApi = root.wx;
+    if (!wxApi) {
+      throw new Error("当前环境缺少 `wx`，不能启动微信小游戏主运行脚本。");
+    }
+    if (typeof wxApi.getSystemInfoSync !== "function") {
+      throw new Error("当前微信环境缺少 `getSystemInfoSync`，无法初始化小游戏画布。");
+    }
+
+    const settings = {
+      audioEnabled: true,
+      vibrateEnabled: true,
+      volume: 0.42
+    };
+    const runtimeStorage = createStorageAdapter("wx-mini-standard", wxApi);
+    const audio = createWxAudioManager(settings, wxApi);
+    const serviceBundle = createServiceBundle({
+      wxApi: wxApi,
+      storage: runtimeStorage
+    });
+    const core = createCore({
+      storage: runtimeStorage,
+      audio: audio,
+      settings: settings,
+      wx: wxApi,
+      domUi: false,
+      requestShareRevive: function () {
+        serviceBundle.share.shareRevive({
+          score: core.state.score,
+          durationMs: core.state.elapsedMs
+        });
+        return core.shareRevive();
+      }
+    });
+
+    const systemInfo = wxApi.getSystemInfoSync();
+    const canvas = (typeof GameGlobal !== "undefined" && GameGlobal.canvas)
+      ? GameGlobal.canvas
+      : (typeof wxApi.createCanvas === "function" ? wxApi.createCanvas() : null);
+    if (!canvas || typeof canvas.getContext !== "function") {
+      throw new Error("当前微信环境未提供可用画布，无法启动小游戏主循环。");
+    }
+    const ctx = canvas.getContext("2d");
+    const dpr = systemInfo.pixelRatio || 1;
+    canvas.width = systemInfo.windowWidth * dpr;
+    canvas.height = systemInfo.windowHeight * dpr;
+    core.attachRenderer(canvas, ctx);
+    core.setViewport(systemInfo.windowWidth, systemInfo.windowHeight, dpr);
+
+    let session = {
+      mode: "wx-loading",
+      nickName: "微信玩家"
+    };
+    let lastStarted = false;
+    let lastPaused = false;
+    let lastGameOver = false;
+
+    function resize() {
+      const info = wxApi.getSystemInfoSync();
+      const nextDpr = info.pixelRatio || 1;
+      canvas.width = info.windowWidth * nextDpr;
+      canvas.height = info.windowHeight * nextDpr;
+      core.setViewport(info.windowWidth, info.windowHeight, nextDpr);
+      core.render();
+    }
+
+    function syncRuntimeFlags() {
+      if (core.state.started && !lastStarted) {
+        serviceBundle.logger("game-started", { session: session.mode });
+        serviceBundle.ads.showBanner();
+      }
+      if (core.state.paused !== lastPaused) {
+        serviceBundle.logger("pause-changed", { paused: core.state.paused });
+      }
+      if (core.state.gameOver && !lastGameOver) {
+        serviceBundle.ads.hideBanner();
+        serviceBundle.logger("game-over", {
+          success: core.state.success,
+          score: core.state.score,
+          durationMs: core.state.elapsedMs
+        });
+      }
+      if (!core.state.gameOver && lastGameOver && core.state.started) {
+        serviceBundle.ads.showBanner();
+      }
+      lastStarted = core.state.started;
+      lastPaused = core.state.paused;
+      lastGameOver = core.state.gameOver;
+    }
+
+    if (typeof wxApi.setPreferredFramesPerSecond === "function") {
+      wxApi.setPreferredFramesPerSecond(60);
+    }
+    if (typeof wxApi.onWindowResize === "function") {
+      wxApi.onWindowResize(resize);
+    }
+
+    serviceBundle.update.init();
+    serviceBundle.share.init();
+    serviceBundle.ads.init();
+    serviceBundle.login.initSession().then((nextSession) => {
+      session = nextSession;
+      serviceBundle.logger("login-ready", session);
+      return serviceBundle.rank.refresh(core, session);
+    }).then((rankSnapshot) => {
+      serviceBundle.logger("rank-ready", rankSnapshot);
+    }).catch(() => {
+      serviceBundle.logger("login-fallback", {});
+    });
+
+    wxApi.onTouchStart(function (event) {
+      const touch = event.touches[0] || event.changedTouches[0];
+      if (!touch) return;
+      core.handlePointerDown(touch.clientX, touch.clientY);
+    });
+    wxApi.onTouchMove(function (event) {
+      const touch = event.touches[0] || event.changedTouches[0];
+      if (!touch) return;
+      core.handlePointerMove(touch.clientX, touch.clientY);
+    });
+    wxApi.onTouchEnd(function (event) {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      core.handlePointerUp(touch.clientX, touch.clientY);
+    });
+    wxApi.onTouchCancel(function (event) {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      core.handlePointerUp(touch.clientX, touch.clientY);
+    });
+
+    wxApi.onHide(function () {
+      audio.stop();
+      serviceBundle.ads.hideBanner();
+      if (core.state.started && !core.state.gameOver && !core.state.paused) {
+        core.togglePause();
+      }
+    });
+    if (typeof wxApi.onShow === "function") {
+      wxApi.onShow(function () {
+        serviceBundle.logger("app-show", { paused: core.state.paused });
+        if (core.state.started && !core.state.gameOver) {
+          serviceBundle.ads.showBanner();
+        }
+        core.render();
+      });
+    }
+
+    core.armStartCountdown();
+    core.render();
+    createLoop(function (dt) {
+      core.update(dt);
+      core.render();
+      syncRuntimeFlags();
+    }, {
+      raf: typeof root.requestAnimationFrame === "function"
+        ? root.requestAnimationFrame.bind(root)
+        : function (callback) {
+            return root.setTimeout(function () {
+              callback(Date.now());
+            }, 16);
+          },
+      now: function () { return Date.now(); }
+    });
+
+    const runtime = {
+      core: core,
+      services: serviceBundle,
+      session: function () { return session; },
+      resize: resize
+    };
+
+    if (typeof GameGlobal !== "undefined") {
+      GameGlobal.__BLOB_WX_RUNTIME__ = runtime;
+    } else {
+      root.__BLOB_WX_RUNTIME__ = runtime;
+    }
+
+    return runtime;
+  }
+
+  return {
+    initWebShell: initWebShell,
+    initWxMiniGameMain: initWxMiniGameMain
+  };
+});
