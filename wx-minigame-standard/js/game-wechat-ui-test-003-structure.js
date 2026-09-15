@@ -70,6 +70,7 @@
   const MAX_WARNING_TIME = 2.6;
   const DESIGN_STAGE_WIDTH = 750;
   const DESIGN_STAGE_HEIGHT = 1334;
+  const DESIGN_GAME_HEIGHT = 1222;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -346,7 +347,7 @@
       "petBackBtn", "petGardenTip", "petCoinValue", "petEnergyStatus", "petEnergyFill", "petEnergyValue",
       "petMoodStatus", "petMoodFill", "petMoodValue", "petGiftStatus", "petGiftValue",
       "petCleanStatus", "petCleanFill", "petCleanValue", "petBubble", "petAvatar",
-      "gameCanvas", "bestValue", "currentStepValue", "minStepValue", "playCurrentStepValue", "playMinStepValue",
+      "gameCanvas", "bestValue", "currentStepValue", "minStepValue",
       "nextBlob", "dangerMeter", "dangerFill",
       "gameOfflineHint",
       "gameMenuBtn", "gamePetChip", "gamePetEmoji", "gamePetText", "pauseGlyph",
@@ -455,7 +456,7 @@
       const availableWidth = Math.max(320, viewportWidth - shellInsetX);
       const widthScale = availableWidth / DESIGN_STAGE_WIDTH;
       const heightScaleBase = Math.max(520, viewportHeight - shellInsetY) / DESIGN_STAGE_HEIGHT;
-      const targetBannerHeight = Math.round(clamp(156 * clamp(widthScale, 0.46, 1.18), 112, 160));
+      const targetBannerHeight = Math.round(clamp(112 * clamp(widthScale, 0.46, 1.18), 92, 116));
       const adHeight = adStage
         ? Math.max(targetBannerHeight, Math.floor(adStage.getBoundingClientRect().height || 0))
         : targetBannerHeight;
@@ -463,34 +464,34 @@
       const fitScale = clamp(
         Math.min(
           widthScale,
-          availableStageHeight / DESIGN_STAGE_HEIGHT,
+          availableStageHeight / DESIGN_GAME_HEIGHT,
           heightScaleBase
         ),
         0.46,
         1.18
       );
       const targetStageWidth = Math.round(DESIGN_STAGE_WIDTH * fitScale);
-      const targetStageHeight = Math.round(DESIGN_STAGE_HEIGHT * fitScale);
+      const targetStageHeight = Math.round(DESIGN_GAME_HEIGHT * fitScale);
 
       if (shellRoot) {
-        const toolSize = Math.round(clamp(142 * fitScale, 92, 146));
+        const toolSize = Math.round(clamp(92 * fitScale, 74, 98));
         const mascotWidth = Math.round(clamp(104 * fitScale, 84, 106));
         const mascotHeight = Math.round(clamp(126 * fitScale, 104, 128));
-        const stageTop = Math.round(clamp(170 * fitScale, 116, 170));
-        const topbarTop = Math.round(clamp(24 * fitScale, 16, 24));
-        const topbarStepWidth = Math.round(clamp(112 * fitScale, 76, 112));
-        const topbarNextWidth = Math.round(clamp(112 * fitScale, 82, 112));
+        const stageTop = Math.round(clamp(126 * fitScale, 96, 126));
+        const topbarTop = Math.round(clamp(28 * fitScale, 18, 30));
+        const topbarStepWidth = Math.round(clamp(86 * fitScale, 64, 90));
+        const topbarNextWidth = Math.round(clamp(132 * fitScale, 104, 136));
         const topbarGap = Math.round(clamp(12 * fitScale, 8, 14));
         const topbarMinHeight = Math.round(clamp(86 * fitScale, 64, 90));
-        const returnTop = Math.round(clamp(24 * fitScale, 16, 24));
+        const returnTop = Math.round(clamp(28 * fitScale, 18, 30));
         const toolBottom = 0;
         const mascotTop = Math.round(clamp(stageTop - mascotHeight, 4, 28));
         shellRoot.style.setProperty("--wx-banner-height", `${targetBannerHeight}px`);
         shellRoot.style.setProperty("--wx-tool-size", `${toolSize}px`);
         shellRoot.style.setProperty("--wx-stage-side-gap", `${Math.round(clamp(10 * fitScale, 6, 12))}px`);
-        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(170 * fitScale, 116, 170))}px`);
+        shellRoot.style.setProperty("--wx-overlay-height", `${Math.round(clamp(126 * fitScale, 96, 126))}px`);
         shellRoot.style.setProperty("--wx-stage-top", `${stageTop}px`);
-        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(164 * fitScale, 108, 164))}px`);
+        shellRoot.style.setProperty("--wx-stage-bottom", `${Math.round(clamp(100 * fitScale, 78, 100))}px`);
         shellRoot.style.setProperty("--wx-topbar-left", `${Math.round(clamp(16 * fitScale, 10, 18))}px`);
         shellRoot.style.setProperty("--wx-topbar-right", `${Math.round(clamp(82 * fitScale, 58, 84))}px`);
         shellRoot.style.setProperty("--wx-topbar-top", `${topbarTop}px`);
@@ -500,13 +501,13 @@
         shellRoot.style.setProperty("--wx-topbar-min-height", `${topbarMinHeight}px`);
         shellRoot.style.setProperty("--wx-return-right", `${Math.round(clamp(16 * fitScale, 11, 18))}px`);
         shellRoot.style.setProperty("--wx-return-top", `${returnTop}px`);
-        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(76 * fitScale, 50, 76))}px`);
-        shellRoot.style.setProperty("--wx-return-height", `${Math.round(clamp(58 * fitScale, 38, 58))}px`);
+        shellRoot.style.setProperty("--wx-return-width", `${Math.round(clamp(50 * fitScale, 44, 50))}px`);
+        shellRoot.style.setProperty("--wx-return-height", `${Math.round(clamp(34 * fitScale, 34, 36))}px`);
         shellRoot.style.setProperty("--wx-step-font", `${Math.round(clamp(26 * fitScale, 18, 26))}px`);
         shellRoot.style.setProperty("--wx-step-separator-font", `${Math.round(clamp(16 * fitScale, 14, 16))}px`);
-        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(72 * fitScale, 52, 72))}px`);
-        shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(58 * fitScale, 38, 58))}px`);
-        shellRoot.style.setProperty("--wx-next-shift-x", "0px");
+        shellRoot.style.setProperty("--wx-next-orb-size", `${Math.round(clamp(64 * fitScale, 50, 66))}px`);
+        shellRoot.style.setProperty("--wx-next-top", `${Math.round(clamp(44 * fitScale, 28, 48))}px`);
+        shellRoot.style.setProperty("--wx-next-shift-x", `${Math.round(clamp(-20 * fitScale, -26, -12))}px`);
         shellRoot.style.setProperty("--wx-mascot-left", `${Math.round(clamp(14 * fitScale, 8, 16))}px`);
         shellRoot.style.setProperty("--wx-mascot-top", `${mascotTop}px`);
         shellRoot.style.setProperty("--wx-mascot-width", `${mascotWidth}px`);
@@ -736,8 +737,6 @@
       safeText(elements.bestValue, String(core.bestScore || 0));
       safeText(elements.currentStepValue, String(core.state.drops));
       safeText(elements.minStepValue, core.state.success ? String(core.state.drops) : "0");
-      safeText(elements.playCurrentStepValue, String(core.state.drops));
-      safeText(elements.playMinStepValue, core.state.success ? String(core.state.drops) : "0");
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
       safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");

@@ -130,24 +130,6 @@
   background: linear-gradient(90deg, var(--ui003-yellow), #ff5e78);
 }
 
-.ui-test-003 .wx-play-step-mirror {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  z-index: 8;
-  width: 96px;
-  height: 58px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: #f7fbf4;
-  background: url("./assets/ui-test-003/ui/ui_step_panel@2x.png") center / 100% 100% no-repeat;
-  font: 900 24px/1 system-ui, sans-serif;
-  text-shadow: 0 2px 0 var(--ui003-navy);
-  pointer-events: none;
-}
-
 .ui-test-003 .wx-tool-stage {
   left: 0;
   right: 0;
