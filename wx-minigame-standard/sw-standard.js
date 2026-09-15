@@ -1,4 +1,4 @@
-const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260910-wxmini-24";
+const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260910-wxmini-26";
 const OFFLINE_FALLBACK = "./mobile-wechat-offline-standard.html";
 const PRECACHE_URLS = [
   "./",

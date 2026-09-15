@@ -1,0 +1,35 @@
+/*
+ * UI-TEST-002
+ * 2 秒动态启动页，仅用于独立临时验证入口。
+ */
+
+.ui-test-002 .ui-test-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+  touch-action: none;
+}
+
+.ui-test-002 .ui-test-intro.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-test-002 .ui-test-intro-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #ffffff;
+}
+
+.ui-test-002 .ui-test-intro[hidden] {
+  display: none;
+}

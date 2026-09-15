@@ -19,14 +19,16 @@
 
     const appBase = readString(overrides, "appBaseUrl", "");
     const apiBase = readString(overrides, "apiBaseUrl", appBase);
+    const userSyncUrl = readString(root, "__BLOB_USER_SYNC_URL__", "");
+    const fallbackUserInfoUrl = userSyncUrl || (apiBase ? `${apiBase}/user/sync` : "");
 
     return {
       version: readString(root, "__BLOB_GAME_VERSION__", wxApi ? "standard-minigame" : "standard-web"),
-      buildLabel: readString(root, "__BLOB_BUILD_LABEL__", "2026-09-10 wxmini-24"),
+      buildLabel: readString(root, "__BLOB_BUILD_LABEL__", "2026-09-10 wxmini-26"),
       appId: readString(overrides, "appId", wxApi ? "touristappid" : ""),
       apiBaseUrl: apiBase,
       sync: {
-        userInfoUrl: readString(overrides, "userInfoUrl", apiBase ? `${apiBase}/user/sync` : ""),
+        userInfoUrl: readString(overrides, "userInfoUrl", fallbackUserInfoUrl),
         loginExchangeUrl: readString(overrides, "loginExchangeUrl", apiBase ? `${apiBase}/auth/wechat/login` : ""),
         leaderboardUrl: readString(overrides, "leaderboardUrl", apiBase ? `${apiBase}/leaderboard` : "")
       },
