@@ -127,7 +127,7 @@
       snapshot = snapshot || core.getSnapshot();
       if (nodes.score) nodes.score.textContent = String(snapshot.score);
       if (nodes.merges) nodes.merges.textContent = String(snapshot.merges);
-      if (nodes.level) nodes.level.textContent = `${snapshot.highestLevel + 1}/7`;
+      if (nodes.level) nodes.level.textContent = `${snapshot.highestLevel + 1}/11`;
       if (nodes.nextImage) {
         nodes.nextImage.src = snapshot.nextImage;
         nodes.nextImage.alt = `下一个水果：${snapshot.nextName}`;
@@ -149,8 +149,8 @@
           : snapshot.paused
             ? "已暂停"
             : snapshot.running
-              ? "拖动瞄准，松手投放同级水果"
-              : "点击开始，体验 7 级水果合成";
+              ? "拖动瞄准，合成至金色 11 号大王"
+              : "点击开始，挑战 11 级水果合成";
       }
     }
 

@@ -19,7 +19,7 @@
   const FRUIT_RESTITUTION = 0.84;
   const FRICTION = 0.992;
   const DROP_COOLDOWN = 0.24;
-  const MAX_LEVEL = 6;
+  const MAX_LEVEL = 10;
   const ASSET_ROOT = "./assets/ui-test-003/creatures/";
   const FRUITS = [
     { name: "苹果", radius: 38, score: 2, color: "#ff6969", file: "creature_level_01_apple@2x.png" },
@@ -28,7 +28,11 @@
     { name: "西瓜", radius: 72, score: 16, color: "#63d8df", file: "creature_level_04_watermelon@2x.png" },
     { name: "李子", radius: 88, score: 32, color: "#ff83bd", file: "creature_level_05_plum@2x.png" },
     { name: "猕猴桃", radius: 105, score: 64, color: "#93d65c", file: "creature_level_06_kiwi@2x.png" },
-    { name: "葡萄", radius: 126, score: 128, color: "#a96bd8", file: "creature_level_07_grape@2x.png" }
+    { name: "葡萄", radius: 126, score: 128, color: "#a96bd8", file: "creature_level_07_grape@2x.png" },
+    { name: "火龙果", radius: 140, score: 256, color: "#ff5f9d", file: "creature_level_08_dragonfruit@2x.png" },
+    { name: "菠萝大王", radius: 154, score: 512, color: "#f2c84b", file: "creature_level_09_pineapple_king@2x.png" },
+    { name: "银色大王", radius: 154, score: 1024, color: "#c7d2df", file: "creature_level_10_silver_king@2x.png" },
+    { name: "金色大王", radius: 154, score: 2048, color: "#ffd447", file: "creature_level_11_golden_king@2x.png" }
   ];
 
   function clamp(value, min, max) {
@@ -267,7 +271,7 @@
       const added = [];
       for (let i = 0; i < fruits.length; i += 1) {
         const a = fruits[i];
-        if (removed.has(a.id) || a.mergeLock > 0) continue;
+        if (removed.has(a.id) || a.mergeLock > 0 || a.level >= MAX_LEVEL) continue;
         for (let j = i + 1; j < fruits.length; j += 1) {
           const b = fruits[j];
           if (removed.has(b.id) || b.mergeLock > 0 || a.level !== b.level) continue;

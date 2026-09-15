@@ -214,5 +214,37 @@
     "scale": 2,
     "pixel_width": 256,
     "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_08_dragonfruit@2x.png",
+    "logical_width": 160,
+    "logical_height": 160,
+    "scale": 2,
+    "pixel_width": 320,
+    "pixel_height": 320
+  },
+  {
+    "file": "creatures/creature_level_09_pineapple_king@2x.png",
+    "logical_width": 160,
+    "logical_height": 160,
+    "scale": 2,
+    "pixel_width": 320,
+    "pixel_height": 320
+  },
+  {
+    "file": "creatures/creature_level_10_silver_king@2x.png",
+    "logical_width": 160,
+    "logical_height": 160,
+    "scale": 2,
+    "pixel_width": 320,
+    "pixel_height": 320
+  },
+  {
+    "file": "creatures/creature_level_11_golden_king@2x.png",
+    "logical_width": 160,
+    "logical_height": 160,
+    "scale": 2,
+    "pixel_width": 320,
+    "pixel_height": 320
   }
 ]
