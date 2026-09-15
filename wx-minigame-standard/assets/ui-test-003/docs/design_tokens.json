@@ -1,0 +1,21 @@
+{
+  "version": "UI-TEST-003",
+  "design_size": [
+    750,
+    1334
+  ],
+  "palette": {
+    "navy": "#071a2f",
+    "ink": "#10253b",
+    "cyan": "#18a9c8",
+    "cyan_light": "#63d8df",
+    "yellow": "#ffe85a",
+    "pink": "#ff83bd",
+    "white": "#f7fbf4"
+  },
+  "rules": {
+    "ui": "@2x",
+    "small_precision_controls": "@3x",
+    "creatures": "@2x transparent PNG"
+  }
+}

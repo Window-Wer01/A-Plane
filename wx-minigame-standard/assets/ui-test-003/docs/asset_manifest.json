@@ -1,0 +1,218 @@
+[
+  {
+    "file": "background/scene_bg_full@2x.png",
+    "logical_width": 750,
+    "logical_height": 1334,
+    "scale": 2,
+    "pixel_width": 1500,
+    "pixel_height": 2668
+  },
+  {
+    "file": "ui/ui_topbar_bg@2x.png",
+    "logical_width": 750,
+    "logical_height": 126,
+    "scale": 2,
+    "pixel_width": 1500,
+    "pixel_height": 252
+  },
+  {
+    "file": "ui/ui_step_panel@2x.png",
+    "logical_width": 120,
+    "logical_height": 76,
+    "scale": 2,
+    "pixel_width": 240,
+    "pixel_height": 152
+  },
+  {
+    "file": "ui/ui_next_panel@2x.png",
+    "logical_width": 132,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 264,
+    "pixel_height": 184
+  },
+  {
+    "file": "ui/btn_back_red@3x.png",
+    "logical_width": 50,
+    "logical_height": 36,
+    "scale": 3,
+    "pixel_width": 150,
+    "pixel_height": 108
+  },
+  {
+    "file": "playfield/playfield_frame_outer@2x.png",
+    "logical_width": 730,
+    "logical_height": 996,
+    "scale": 2,
+    "pixel_width": 1460,
+    "pixel_height": 1992
+  },
+  {
+    "file": "playfield/playfield_frame_inner@2x.png",
+    "logical_width": 706,
+    "logical_height": 972,
+    "scale": 2,
+    "pixel_width": 1412,
+    "pixel_height": 1944
+  },
+  {
+    "file": "playfield/danger_line_mask@2x.png",
+    "logical_width": 706,
+    "logical_height": 18,
+    "scale": 2,
+    "pixel_width": 1412,
+    "pixel_height": 36
+  },
+  {
+    "file": "skills/ui_skill_bar_bg@2x.png",
+    "logical_width": 750,
+    "logical_height": 100,
+    "scale": 2,
+    "pixel_width": 1500,
+    "pixel_height": 200
+  },
+  {
+    "file": "skills/skill_capsule_idle@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_capsule_active@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_clean_idle@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_clean_active@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_rage_idle@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_rage_active@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_split_idle@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/skill_split_active@2x.png",
+    "logical_width": 92,
+    "logical_height": 92,
+    "scale": 2,
+    "pixel_width": 184,
+    "pixel_height": 184
+  },
+  {
+    "file": "skills/badge_count@2x.png",
+    "logical_width": 28,
+    "logical_height": 20,
+    "scale": 2,
+    "pixel_width": 56,
+    "pixel_height": 40
+  },
+  {
+    "file": "banner/banner_wrap_bg@2x.png",
+    "logical_width": 750,
+    "logical_height": 112,
+    "scale": 2,
+    "pixel_width": 1500,
+    "pixel_height": 224
+  },
+  {
+    "file": "banner/banner_top_edge@2x.png",
+    "logical_width": 750,
+    "logical_height": 18,
+    "scale": 2,
+    "pixel_width": 1500,
+    "pixel_height": 36
+  },
+  {
+    "file": "creatures/creature_level_01_apple@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_02_orange@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_03_lemon@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_04_watermelon@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_05_plum@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_06_kiwi@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  },
+  {
+    "file": "creatures/creature_level_07_grape@2x.png",
+    "logical_width": 128,
+    "logical_height": 128,
+    "scale": 2,
+    "pixel_width": 256,
+    "pixel_height": 256
+  }
+]
