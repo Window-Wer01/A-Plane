@@ -116,7 +116,6 @@
 }
 
 .ui-test-003 .danger-bar {
-  min-height: 18px;
   border: 0;
   background: url("./assets/ui-test-003/playfield/danger_line_mask@2x.png") center / 100% 100% no-repeat;
   box-shadow: none;
@@ -129,8 +128,6 @@
 }
 
 .ui-test-003 .wx-tool-stage {
-  padding: 8px;
-  align-items: center;
   background: url("./assets/ui-test-003/skills/ui_skill_bar_bg@2x.png") center / 100% 100% no-repeat;
 }
 
@@ -197,9 +194,6 @@
 }
 
 .ui-test-003 .wx-tool-stock {
-  min-width: 28px;
-  height: 20px;
-  padding: 0 4px;
   overflow: hidden;
   border: 0;
   border-radius: 0;
