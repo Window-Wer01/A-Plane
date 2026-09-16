@@ -111,8 +111,6 @@
 }
 
 .ui-test-003 .danger-meter {
-  left: 5%;
-  right: 5%;
   z-index: 7;
   background: transparent;
 }
@@ -131,17 +129,9 @@
 }
 
 .ui-test-003 .wx-tool-stage {
-  left: 0;
-  right: 0;
-  height: var(--wx-stage-bottom);
   padding: 8px;
-  display: flex;
   align-items: center;
   background: url("./assets/ui-test-003/skills/ui_skill_bar_bg@2x.png") center / 100% 100% no-repeat;
-}
-
-.ui-test-003 .wx-tool-grid {
-  width: 100%;
 }
 
 .ui-test-003 .wx-tool-card {
@@ -207,8 +197,6 @@
 }
 
 .ui-test-003 .wx-tool-stock {
-  top: -3px;
-  right: -3px;
   min-width: 28px;
   height: 20px;
   padding: 0 4px;

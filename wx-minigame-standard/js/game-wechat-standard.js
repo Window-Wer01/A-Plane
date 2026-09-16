@@ -738,7 +738,6 @@
       safeText(elements.minStepValue, core.state.success ? String(core.state.drops) : "0");
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
-      safeText(elements.pauseAudioBtn, settings.audioEnabled ? "3 音乐开关（当前开）" : "3 音乐开关（当前关）");
       if (elements.nextBlob) {
         elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.08) 38%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd"][core.state.nextType] || "#7dd3fc"}`;
       }
@@ -868,17 +867,6 @@
 
       elements.resumeGameBtn?.addEventListener("click", function () { closePausePanel(true); });
       elements.pauseRestartBtn?.addEventListener("click", restartRunAndEnterGame);
-      elements.pauseAudioBtn?.addEventListener("click", function () {
-        settings.audioEnabled = !settings.audioEnabled;
-        persistSettings();
-        audio.syncVolume();
-        if (!settings.audioEnabled) {
-          audio.stop();
-        } else if (core.state.started && !core.state.paused && !core.state.gameOver) {
-          audio.start();
-        }
-        syncUi();
-      });
       elements.pauseHelpBtn?.addEventListener("click", function () {
         openHelpPanel();
       });
