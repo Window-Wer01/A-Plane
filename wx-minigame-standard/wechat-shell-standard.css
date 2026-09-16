@@ -7,6 +7,18 @@
     linear-gradient(180deg, #4a72d8 0%, #2d4c9f 45%, #1e356f 100%);
 }
 
+html.wx-shell-lock,
+body.wx-shell-lock {
+  height: 100%;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+.mobile-play-page {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: auto;
+}
+
 .wechat-mini-shell {
   --wx-banner-height: 112px;
   --wx-game-topbar-height: 82px;
