@@ -562,6 +562,16 @@
       }
     }
 
+    function updateViewportHeightVar() {
+      const viewportHeight = Math.max(
+        doc.documentElement?.clientHeight || 0,
+        root.innerHeight || 0,
+        640
+      );
+      doc.documentElement?.style.setProperty("--wx-app-height", `${viewportHeight}px`);
+      doc.body?.style.setProperty("--wx-app-height", `${viewportHeight}px`);
+    }
+
     function syncViewportLock(locked) {
       const method = locked ? "add" : "remove";
       doc.documentElement?.classList[method]("wx-shell-lock");
@@ -1054,6 +1064,7 @@
     serviceBundle.share.init();
     serviceBundle.update.init();
     serviceBundle.ads.init();
+    updateViewportHeightVar();
     forceScrollToTop();
     setScreen("menu");
     resizeCanvas();
@@ -1069,10 +1080,16 @@
       syncUi();
     });
 
-    root.addEventListener("resize", resizeCanvas);
+    root.addEventListener("resize", function () {
+      updateViewportHeightVar();
+      resizeCanvas();
+      forceScrollToTop();
+    });
     root.addEventListener("orientationchange", function () {
+      updateViewportHeightVar();
       forceScrollToTop();
       root.setTimeout(function () {
+        updateViewportHeightVar();
         resizeCanvas();
         forceScrollToTop();
       }, 80);
