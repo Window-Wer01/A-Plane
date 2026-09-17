@@ -1,31 +1,13 @@
 .wechat-mini-body {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: var(--wx-app-height, 100svh);
-  min-height: var(--wx-app-height, 100svh);
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 20% 0%, rgba(255, 223, 119, 0.24), transparent 30%),
     radial-gradient(circle at 80% 0%, rgba(110, 224, 255, 0.22), transparent 26%),
     linear-gradient(180deg, #4a72d8 0%, #2d4c9f 45%, #1e356f 100%);
 }
 
-html.wx-shell-lock,
-body.wx-shell-lock {
-  height: 100%;
-  overflow: hidden !important;
-  overscroll-behavior: none;
-}
-
 .mobile-play-page {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: var(--wx-app-height, 100svh);
-  min-height: var(--wx-app-height, 100svh);
-  overflow: hidden;
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: auto;
 }
@@ -69,11 +51,9 @@ body.wx-shell-lock {
   --wx-tool-timer-font: 12px;
   position: relative;
   overflow: hidden;
-  height: var(--wx-app-height, 100svh);
-  min-height: var(--wx-app-height, 100svh);
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0 4px 2px;
-  display: flex;
-  flex-direction: column;
 }
 
 .wx-shell-notice {
@@ -127,11 +107,6 @@ body.wx-shell-lock {
 .wx-home-screen,
 .wx-panel-screen {
   display: block;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .wx-home-card,
@@ -409,7 +384,8 @@ body.wx-shell-lock {
   width: 100%;
   margin-left: 0;
   margin-right: 0;
-  min-height: calc(var(--wx-app-height, 100svh) - 8px);
+  min-height: calc(100vh - 8px);
+  min-height: calc(100dvh - 8px);
   padding-bottom: 0;
   overflow: hidden;
 }

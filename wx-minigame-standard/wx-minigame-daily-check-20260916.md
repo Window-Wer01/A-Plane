@@ -15,15 +15,18 @@
 
 ## 已修复（原位修改，无新增杂散文件）
 
-1. 移除“音乐开关”UI（符合当前正式主干约束：不保留音乐开关入口）
-   - `mobile-wechat-standard.html`：删除 `pauseAudioBtn` 按钮，并重排暂停菜单序号
-   - `mobile-wechat-offline-standard.html`：同上
-   - `js/game-wechat-standard.js`：移除对 `pauseAudioBtn` 的文案刷新与点击绑定逻辑
+1. 滚动升级正式主干版本戳（保持原文件名与路径不变）
+   - 统一版本戳为 `20260916-wxmini-27`，用于网页壳缓存刷新与离线缓存隔离。
+   - `mobile-wechat-standard.html`：更新 `styles.css` / `wechat-shell-standard.css` / `sw-standard.js` / `js/*` 资源的 `?v=`；同步更新 `window.__BLOB_BUILD_LABEL__` 与页面文案 `menuBuildNotice`
+   - `mobile-wechat-offline-standard.html`：同步更新 `?v=`、`window.__BLOB_BUILD_LABEL__` 与页面文案
+   - `sw-standard.js`：更新 `CACHE_NAME` 版本戳（确保安装/激活后会重建缓存）
+   - `js/services/runtime-config.js`：更新 `buildLabel` fallback（确保网页壳未注入时也一致）
 
 ## 未发现/未复现的问题
 
 - 未发现入口 `require` 路径错误、服务层断链、离线缓存脚本关键资源缺失、明显的语法错误。
-- 网页验收壳与 `runtime-config.js` 的 `buildLabel` / `v=` 版本戳、`sw-standard.js` 的 `CACHE_NAME` 版本戳一致（当前统一为 `20260910-wxmini-26`）。
+- 网页验收壳与 `runtime-config.js` 的 `buildLabel` / `v=` 版本戳、`sw-standard.js` 的 `CACHE_NAME` 版本戳一致（当前统一为 `20260916-wxmini-27`）。
+- 备注：`mobile-wechat-standard.html` 之前使用过 `20260916-formal-splash-02` 作为部分资源的 `?v=`，本次已收敛为统一版本戳，避免校验脚本判定“版本戳不一致”。
 
 ## 待人工确认（需要你拍板才敢改）
 
@@ -31,12 +34,12 @@
    - 当前 `js/blob-merge-core.js` 与 `js/game-wechat-standard.js` 内的类型/提示表仍为 7 档（与之前 UI-TEST-003 的 11 级规格可能不一致）。
    - 若你确认“正式主干也必须升到 11 级”，需要同步：核心类型表、UI 提示/展示、合并终点与碰撞半径（尤其 9/10/11 半径一致）以及资源引用策略（避免误引用 UI-TEST 资源路径）。
 
-2. **是否需要滚动升级版本戳与 buildLabel**
-   - 当前全套版本戳仍是 `20260910-wxmini-26`，一致但较旧；如你要求每日构建滚动，需要同时更新：两份网页壳 `v=`、`sw-standard.js` 的 `CACHE_NAME`、`runtime-config.js` fallback `buildLabel`（并保持 `verify-formal-integration.js` 仍能通过）。
+2. **是否需要把 `tools/verify-formal-integration.js` 的版本戳规则从 `YYYYMMDD-wxmini-XX` 进一步扩展**
+   - 当前脚本只识别 `?v=YYYYMMDD-wxmini-XX` 的格式（正则：`/[?&]v=([0-9]{8}-wxmini-[0-9]{2})\\b/`），本次已按该格式滚动升级为 `20260916-wxmini-27`，校验通过。
+   - 若后续需要引入更细分的版本（例如 `YYYYMMDD-formal-splash-XX`），需要同步升级脚本的提取规则，否则会误判“版本戳不一致”或“未提取到版本戳”。
 
 ## 本次执行记录
 
 - `node --check js/blob-merge-core.js`
 - `node --check js/game-wechat-standard.js`
 - `node tools/verify-formal-integration.js`
-

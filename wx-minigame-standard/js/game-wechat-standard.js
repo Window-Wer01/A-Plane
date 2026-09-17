@@ -562,35 +562,15 @@
       }
     }
 
-    function updateViewportHeightVar() {
-      const viewportHeight = Math.max(
-        doc.documentElement?.clientHeight || 0,
-        root.innerHeight || 0,
-        640
-      );
-      doc.documentElement?.style.setProperty("--wx-app-height", `${viewportHeight}px`);
-      doc.body?.style.setProperty("--wx-app-height", `${viewportHeight}px`);
-    }
-
-    function syncViewportLock(locked) {
-      const method = locked ? "add" : "remove";
-      doc.documentElement?.classList[method]("wx-shell-lock");
-      doc.body?.classList[method]("wx-shell-lock");
-    }
-
     function setScreen(name) {
       currentScreen = name;
       show(elements.menuScreen, name === "menu");
       show(elements.friendRankScreen, name === "rank");
       show(elements.petParkScreen, name === "pet");
       show(elements.gameScreen, name === "game");
-      forceScrollToTop();
       if (name === "game") {
         serviceBundle.ads.showBanner();
-        root.requestAnimationFrame(function () {
-          resizeCanvas();
-          forceScrollToTop();
-        });
+        root.requestAnimationFrame(resizeCanvas);
       } else {
         serviceBundle.ads.hideBanner();
       }
@@ -675,8 +655,6 @@
       const splash = elements.startupSplash;
       const video = elements.startupVideo;
       if (!splash) {
-        syncViewportLock(false);
-        forceScrollToTop();
         if (hasAutoStartFlag()) {
           root.setTimeout(restartRunAndEnterGame, 60);
         }
@@ -693,10 +671,6 @@
         splash.classList.add("is-leaving");
         root.setTimeout(function () {
           splash.hidden = true;
-          syncViewportLock(false);
-          forceScrollToTop();
-          root.setTimeout(forceScrollToTop, 60);
-          root.setTimeout(forceScrollToTop, 260);
           if (hasAutoStartFlag()) {
             root.setTimeout(restartRunAndEnterGame, 60);
           }
@@ -707,13 +681,9 @@
     function initStartupSplash() {
       const splash = elements.startupSplash;
       const video = elements.startupVideo;
-      syncViewportLock(true);
-      forceScrollToTop();
       if (!splash || !video || hasSkipIntroFlag()) {
         if (splash) splash.hidden = true;
         startupFinished = true;
-        syncViewportLock(false);
-        forceScrollToTop();
         if (hasAutoStartFlag()) {
           root.setTimeout(restartRunAndEnterGame, 60);
         }
@@ -1064,8 +1034,6 @@
     serviceBundle.share.init();
     serviceBundle.update.init();
     serviceBundle.ads.init();
-    updateViewportHeightVar();
-    forceScrollToTop();
     setScreen("menu");
     resizeCanvas();
     syncUi();
@@ -1080,20 +1048,7 @@
       syncUi();
     });
 
-    root.addEventListener("resize", function () {
-      updateViewportHeightVar();
-      resizeCanvas();
-      forceScrollToTop();
-    });
-    root.addEventListener("orientationchange", function () {
-      updateViewportHeightVar();
-      forceScrollToTop();
-      root.setTimeout(function () {
-        updateViewportHeightVar();
-        resizeCanvas();
-        forceScrollToTop();
-      }, 80);
-    });
+    root.addEventListener("resize", resizeCanvas);
     root.addEventListener("online", syncUi);
     root.addEventListener("offline", syncUi);
     doc.addEventListener("visibilitychange", function () {
