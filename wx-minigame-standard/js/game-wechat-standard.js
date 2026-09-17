@@ -651,7 +651,7 @@
       if (video) {
         try {
           video.pause();
-          video.currentTime = Math.min(2, Number(video.duration) || 2);
+          video.currentTime = Math.max(0, (Number(video.duration) || 2) - 0.04);
         } catch {}
       }
       navIntroHideTimer = root.setTimeout(function () {
@@ -663,8 +663,8 @@
               restartRunAndEnterGame();
             }, 60);
           }
-        }, 220);
-      }, 180);
+        }, 900);
+      }, 700);
     }
 
     function initNavIntro() {
@@ -686,9 +686,14 @@
       try {
         video.currentTime = 0;
       } catch {}
-      navIntroTimer = root.setTimeout(finishNavIntro, 2000);
+      navIntroTimer = root.setTimeout(finishNavIntro, 3000);
       video.play().catch(function () {});
-      video.addEventListener("ended", finishNavIntro, { once: true });
+      video.addEventListener("ended", function () {
+        try {
+          video.pause();
+          video.currentTime = Math.max(0, (Number(video.duration) || 2) - 0.04);
+        } catch {}
+      }, { once: true });
       intro.addEventListener("click", function () {
         finishNavIntro();
       }, { passive: true });
