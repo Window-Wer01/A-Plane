@@ -7,11 +7,6 @@
     linear-gradient(180deg, #4a72d8 0%, #2d4c9f 45%, #1e356f 100%);
 }
 
-.mobile-play-page {
-  overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: auto;
-}
-
 .wechat-mini-shell {
   --wx-banner-height: 112px;
   --wx-game-topbar-height: 82px;
@@ -60,42 +55,42 @@
   display: none;
 }
 
-.wx-startup-splash {
+.wx-nav-intro {
   position: fixed;
   inset: 0;
   z-index: 99999;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: #000;
+  background: #000000;
   opacity: 1;
   transition: opacity 240ms ease-out;
 }
 
-.wx-startup-splash.is-blackout {
-  background: #000;
+.wx-nav-intro.is-blackout {
+  background: #000000;
 }
 
-.wx-startup-splash.is-blackout .wx-startup-video {
+.wx-nav-intro.is-blackout .wx-nav-intro-video {
   opacity: 0;
 }
 
-.wx-startup-splash.is-leaving {
+.wx-nav-intro.is-leaving {
   opacity: 0;
   pointer-events: none;
 }
 
-.wx-startup-splash[hidden] {
+.wx-nav-intro[hidden] {
   display: none;
 }
 
-.wx-startup-video {
+.wx-nav-intro-video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  background: #000;
+  background: #000000;
   opacity: 1;
   transition: opacity 180ms linear;
 }
@@ -387,7 +382,6 @@
   min-height: calc(100vh - 8px);
   min-height: calc(100dvh - 8px);
   padding-bottom: 0;
-  overflow: hidden;
 }
 
 .wechat-game-layout {
