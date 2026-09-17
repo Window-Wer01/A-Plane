@@ -91,15 +91,6 @@
     }
   }
 
-  function hasSkipIntroFlag() {
-    try {
-      const search = root.location && typeof root.location.search === "string" ? root.location.search : "";
-      return /(?:\?|&)skipintro=1(?:&|$)/.test(search);
-    } catch {
-      return false;
-    }
-  }
-
   function safeText(node, text) {
     if (node) node.textContent = text;
   }
@@ -348,7 +339,7 @@
 
   function collectElements(doc) {
     const ids = [
-      "navIntro", "navIntroVideo",
+      "guideSplash", "guideSplashImage",
       "shellNotice", "menuBuildNotice", "shellNetworkState", "shellWelcomeTip",
       "menuScreen", "friendRankScreen", "petParkScreen", "gameScreen",
       "menuStartBtn", "menuRankBtn", "menuPetBtn", "menuExitBtn",
@@ -434,9 +425,9 @@
       entries: []
     };
     let lastPauseGlyphResumeAt = 0;
-    let navIntroFinished = false;
-    let navIntroTimer = 0;
-    let navIntroHideTimer = 0;
+    let guideSplashFinished = false;
+    let guideSplashStarted = false;
+    let guideSplashTimer = 0;
 
     function persistSettings() {
       settingsStorage.set("audio-enabled", settings.audioEnabled ? "1" : "0");
@@ -626,20 +617,15 @@
       syncUi();
     }
 
-    function finishNavIntro() {
-      if (navIntroFinished) return;
-      navIntroFinished = true;
-      if (navIntroTimer) {
-        root.clearTimeout(navIntroTimer);
-        navIntroTimer = 0;
+    function finishGuideSplash() {
+      if (guideSplashFinished) return;
+      guideSplashFinished = true;
+      if (guideSplashTimer) {
+        root.clearTimeout(guideSplashTimer);
+        guideSplashTimer = 0;
       }
-      if (navIntroHideTimer) {
-        root.clearTimeout(navIntroHideTimer);
-        navIntroHideTimer = 0;
-      }
-      const intro = elements.navIntro;
-      const video = elements.navIntroVideo;
-      if (!intro) {
+      const splash = elements.guideSplash;
+      if (!splash) {
         if (hasAutoStartFlag()) {
           root.setTimeout(function () {
             restartRunAndEnterGame();
@@ -647,32 +633,27 @@
         }
         return;
       }
-      intro.classList.add("is-blackout");
-      if (video) {
-        try {
-          video.pause();
-          video.currentTime = Math.max(0, (Number(video.duration) || 2) - 0.04);
-        } catch {}
-      }
-      navIntroHideTimer = root.setTimeout(function () {
-        intro.classList.add("is-leaving");
-        root.setTimeout(function () {
-          intro.hidden = true;
-          if (hasAutoStartFlag()) {
-            root.setTimeout(function () {
-              restartRunAndEnterGame();
-            }, 60);
-          }
-        }, 900);
-      }, 700);
+      splash.classList.add("is-leaving");
+      root.setTimeout(function () {
+        splash.hidden = true;
+        if (hasAutoStartFlag()) {
+          root.setTimeout(function () {
+            restartRunAndEnterGame();
+          }, 60);
+        }
+      }, 560);
     }
 
-    function initNavIntro() {
-      const intro = elements.navIntro;
-      const video = elements.navIntroVideo;
-      if (!intro || !video || hasSkipIntroFlag()) {
-        if (intro) intro.hidden = true;
-        navIntroFinished = true;
+    function startGuideSplashCountdown() {
+      if (guideSplashStarted || guideSplashFinished) return;
+      guideSplashStarted = true;
+      guideSplashTimer = root.setTimeout(finishGuideSplash, 3000);
+    }
+
+    function initGuideSplash() {
+      const splash = elements.guideSplash;
+      const image = elements.guideSplashImage;
+      if (!splash || !image) {
         if (hasAutoStartFlag()) {
           root.setTimeout(function () {
             restartRunAndEnterGame();
@@ -680,23 +661,17 @@
         }
         return;
       }
-      intro.hidden = false;
-      intro.classList.remove("is-blackout", "is-leaving");
-      video.muted = true;
-      try {
-        video.currentTime = 0;
-      } catch {}
-      navIntroTimer = root.setTimeout(finishNavIntro, 3000);
-      video.play().catch(function () {});
-      video.addEventListener("ended", function () {
-        try {
-          video.pause();
-          video.currentTime = Math.max(0, (Number(video.duration) || 2) - 0.04);
-        } catch {}
-      }, { once: true });
-      intro.addEventListener("click", function () {
-        finishNavIntro();
-      }, { passive: true });
+      splash.hidden = false;
+      splash.classList.remove("is-leaving");
+      if (image.complete) {
+        root.requestAnimationFrame(function () {
+          startGuideSplashCountdown();
+        });
+      } else {
+        image.addEventListener("load", startGuideSplashCountdown, { once: true });
+        image.addEventListener("error", startGuideSplashCountdown, { once: true });
+        root.setTimeout(startGuideSplashCountdown, 800);
+      }
     }
 
     function tryExitShell() {
@@ -1033,7 +1008,7 @@
     setScreen("menu");
     resizeCanvas();
     syncUi();
-    initNavIntro();
+    initGuideSplash();
 
     serviceBundle.login.initSession().then((nextSession) => {
       session = nextSession;

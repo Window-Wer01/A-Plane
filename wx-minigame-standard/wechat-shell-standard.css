@@ -55,44 +55,34 @@
   display: none;
 }
 
-.wx-nav-intro {
+.wx-guide-splash {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  overflow: hidden;
   display: grid;
   place-items: center;
-  background: #000000;
+  overflow: hidden;
+  background: #ffffff;
   opacity: 1;
-  transition: opacity 900ms ease-out;
+  transition: opacity 560ms ease-out;
 }
 
-.wx-nav-intro.is-blackout {
-  background: #000000;
-}
-
-.wx-nav-intro.is-blackout .wx-nav-intro-video {
-  opacity: 0;
-}
-
-.wx-nav-intro.is-leaving {
+.wx-guide-splash.is-leaving {
   opacity: 0;
   pointer-events: none;
 }
 
-.wx-nav-intro[hidden] {
+.wx-guide-splash[hidden] {
   display: none;
 }
 
-.wx-nav-intro-video {
+.wx-guide-splash-image {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  background: #000000;
-  opacity: 1;
-  transition: opacity 700ms ease-out;
+  background: #ffffff;
 }
 
 .wechat-screen.hidden {
