@@ -1,4 +1,4 @@
-const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260916-wxmini-27";
+const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260918-wxmini-29";
 const OFFLINE_FALLBACK = "./mobile-wechat-offline-standard.html";
 const PRECACHE_URLS = [
   "./",
@@ -16,7 +16,26 @@ const PRECACHE_URLS = [
   "./js/blob-merge-core.js",
   "./js/game-wechat-standard.js",
   "./assets/bgm-paper-boat.mp3",
-  "./assets/bubble-creature.png"
+  "./assets/bubble-creature.png",
+  "./assets/ui-phase1-0102/background/scene_bg_full@2x.png",
+  "./assets/ui-phase1-0102/ui/ui_topbar_bg@2x.png",
+  "./assets/ui-phase1-0102/ui/ui_step_panel@2x.png",
+  "./assets/ui-phase1-0102/ui/ui_next_panel@2x.png",
+  "./assets/ui-phase1-0102/ui/btn_back_red@3x.png",
+  "./assets/ui-phase1-0102/playfield/playfield_frame_outer@2x.png",
+  "./assets/ui-phase1-0102/playfield/playfield_frame_inner@2x.png",
+  "./assets/ui-phase1-0102/skills/ui_skill_bar_bg@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_capsule_idle@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_capsule_active@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_clean_idle@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_clean_active@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_rage_idle@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_rage_active@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_split_idle@2x.png",
+  "./assets/ui-phase1-0102/skills/skill_split_active@2x.png",
+  "./assets/ui-phase1-0102/skills/badge_count@2x.png",
+  "./assets/ui-phase1-0102/banner/banner_wrap_bg@2x.png",
+  "./assets/ui-phase1-0102/banner/banner_top_edge@2x.png"
 ];
 
 function toCacheKey(input) {
