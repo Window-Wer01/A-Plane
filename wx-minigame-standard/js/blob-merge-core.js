@@ -33,6 +33,7 @@
   const STACK_SQUISH_DOWN = 20;
   const COLLISION_SKIN = su(2.4);
   const MERGE_TOUCH_GAP = -0.8;
+  const MERGE_ARM_DELAY = 0.002;
   const TOOL_DEFAULT_STOCK = 5;
   const CAPSULE_DURATION = 30;
   const CAPSULE_SAFE_BONUS = 0.05;
@@ -649,8 +650,8 @@
       for (let i = 0; i < subSteps; i += 1) {
         this.advanceBlobs(subDt);
         this.updateRage(subDt);
-        this.resolveCollisions();
         this.resolveMerges();
+        this.resolveCollisions();
         this.updateDanger(subDt);
       }
       this.updateFx(dt);
@@ -812,7 +813,7 @@
           const b = blobs[j];
           if (a.typeIndex !== b.typeIndex) continue;
           if (a.specialType === "splitBomb" || b.specialType === "splitBomb") continue;
-          if (a.age <= 0.01 || b.age <= 0.01) continue;
+          if (a.age <= MERGE_ARM_DELAY || b.age <= MERGE_ARM_DELAY) continue;
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;

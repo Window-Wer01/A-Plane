@@ -114,8 +114,9 @@
 
 .wechat-screen#gameScreen {
   background:
-    var(--wx-pixel-bg-url) center top / 100% 100% no-repeat,
-    linear-gradient(180deg, #103b56 0%, #0a1834 100%);
+    radial-gradient(circle at 20% 0%, rgba(255, 223, 119, 0.18), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(110, 224, 255, 0.16), transparent 26%),
+    linear-gradient(180deg, #4a72d8 0%, #2d4c9f 45%, #1e356f 100%);
 }
 
 .wechat-screen#gameScreen .game-panel,
@@ -727,13 +728,13 @@
 }
 
 .wx-stage-overlay::before {
-  content: "";
+  content: none;
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   height: var(--wx-stage-top);
-  background: var(--wx-pixel-topbar-url) center top / 100% 100% no-repeat;
+  background: none;
   border-bottom: none;
   box-shadow: none;
 }
@@ -772,8 +773,8 @@
 .wx-return-btn {
   min-height: 38px;
   border-radius: 12px;
-  border: none;
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
   overflow: hidden;
 }
 
@@ -783,17 +784,17 @@
   flex-direction: column;
   justify-content: flex-start;
   min-width: 0;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.06)),
+    linear-gradient(180deg, rgba(39, 68, 146, 0.94), rgba(27, 46, 103, 0.98));
 }
 
 .wx-step-panel {
-  background-image: var(--wx-pixel-step-url);
+  background-image: none;
 }
 
 .wx-next-center.wx-top-panel {
-  background-image: var(--wx-pixel-next-url);
+  background-image: none;
 }
 
 .wx-panel-label {
@@ -815,16 +816,18 @@
   height: var(--wx-return-height);
   padding: 0;
   border-radius: 10px;
-  background: var(--wx-pixel-back-url) center / 100% 100% no-repeat;
-  color: transparent;
-  font-size: 0;
+  background:
+    linear-gradient(180deg, #f97373 0%, #dc2626 100%);
+  color: #fff5f5;
+  font-size: 14px;
+  font-weight: 800;
   z-index: 9;
   display: grid;
   place-items: center;
 }
 
 .wx-return-arrow {
-  display: none;
+  display: block;
 }
 
 .wx-return-arrow::before,
@@ -1133,19 +1136,19 @@
   display: block;
   overflow: hidden;
   background: transparent;
-  border: none;
-  box-shadow: none;
+  border: 2px solid rgba(155, 219, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
   border-radius: 28px;
   isolation: isolate;
 }
 
 .wx-board-shell::before,
 .wx-board-shell::after {
-  content: "";
+  content: none;
   position: absolute;
   left: 0;
   right: 0;
-  top: -10px;
+  top: 0;
   bottom: 0;
   background-position: center;
   background-repeat: no-repeat;
@@ -1155,12 +1158,12 @@
 
 .wx-board-shell::before {
   z-index: 4;
-  background-image: var(--wx-pixel-frame-outer-url);
+  background-image: none;
 }
 
 .wx-board-shell::after {
   z-index: 5;
-  background-image: var(--wx-pixel-frame-inner-url);
+  background-image: none;
 }
 
 .wechat-game-layout #gameCanvas {
@@ -1208,10 +1211,15 @@
 }
 
 .wx-tool-stage::before {
-  content: "";
+  content: none;
   position: absolute;
   inset: 0;
-  background: var(--wx-pixel-skillbar-url) center bottom / 100% 100% no-repeat;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)),
+    linear-gradient(180deg, rgba(27, 56, 124, 0.92), rgba(18, 33, 82, 0.98));
+  border-radius: 22px;
+  border: 1px solid rgba(196, 220, 255, 0.16);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
   pointer-events: none;
 }
 
@@ -1233,12 +1241,14 @@
   min-height: 0;
   margin: 0 auto;
   padding: 0;
-  border-radius: 24px;
-  border: none;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  box-shadow: none;
+  border-radius: 999px;
+  border: 2px solid rgba(196, 220, 255, 0.2);
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, rgba(42, 55, 164, 0.98) 0%, rgba(24, 32, 110, 0.99) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.08),
+    0 10px 20px rgba(7, 13, 49, 0.28);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1249,35 +1259,35 @@
 }
 
 .wx-tool-card[data-tool-key="capsule"] {
-  background-image: var(--wx-pixel-skill-capsule-idle-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="capsule"].is-active {
-  background-image: var(--wx-pixel-skill-capsule-active-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="clean"] {
-  background-image: var(--wx-pixel-skill-clean-idle-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="clean"].is-active {
-  background-image: var(--wx-pixel-skill-clean-active-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="rage"] {
-  background-image: var(--wx-pixel-skill-rage-idle-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="rage"].is-active {
-  background-image: var(--wx-pixel-skill-rage-active-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="split"] {
-  background-image: var(--wx-pixel-skill-split-idle-url);
+  background-image: none;
 }
 
 .wx-tool-card[data-tool-key="split"].is-active {
-  background-image: var(--wx-pixel-skill-split-active-url);
+  background-image: none;
 }
 
 .wx-tool-card:disabled {
@@ -1293,15 +1303,19 @@
 }
 
 .wx-tool-name {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+  position: static;
+  width: auto;
+  height: auto;
   padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
+  margin: 0 8px 4px;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
   border: 0;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #eef2ff;
 }
 
 .wx-tool-stock {
@@ -1312,8 +1326,8 @@
   height: 24px;
   padding: 0 6px;
   border-radius: 999px;
-  border: none;
-  background: var(--wx-pixel-badge-url) center / 100% 100% no-repeat;
+  border: 1px solid rgba(255,255,255,0.24);
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1324,7 +1338,11 @@
 }
 
 .wx-tool-meta {
-  display: none;
+  display: block;
+  margin: 4px 10px 0;
+  font-size: 9px;
+  line-height: 1.2;
+  color: rgba(238, 242, 255, 0.72);
 }
 
 .wx-tool-timer {
@@ -1365,9 +1383,9 @@
   min-height: var(--wx-banner-height);
   height: var(--wx-banner-height);
   position: relative;
-  border-radius: 0;
-  background: var(--wx-pixel-banner-url) center / 100% 100% no-repeat;
-  border: none;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+  border: 1px dashed rgba(58, 97, 196, 0.42);
   display: grid;
   place-items: center;
   text-align: center;
@@ -1376,13 +1394,13 @@
 }
 
 .wx-tv-screen::before {
-  content: "";
+  content: none;
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   height: 18px;
-  background: var(--wx-pixel-banner-edge-url) center top / 100% 100% no-repeat;
+  background: none;
   pointer-events: none;
 }
 
@@ -1398,7 +1416,7 @@
 
 .wx-ad-placeholder span {
   display: block;
-  color: rgba(228, 245, 255, 0.72);
+  color: rgba(59, 80, 125, 0.82);
   font-size: 11px;
   margin-bottom: 4px;
 }
@@ -1406,7 +1424,7 @@
 .wx-ad-placeholder strong {
   display: block;
   font-size: 13px;
-  color: #eefaff;
+  color: #26417d;
 }
 
 .wx-reward-card {
