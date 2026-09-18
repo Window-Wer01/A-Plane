@@ -650,8 +650,8 @@
       for (let i = 0; i < subSteps; i += 1) {
         this.advanceBlobs(subDt);
         this.updateRage(subDt);
-        this.resolveMerges();
         this.resolveCollisions();
+        this.resolveMerges();
         this.updateDanger(subDt);
       }
       this.updateFx(dt);
@@ -726,6 +726,46 @@
       }
     }
 
+    mergeBlobPair(a, b) {
+      const nextIndex = Math.min(TYPES.length - 1, a.typeIndex + 1);
+      const merged = this.createBlob(
+        nextIndex,
+        (a.x + b.x) * 0.5,
+        (a.y + b.y) * 0.5,
+        (a.vx + b.vx) * 0.035,
+        Math.min((a.vy + b.vy) * 0.035, -210)
+      );
+      this.state.blobs = this.state.blobs
+        .filter((blob) => blob.id !== a.id && blob.id !== b.id)
+        .concat(merged);
+      this.applyMergeShockwave(merged.x, merged.y, merged.radius, [merged.id]);
+      this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score}`, TYPES[nextIndex].color);
+      this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1.18 + nextIndex * 0.28);
+      this.spawnSparks(
+        merged.x,
+        merged.y,
+        TYPES[nextIndex].color,
+        14 + nextIndex * 3,
+        210 + nextIndex * 32,
+        0.68 + nextIndex * 0.04
+      );
+      if (nextIndex >= 4) {
+        this.state.cameraPunch = Math.max(this.state.cameraPunch, 0.03 + nextIndex * 0.006);
+      }
+      this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
+      this.state.merges += 1;
+      this.state.highestType = Math.max(this.state.highestType, nextIndex);
+      this.state.message = `合成了 ${TYPES[nextIndex].label}，继续留住底部空间。`;
+      if (this.state.score > this.bestScore) {
+        this.bestScore = this.state.score;
+        this.writeNumber("best-score", this.bestScore);
+      }
+      if (nextIndex === TYPES.length - 1) {
+        this.finishRun(true);
+      }
+      return merged;
+    }
+
     resolveCollisions() {
       const blobs = this.state.blobs;
       for (let i = 0; i < blobs.length; i += 1) {
@@ -743,6 +783,17 @@
           }
           if (b.specialType === "splitBomb" && b.specialArmed) {
             if (this.applySplitBombHit(b, a)) return;
+          }
+
+          if (
+            a.typeIndex === b.typeIndex &&
+            a.specialType !== "splitBomb" &&
+            b.specialType !== "splitBomb" &&
+            a.age > MERGE_ARM_DELAY &&
+            b.age > MERGE_ARM_DELAY
+          ) {
+            this.mergeBlobPair(a, b);
+            return true;
           }
 
           const nx = dx / dist;
@@ -803,12 +854,8 @@
 
     resolveMerges() {
       const blobs = this.state.blobs;
-      const removed = new Set();
-      const spawned = [];
       for (let i = 0; i < blobs.length; i += 1) {
-        if (removed.has(blobs[i].id)) continue;
         for (let j = i + 1; j < blobs.length; j += 1) {
-          if (removed.has(blobs[j].id)) continue;
           const a = blobs[i];
           const b = blobs[j];
           if (a.typeIndex !== b.typeIndex) continue;
@@ -819,48 +866,11 @@
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
           const minDist = a.radius + b.radius + COLLISION_SKIN * 0.72;
           if (dist > minDist - MERGE_TOUCH_GAP) continue;
-          removed.add(a.id);
-          removed.add(b.id);
-          const nextIndex = Math.min(TYPES.length - 1, a.typeIndex + 1);
-          const merged = this.createBlob(
-            nextIndex,
-            (a.x + b.x) * 0.5,
-            (a.y + b.y) * 0.5,
-            (a.vx + b.vx) * 0.035,
-            Math.min((a.vy + b.vy) * 0.035, -210)
-          );
-          spawned.push(merged);
-          this.applyMergeShockwave(merged.x, merged.y, merged.radius, [merged.id]);
-          this.spawnPopup(merged.x, merged.y, `啵！+${TYPES[nextIndex].score}`, TYPES[nextIndex].color);
-          this.spawnBurst(merged.x, merged.y, TYPES[nextIndex].color, 1.18 + nextIndex * 0.28);
-          this.spawnSparks(
-            merged.x,
-            merged.y,
-            TYPES[nextIndex].color,
-            14 + nextIndex * 3,
-            210 + nextIndex * 32,
-            0.68 + nextIndex * 0.04
-          );
-          if (nextIndex >= 4) {
-            this.state.cameraPunch = Math.max(this.state.cameraPunch, 0.03 + nextIndex * 0.006);
-          }
-          this.state.score += TYPES[nextIndex].score * MERGE_SCORE_FACTOR;
-          this.state.merges += 1;
-          this.state.highestType = Math.max(this.state.highestType, nextIndex);
-          this.state.message = `合成了 ${TYPES[nextIndex].label}，继续留住底部空间。`;
-          if (nextIndex === TYPES.length - 1) {
-            this.finishRun(true);
-          }
-          break;
+          this.mergeBlobPair(a, b);
+          return true;
         }
       }
-
-      if (!removed.size) return;
-      this.state.blobs = blobs.filter((blob) => !removed.has(blob.id)).concat(spawned);
-      if (this.state.score > this.bestScore) {
-        this.bestScore = this.state.score;
-        this.writeNumber("best-score", this.bestScore);
-      }
+      return false;
     }
 
     updateDanger(dt) {
