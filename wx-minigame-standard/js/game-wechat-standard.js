@@ -62,11 +62,19 @@
     { label: "4号 果冻球", hint: "这是过渡球，尽量别悬空。" },
     { label: "5号 轨道球", hint: "开始占空间了，别挤满右侧。" },
     { label: "6号 星核球", hint: "高阶球要有大底座支撑。" },
-    { label: "7号 大王球", hint: "再稳一次，就能直接收王。" }
+    { label: "7号 大王球", hint: "先稳住，开始冲更高层。" },
+    { label: "8号 极光球", hint: "已经进后期了，优先保留中央支点。" },
+    { label: "9号 传说球", hint: "9号开始别贪快，等自然贴合再并。" },
+    { label: "10号 银耀球", hint: "银色高阶要留出生长空间，别顶红线。" },
+    { label: "11号 金耀球", hint: "最后金阶只等一次好角度，别乱压。" }
   ];
 
-  const WEB_BGM_SRC = "./assets/bgm-paper-boat.mp3";
-  const WX_BGM_SRC = "assets/bgm-paper-boat.mp3";
+  const WEB_BGM_SRC = "./assets/bgm-paper-boat-20260920.mp3";
+  const WX_BGM_SRC = "assets/bgm-paper-boat-20260920.mp3";
+  const WEB_DROP_SFX_SRC = "./assets/sfx-drop-20260920.wav";
+  const WX_DROP_SFX_SRC = "assets/sfx-drop-20260920.wav";
+  const WEB_MERGE_SFX_SRC = "./assets/sfx-merge-20260920.wav";
+  const WX_MERGE_SFX_SRC = "assets/sfx-merge-20260920.wav";
   const MAX_WARNING_TIME = 2.6;
   const DESIGN_STAGE_WIDTH = 750;
   const DESIGN_STAGE_HEIGHT = 1334;
@@ -152,6 +160,7 @@
 
   function createWebAudioManager(settings) {
     let audio = null;
+    const liveEffects = new Set();
 
     function ensureAudio() {
       if (audio) return audio;
@@ -165,6 +174,25 @@
       return audio;
     }
 
+    function playEffect(src, volumeScale) {
+      if (!settings.audioEnabled) return;
+      const effect = new Audio(src);
+      effect.preload = "auto";
+      effect.volume = clamp(settings.volume * volumeScale, 0, 1);
+      effect.playsInline = true;
+      effect.setAttribute("playsinline", "");
+      effect.setAttribute("webkit-playsinline", "");
+      const cleanup = function () {
+        liveEffects.delete(effect);
+        effect.onended = null;
+        effect.onerror = null;
+      };
+      effect.onended = cleanup;
+      effect.onerror = cleanup;
+      liveEffects.add(effect);
+      effect.play().catch(cleanup);
+    }
+
     return {
       start() {
         if (!settings.audioEnabled) return;
@@ -173,17 +201,33 @@
         player.play().catch(() => {});
       },
       stop() {
-        if (!audio) return;
-        audio.pause();
+        if (audio) {
+          audio.pause();
+        }
+        liveEffects.forEach((effect) => {
+          try {
+            effect.pause();
+          } catch {
+            // ignore
+          }
+        });
+        liveEffects.clear();
       },
       syncVolume() {
         if (audio) audio.volume = settings.volume;
+      },
+      playDrop() {
+        playEffect(WEB_DROP_SFX_SRC, 0.52);
+      },
+      playMerge(level = 0) {
+        playEffect(WEB_MERGE_SFX_SRC, Math.min(1, 0.72 + level * 0.03));
       }
     };
   }
 
   function createWxAudioManager(settings, wxApi) {
     let audio = null;
+    const liveEffects = new Set();
 
     function ensureAudio() {
       if (audio) return audio;
@@ -191,7 +235,28 @@
       audio.src = WX_BGM_SRC;
       audio.loop = true;
       audio.volume = settings.volume;
+      audio.obeyMuteSwitch = false;
       return audio;
+    }
+
+    function playEffect(src, volumeScale) {
+      if (!settings.audioEnabled) return;
+      const effect = wxApi.createInnerAudioContext();
+      effect.src = src;
+      effect.volume = clamp(settings.volume * volumeScale, 0, 1);
+      effect.obeyMuteSwitch = false;
+      const cleanup = function () {
+        liveEffects.delete(effect);
+        try {
+          effect.destroy();
+        } catch {
+          // ignore
+        }
+      };
+      effect.onEnded(cleanup);
+      effect.onError(cleanup);
+      liveEffects.add(effect);
+      effect.play();
     }
 
     return {
@@ -202,11 +267,27 @@
         player.play();
       },
       stop() {
-        if (!audio) return;
-        audio.pause();
+        if (audio) {
+          audio.pause();
+        }
+        liveEffects.forEach((effect) => {
+          try {
+            effect.stop();
+            effect.destroy();
+          } catch {
+            // ignore
+          }
+        });
+        liveEffects.clear();
       },
       syncVolume() {
         if (audio) audio.volume = settings.volume;
+      },
+      playDrop() {
+        playEffect(WX_DROP_SFX_SRC, 0.52);
+      },
+      playMerge(level = 0) {
+        playEffect(WX_MERGE_SFX_SRC, Math.min(1, 0.72 + level * 0.03));
       }
     };
   }
@@ -220,6 +301,16 @@
         },
         stopBgm() {
           platform.audio.stop();
+        },
+        playDropSfx(typeIndex) {
+          if (platform.audio && typeof platform.audio.playDrop === "function") {
+            platform.audio.playDrop(typeIndex);
+          }
+        },
+        playMergeSfx(typeIndex) {
+          if (platform.audio && typeof platform.audio.playMerge === "function") {
+            platform.audio.playMerge(typeIndex);
+          }
         },
         storageGet(key) {
           return platform.storage.get(key, "");
@@ -800,7 +891,8 @@
       safeText(elements.gamePetEmoji, core.state.gameOver ? "👑" : core.state.paused ? "😴" : "🐾");
       safeText(elements.gamePetText, core.state.gameOver ? "本局已结束" : core.state.paused ? "当前已暂停" : "当前精灵状态");
       if (elements.nextBlob) {
-        elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.08) 38%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd"][core.state.nextType] || "#7dd3fc"}`;
+        elements.nextBlob.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.92), rgba(255,255,255,0.12) 34%, rgba(255,255,255,0) 60%), ${["#7dd3fc","#86efac","#f9a8d4","#c4b5fd","#fdba74","#fde68a","#93c5fd","#67e8f9","#a78bfa","#d1d5db","#facc15"][core.state.nextType] || "#7dd3fc"}`;
+        elements.nextBlob.style.boxShadow = `0 0 0 2px rgba(248,250,252,0.88), 0 0 18px ${["rgba(125,211,252,0.45)","rgba(134,239,172,0.42)","rgba(249,168,212,0.42)","rgba(196,181,253,0.44)","rgba(253,186,116,0.44)","rgba(253,230,138,0.48)","rgba(147,197,253,0.5)","rgba(103,232,249,0.54)","rgba(167,139,250,0.56)","rgba(209,213,219,0.58)","rgba(250,204,21,0.62)"][core.state.nextType] || "rgba(125,211,252,0.45)"}`;
       }
 
       const offline = typeof navigator !== "undefined" && navigator.onLine === false;

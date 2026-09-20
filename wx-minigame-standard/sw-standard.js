@@ -1,4 +1,4 @@
-const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260918-wxmini-37";
+const CACHE_NAME = "blob-merge-prototype-standard-offline-cache-20260920-wxmini-38";
 const OFFLINE_FALLBACK = "./mobile-wechat-offline-standard.html";
 const PRECACHE_URLS = [
   "./",
@@ -16,8 +16,10 @@ const PRECACHE_URLS = [
   "./js/services/update-service.js",
   "./js/blob-merge-core.js",
   "./js/game-wechat-standard.js",
-  "./assets/bgm-paper-boat.mp3",
-  "./assets/bubble-creature.png",
+  "./assets/bgm-paper-boat-20260920.mp3",
+  "./assets/bubble-creature-refined-20260920.png",
+  "./assets/sfx-drop-20260920.wav",
+  "./assets/sfx-merge-20260920.wav",
   "./assets/ui-pixel-ref-20260918/background/scene_bg_full@2x.png",
   "./assets/ui-pixel-ref-20260918/ui/ui_topbar_bg@2x.png",
   "./assets/ui-pixel-ref-20260918/ui/ui_step_panel@2x.png",

@@ -60,7 +60,11 @@
     { key: "jelly", label: "果冻球", radius: su(40), color: "#c4b5fd", score: 8 },
     { key: "orbit", label: "轨道球", radius: su(52), color: "#fdba74", score: 16 },
     { key: "core", label: "星核球", radius: su(66), color: "#fde68a", score: 32 },
-    { key: "king", label: "大王球", radius: su(82), color: "#93c5fd", score: 64 }
+    { key: "king", label: "大王球", radius: su(82), color: "#93c5fd", score: 64 },
+    { key: "aurora", label: "极光球", radius: su(96), color: "#67e8f9", score: 128 },
+    { key: "legend", label: "传说球", radius: su(110), color: "#a78bfa", score: 256 },
+    { key: "silver", label: "银耀球", radius: su(110), color: "#d1d5db", score: 512 },
+    { key: "gold", label: "金耀球", radius: su(110), color: "#facc15", score: 1024 }
   ];
   const RESULT_BUTTON = rect(120, 478, 180, 52);
   const RESULT_REVIVE_BUTTON = rect(36, 478, 112, 52);
@@ -151,7 +155,7 @@
           return sprite;
         };
         return {
-          bubble: createSprite("./assets/bubble-creature.png")
+          bubble: createSprite("./assets/bubble-creature-refined-20260920.png")
         };
       } catch {
         return null;
@@ -610,6 +614,7 @@
       this.state.dropCooldown = DROP_COOLDOWN;
       this.state.drops += 1;
       this.state.message = `已投下 ${TYPES[typeIndex].label}，下一手优先整理支撑面。`;
+      this.platform.playDropSfx && this.platform.playDropSfx(typeIndex);
       this.recordReviveSnapshot();
     }
 
@@ -756,6 +761,7 @@
       this.state.merges += 1;
       this.state.highestType = Math.max(this.state.highestType, nextIndex);
       this.state.message = `合成了 ${TYPES[nextIndex].label}，继续留住底部空间。`;
+      this.platform.playMergeSfx && this.platform.playMergeSfx(nextIndex);
       if (this.state.score > this.bestScore) {
         this.bestScore = this.state.score;
         this.writeNumber("best-score", this.bestScore);
@@ -1119,25 +1125,49 @@
         const spriteReady = sprite && sprite.complete && sprite.naturalWidth > 0;
         ctx.save();
         ctx.translate(blob.x, blob.y);
+        const accent = blob.color || TYPES[blob.typeIndex].color;
+        ctx.fillStyle = accent;
+        ctx.globalAlpha = 0.18;
+        ctx.beginPath();
+        ctx.arc(0, 0, blob.radius * 1.08, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath();
+        ctx.arc(0, 0, blob.radius * 1.22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
         if (spriteReady) {
-          ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
+          ctx.fillStyle = "rgba(3, 12, 28, 0.26)";
           ctx.beginPath();
           ctx.arc(0, blob.radius * 0.04, blob.radius * 0.9, 0, Math.PI * 2);
           ctx.fill();
+          ctx.strokeStyle = "rgba(248,250,252,0.94)";
+          ctx.lineWidth = Math.max(3, blob.radius * 0.14);
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius * 0.98, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = Math.max(2, blob.radius * 0.07);
+          ctx.beginPath();
+          ctx.arc(0, 0, blob.radius * 1.1, 0, Math.PI * 2);
+          ctx.stroke();
           const drawWidth = blob.radius * 2.28;
           const drawHeight = drawWidth * (sprite.naturalHeight / sprite.naturalWidth);
           const offsetY = -drawHeight * 0.54;
-          ctx.shadowColor = "rgba(15, 23, 42, 0.24)";
-          ctx.shadowBlur = blob.radius * 0.28;
+          ctx.shadowColor = accent;
+          ctx.shadowBlur = blob.radius * 0.34;
           ctx.drawImage(sprite, -drawWidth / 2, offsetY, drawWidth, drawHeight);
           ctx.restore();
           continue;
         }
 
-        ctx.fillStyle = blob.color;
+        ctx.fillStyle = accent;
         ctx.beginPath();
         ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = "rgba(248,250,252,0.92)";
+        ctx.lineWidth = Math.max(3, blob.radius * 0.14);
+        ctx.stroke();
 
         ctx.fillStyle = "rgba(255,255,255,0.22)";
         ctx.beginPath();
