@@ -5,6 +5,7 @@ const PRECACHE_URLS = [
   "./preview.html",
   "./mobile-wechat-standard.html",
   "./mobile-wechat-offline-standard.html",
+  "./assets/startup/guide-splash-750x1334.png",
   "./styles.css",
   "./wechat-shell-standard.css",
   "./js/services/runtime-config.js",
