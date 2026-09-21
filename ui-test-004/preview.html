@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>我要当大王 - 微信小游戏标准预览</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050b16;
+      --card: #0f1b2f;
+      --line: rgba(148, 163, 184, 0.24);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, rgba(56,189,248,0.18), transparent 36%),
+        linear-gradient(180deg, #050b16, #101a2c 62%, #0a1220);
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: var(--text);
+    }
+    .preview-shell {
+      width: min(100vw, 1120px);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 300px minmax(320px, 430px) 300px;
+      gap: 18px;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 18px;
+    }
+    .side-card {
+      padding: 18px 18px 20px;
+      border-radius: 22px;
+      background: rgba(15, 27, 47, 0.86);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    .side-card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .side-card p, .side-card li {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .side-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .phone-frame {
+      width: min(100%, 430px);
+      aspect-ratio: 390 / 844;
+      padding: 12px;
+      border-radius: 36px;
+      background: linear-gradient(180deg, #0f172a, #020617);
+      box-shadow: 0 30px 70px rgba(2, 6, 23, 0.56);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #020617;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .phone-iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #020617;
+      border: 0;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 132px;
+      height: 20px;
+      border-radius: 0 0 18px 18px;
+      background: rgba(2, 6, 23, 0.92);
+      z-index: 3;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.14);
+      border: 1px solid rgba(56,189,248,0.24);
+      color: #bae6fd;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 980px) {
+      .preview-shell {
+        grid-template-columns: 1fr;
+        width: 100%;
+        justify-items: center;
+      }
+      .side-card {
+        width: min(100%, 430px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="preview-shell">
+    <section class="side-card">
+      <span class="badge">网页 / PC 验收壳</span>
+      <h2>验收方式</h2>
+      <p>这个页面会始终按手机尺寸显示核心画面。PC 打开时，你看到的是固定手机比例窗口；手机打开时，则直接满屏适配。</p>
+      <ul>
+        <li>玩法核心与微信小游戏共用 `blob-merge-core.js`</li>
+        <li>后续网页版和 PC 版都继续从这套共享核心分出来</li>
+        <li>微信小游戏部分单独走 `game.js + game.json + project.config.json`</li>
+      </ul>
+    </section>
+
+    <section class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-notch"></div>
+        <iframe
+          class="phone-iframe"
+          src="./mobile-wechat-standard.html"
+          title="微信小游戏迁移版手机窗口预览"
+          loading="eager"
+          referrerpolicy="no-referrer"
+        ></iframe>
+      </div>
+    </section>
+
+    <section class="side-card">
+      <span class="badge">当前目标</span>
+      <h2>本轮先保证</h2>
+      <ul>
+        <li>中间手机框现在加载的是完整迁移版页面，不是简化骨架</li>
+        <li>PC 上可以直接按手机显示标准验收主界面、游戏页、技能栏和结算页</li>
+        <li>微信小游戏目录继续单独保留 `game.js / game.json / project.config.json`</li>
+        <li>后续网页版、PC 版和小游戏版继续共用同一份资源目录</li>
+      </ul>
+      <p>这一步已经把旧试玩线的正式体验迁进新目录，后续迭代都以这里为准，不再回旧版本文件里改。</p>
+    </section>
+  </main>
+</body>
+</html>

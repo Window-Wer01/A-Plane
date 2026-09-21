@@ -1,0 +1,124 @@
+const CACHE_NAME = "blob-merge-prototype-ui-test-004-offline-cache-20260921";
+const OFFLINE_FALLBACK = "./mobile-wechat-offline-standard.html";
+const PRECACHE_URLS = [
+  "./",
+  "./preview.html",
+  "./mobile-wechat-standard.html",
+  "./mobile-wechat-offline-standard.html",
+  "./assets/startup/guide-splash-750x1334.png",
+  "./styles.css",
+  "./wechat-shell-standard.css",
+  "./js/services/runtime-config.js",
+  "./js/services/login-service.js",
+  "./js/services/ad-service.js",
+  "./js/services/share-service.js",
+  "./js/services/rank-service.js",
+  "./js/services/update-service.js",
+  "./js/blob-merge-core.js",
+  "./js/game-wechat-standard.js",
+  "./assets/bgm-ui-test-004-20260921.wav",
+  "./assets/sfx-drop-ui-test-004-20260921.wav",
+  "./assets/sfx-merge-ui-test-004-20260921.wav",
+  "./assets/ball-lv-01-ui-test-004.png",
+  "./assets/ball-lv-02-ui-test-004.png",
+  "./assets/ball-lv-03-ui-test-004.png",
+  "./assets/ball-lv-04-ui-test-004.png",
+  "./assets/ball-lv-05-ui-test-004.png",
+  "./assets/ball-lv-06-ui-test-004.png",
+  "./assets/ball-lv-07-ui-test-004.png",
+  "./assets/ball-lv-08-ui-test-004.png",
+  "./assets/ball-lv-09-ui-test-004.png",
+  "./assets/ball-lv-10-ui-test-004.png",
+  "./assets/ball-lv-11-ui-test-004.png",
+  "./assets/ui-pixel-ref-20260918/background/scene_bg_full@2x.png",
+  "./assets/ui-pixel-ref-20260918/ui/ui_topbar_bg@2x.png",
+  "./assets/ui-pixel-ref-20260918/ui/ui_step_panel@2x.png",
+  "./assets/ui-pixel-ref-20260918/ui/ui_next_panel@2x.png",
+  "./assets/ui-pixel-ref-20260918/ui/btn_back_red@3x.png",
+  "./assets/ui-pixel-ref-20260918/playfield/playfield_frame_outer@2x.png",
+  "./assets/ui-pixel-ref-20260918/playfield/playfield_frame_inner@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/ui_skill_bar_bg@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_capsule_idle@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_capsule_active@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_clean_idle@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_clean_active@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_rage_idle@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_rage_active@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_split_idle@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/skill_split_active@2x.png",
+  "./assets/ui-pixel-ref-20260918/skills/badge_count@2x.png",
+  "./assets/ui-pixel-ref-20260918/banner/banner_wrap_bg@2x.png",
+  "./assets/ui-pixel-ref-20260918/banner/banner_top_edge@2x.png"
+];
+
+function toCacheKey(input) {
+  const url = new URL(input, self.location.href);
+  url.hash = "";
+  return url.toString();
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
+  const cacheKey = toCacheKey(requestUrl.pathname);
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, cloned));
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage = await caches.match(cacheKey);
+          if (cachedPage) return cachedPage;
+          return caches.match(OFFLINE_FALLBACK);
+        })
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(cacheKey)
+      .then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, cloned));
+          return response;
+        });
+      })
+      .catch(() => {
+        if (event.request.destination === "document") {
+          return caches.match(OFFLINE_FALLBACK);
+        }
+        return new Response("", { status: 504, statusText: "Offline" });
+      })
+  );
+});
