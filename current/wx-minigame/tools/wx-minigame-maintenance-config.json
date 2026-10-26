@@ -1,0 +1,9 @@
+{
+  "cleanupIntervalHours": 48,
+  "cleanupRetainDays": 7,
+  "keepTestFolders": [
+    "ui-test-004"
+  ],
+  "deleteZipPattern": "^UI-TEST-\\d{3}.*\\.zip$"
+}
+

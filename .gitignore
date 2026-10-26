@@ -1,0 +1,28 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Local secrets and overrides
+.env
+.env.*
+!.env.example
+*.local.js
+*.private.js
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Local historical snapshots are retained outside the GitHub working tree.
+archive/

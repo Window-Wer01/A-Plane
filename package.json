@@ -1,0 +1,11 @@
+{
+  "name": "blob-merge-project",
+  "version": "2026.10.22",
+  "private": true,
+  "description": "Blob Merge WeChat mini-game development workspace",
+  "scripts": {
+    "verify": "node tools/verify-project.js",
+    "verify:integration": "node current/wx-minigame/tools/verify-formal-integration.js",
+    "build:playtest": "node tools/build-playtest.js"
+  }
+}
