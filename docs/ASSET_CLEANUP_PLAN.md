@@ -1,18 +1,20 @@
-# 当前资产清理计划
+# 当前资产清理记录
 
 审计日期：2026-10-26
 
 审计目录：`current/wx-minigame/assets/`
 
-## 审计结果
+## 清理结果
 
-- 资产文件总数：29
-- 已被 HTML、CSS、JavaScript、JSON、Markdown 或 Service Worker 引用：25
-- 未发现引用：4
-- 当前资产总大小：8,101,401 字节
-- 未引用候选合计：1,366,453 字节
+- 清理前资产文件：29 个
+- 当前保留资产文件：25 个
+- 已删除未引用资产：4 个
+- 减少体积：1,366,453 字节（约 1.30 MiB）
+- `node tools/verify-project.js`：通过
+- `node tools/build-playtest.js dist/playtest`：通过
+- 构建版本：`2026-10-22 wxmini-50`
 
-## 待退役候选
+## 已退役文件
 
 ```text
 assets/startup/formal-opening-splash.mp4
@@ -21,17 +23,12 @@ assets/startup/formal-opening-splash-750x1334-2s.mp4
 assets/ui-pixel-ref-20260918/preview/ui_full_preview_750x1334.png
 ```
 
-以上文件在当前正式主干文本、运行入口和 Service Worker 缓存清单中均未找到引用，但仍需要完成一次网页试玩和微信开发者工具启动测试后再删除。
+这些文件未被当前正式主干、网页验收入口或 Service Worker 缓存清单引用，删除后自动校验和手机试玩构建均通过。旧内容仍可从 Git 历史和迁移前标签 `legacy-before-codex-cleanup-2026-10-26` 恢复。
 
-## 推荐清理步骤
+## 后续资产规则
 
-1. 从 `main` 创建 `chore/remove-retired-assets` 分支。
-2. 再次运行 `node tools/verify-project.js`，保存基线结果。
-3. 只删除上述四个候选文件，不混入功能修改。
-4. 再运行 `node tools/verify-project.js` 和 `node tools/build-playtest.js`。
-5. 本地测试首页、开始游戏、音频、启动页和离线重载。
-6. 推送分支并创建 Pull Request。
-7. 等待 GitHub Actions 校验通过后再合并。
-8. 合并后由 Pages 工作流自动发布，再检查 `VERSION.txt` 和手机页面。
-
-旧资产不需要继续留在开发主干中。Git 提交历史和本地 `archive/original-snapshot/` 已承担追溯职责，因此不应把 `-old`、`-backup`、多版本复制件继续堆在运行目录。
+1. 新资产只放入 `current/wx-minigame/assets/` 中实际使用的位置。
+2. 不保留 `-old`、`-backup` 或仅供追溯的重复版本。
+3. 替换资产时同步检查 HTML、CSS、JavaScript、JSON 和 `sw-standard.js`。
+4. 每次资产修改后运行 `node tools/verify-project.js` 和试玩构建。
+5. 历史追溯使用 Git 提交和标签，不在运行目录中堆副本。
